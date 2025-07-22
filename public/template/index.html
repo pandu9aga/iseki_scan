@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: #333;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+        }
+        header {
+            background: linear-gradient(135deg, #007BFF, #0056b3);
+            color: white;
+            padding: 3rem 0;
+            text-align: center;
+        }
+        header h1 {
+            font-size: 3rem;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 2rem auto;
+        }
+        section {
+            background: white;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #007BFF;
+            margin-bottom: 1rem;
+        }
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .service-card {
+            background: #f9f9f9;
+            padding: 1.5rem;
+            border-radius: 8px;
+            transition: transform 0.3s ease-in-out;
+        }
+        .service-card:hover {
+            transform: translateY(-10px);
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 1rem;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome to Our Company</h1>
+        <p>Your Partner for Innovative Solutions</p>
+    </header>
+    
+    <div class="container">
+        <section id="about">
+            <h2>About Us</h2>
+            <p>We are a company dedicated to providing the best services and solutions for our clients. Our team of experts works relentlessly to drive innovation and deliver top-notch results.</p>
+        </section>
+
+        <section id="services">
+            <h2>Our Services</h2>
+            <div class="services">
+                <div class="service-card">
+                    <h3>Service 1</h3>
+                    <p>We offer outstanding solutions tailored to your business needs.</p>
+                </div>
+                <div class="service-card">
+                    <h3>Service 2</h3>
+                    <p>Innovative strategies to keep you ahead of the competition.</p>
+                </div>
+                <div class="service-card">
+                    <h3>Service 3</h3>
+                    <p>Efficient processes that boost your company's productivity.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact">
+            <h2>Contact Us</h2>
+            <p>Email: info@company.com</p>
+            <p>Phone: +123 456 7890</p>
+            <a href="#" class="btn">Get in Touch</a>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Our Company. All Rights Reserved.</p>
+    </footer>
+</body>
+</html>
