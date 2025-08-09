@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AdminMiddleware
+class McMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
@@ -15,8 +15,8 @@ class AdminMiddleware
             return redirect()->route('login')->withErrors(['accessDenied' => 'You must login first']);
         }
 
-        // Cek tipe user harus admin (misal 2)
-        if (session('Id_Type_User') != 2) {
+        // Cek tipe user harus admin (misal 1)
+        if (session('Id_Type_User') != 1) {
             session()->forget('Id_User');
             session()->forget('Id_Type_User');
             return redirect()->route('login')->withErrors(['accessDenied' => 'You must login with admin account']);

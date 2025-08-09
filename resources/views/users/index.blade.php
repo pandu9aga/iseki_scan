@@ -28,18 +28,22 @@
                     <thead>
                         <tr>
                             <th>No</th>
+                            <th>Day</th>
                             <th>Time</th>
                             <th>Item</th>
                             <th>Rack</th>
+                            <th>Sum Record</th>
                             <th>Correctness</th>
                         </tr>
                     </thead>
                     <tfoot>
                         <tr>
                             <th>No</th>
+                            <th>Day</th>
                             <th>Time</th>
                             <th>Item</th>
                             <th>Rack</th>
+                            <th>Sum Record</th>
                             <th>Correctness</th>
                         </tr>
                     </tfoot>
@@ -47,9 +51,11 @@
                         @foreach ( $records as $i )
                         <tr>
                             <td>{{ $loop->iteration }}</td>
+                            <td>{{ $i->Day_Record }}</td>
                             <td>{{ $i->Time_Record }}</td>
                             <td>{{ $i->Code_Item_Rack }}</td>
                             <td>{{ $i->Code_Rack }}</td>
+                            <td>{{ $i->Sum_Record }}</td>
                             <td>
                                 @if ($i->Correctness_Record == 1)
                                     <span class="text-white px-1 py-1 bg-gradient-success">

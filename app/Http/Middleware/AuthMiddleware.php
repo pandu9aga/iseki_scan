@@ -10,17 +10,13 @@ class AuthMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!session()->has('Id_User')) {
+        if (!session()->has('Id_Member')) {
+            session()->forget('Id_Member');
+            session()->forget('NIK_Member');
+            session()->forget('Name_Member');
             return redirect()->route('login')->withErrors(['accessDenied' => 'You must login first']);
-        }
-
-        if(session('Id_Type_User') != 1) {
-            session()->forget('Id_User');
-            session()->forget('Id_Type_User');
-            return redirect()->route('login')->withErrors(['accessDenied' => 'You must login with user account']);
         }
 
         return $next($request);
     }
 }
-

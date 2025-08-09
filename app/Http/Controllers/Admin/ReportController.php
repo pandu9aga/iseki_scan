@@ -17,7 +17,7 @@ class ReportController extends Controller
 {
     public function index(){
         $date = Carbon::today();
-        $records = Record::whereDate('Day_Record', $date)->with('user')->get();
+        $records = Record::whereDate('Day_Record', $date)->with('member')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRecords = $records->count();
         $date = Carbon::parse($date)->isoFormat('YYYY-MM-DD');
@@ -32,7 +32,7 @@ class ReportController extends Controller
 
     public function submit(Request $request){
         $date = $request->input('Day_Record');
-        $records = Record::whereDate('Day_Record', $date)->with('user')->get();
+        $records = Record::whereDate('Day_Record', $date)->with('member')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRecords = $records->count();
         
@@ -47,14 +47,14 @@ class ReportController extends Controller
     public function export(Request $request) {
         $date = $request->input('Day_Record_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
-        $records = Record::whereDate('Day_Record', $date)->with('user')->get();
+        $records = Record::whereDate('Day_Record', $date)->with('member')->get();
 
         // Buat Spreadsheet
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
-        $headers = ['No', 'Date', 'Time', 'Item', 'Rack', 'Correctness', 'Person'];
+        $headers = ['No', 'Date', 'Time', 'Item', 'Rack', 'Sum Record', 'Correctness', 'Person'];
         $sheet->fromArray([$headers], NULL, 'A1');
 
         // Style header (tebal & background abu-abu)
@@ -62,7 +62,7 @@ class ReportController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:G1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
 
         // Isi data
         $row = 2;
@@ -76,12 +76,13 @@ class ReportController extends Controller
                 $record->Time_Record,
                 $record->Code_Item_Rack,
                 $record->Code_Rack,
+                $record->Sum_Record,
                 $correctness,
-                $record->user->Name_User ?? '-'
+                $record->member->Name_Member ?? '-'
             ], NULL, 'A' . $row);
 
             // Set warna dan tebal untuk "Correct" & "Incorrect"
-            $correctnessCell = 'F' . $row;
+            $correctnessCell = 'G' . $row;
             if ($correctness === 'Correct') {
                 $sheet->getStyle($correctnessCell)->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => '008000']] // Hijau

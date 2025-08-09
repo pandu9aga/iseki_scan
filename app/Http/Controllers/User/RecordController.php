@@ -18,16 +18,20 @@ class RecordController extends Controller
     {
         $date = Carbon::today();
         $timeNow = Carbon::now()->format('H:i:s');
-        $Id_User = session('Id_User');
+        $Id_User = session('Id_Member');
 
         // melakukan validasi data
         $request->validate([
             'Code_Item' => 'required',
-            'Code_Rack' => 'required'
+            'Code_Rack' => 'required',
+            'Sum_Record' => 'required|integer|min:1',
         ],
         [
             'Code_Item.required' => 'Kode item wajib diisi',
-            'Code_Rack.required' => 'Kode rack wajib diisi'
+            'Code_Rack.required' => 'Kode rack wajib diisi',
+            'Sum_Record.required' => 'Jumlah permintaan wajib diisi',
+            'Sum_Record.integer' => 'Jumlah permintaan harus berupa angka',
+            'Sum_Record.min' => 'Jumlah permintaan minimal 1',
         ]);
 
         $codeItem = substr($request->input('Code_Item'), 0, 12);
@@ -39,6 +43,7 @@ class RecordController extends Controller
             'Code_Item_Rack' => $codeItem,
             'Code_Rack' => $request->input('Code_Rack'),
             'Correctness_Record' => $request->input('Correctness'),
+            'Sum_Record' => $request->input('Sum_Record'),
             'Id_User' => $Id_User
         ]);
         

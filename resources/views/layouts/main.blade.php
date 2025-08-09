@@ -14,9 +14,9 @@
 
     <!-- Custom fonts for this template-->
     <link href="{{asset('vendor/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
-    <link
+    {{-- <link
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet">
+        rel="stylesheet"> --}}
 
     <!-- Custom styles for this template-->
     <link href="{{asset('css/sb-admin-2.min.css')}}" rel="stylesheet">
@@ -54,6 +54,26 @@
             <!-- Divider -->
             <hr class="sidebar-divider">
 
+            <!-- Nav Item - Report -->
+            <li class="nav-item active">
+                <a class="nav-link" href="{{ route('admin_submission') }}">
+                    <i class="fas fa-fw fa-chart-area"></i>
+                    <span>Submission</span></a>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+             <!-- Nav Item - Report -->
+            <li class="nav-item active">
+                <a class="nav-link" href="{{ route('admin_request') }}">
+                    <i class="fas fa-fw fa-chart-area"></i>
+                    <span>Request</span></a>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
             <!-- Nav Item - Monthly -->
             <li class="nav-item active">
                 <a class="nav-link" href="{{ route('monthly') }}">
@@ -74,13 +94,23 @@
             <!-- Divider -->
             <hr class="sidebar-divider">
 
-            <!-- Nav Item - Report -->
+            <!-- Nav Item - User -->
             <li class="nav-item active">
                 <a class="nav-link" href="{{ route('user') }}">
                     <i class="fas fa-fw fa-user"></i>
                     <span>User</span></a>
             </li>
 
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Nav Item - Member -->
+            <li class="nav-item active">
+                <a class="nav-link" href="{{route('member')}}">
+                    <i class="fas fa-fw fa-user-circle"></i>
+                    <span>Member</span></a>
+            </li>
+            
             <!-- Divider -->
             <hr class="sidebar-divider">
 

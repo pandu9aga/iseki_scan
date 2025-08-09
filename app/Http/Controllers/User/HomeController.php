@@ -11,7 +11,7 @@ class HomeController extends Controller
 {
     public function index(){
         $date = Carbon::today();
-        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_User'))->get();
+        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_Member'))->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRecords = $records->count();
         

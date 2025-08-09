@@ -15,8 +15,8 @@ class Record extends Model
     public $timestamps = false; // Jika tabel tidak memiliki created_at dan updated_at
 
     // Relasi ke model User
-    public function user()
+    public function member()
     {
-        return $this->belongsTo(User::class, 'Id_User', 'Id_User');
+        return $this->belongsTo(Member::class, 'Id_User', 'Id_Member');
     }
 }

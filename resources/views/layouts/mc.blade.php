@@ -44,57 +44,18 @@
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
-            <!-- Nav Item - Dashboard -->
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ route('home') }}">
-                    <i class="fas fa-fw fa-home"></i>
-                    <span>Home</span></a>
-            </li>
-
             <!-- Divider -->
             <hr class="sidebar-divider">
 
-            <!-- Nav Item - Request -->
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ route('request') }}"> 
-                    <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Request</span></a>
-            </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider d-none d-md-block">
-
             <!-- Nav Item - Report -->
             <li class="nav-item active">
-                <a class="nav-link" href="{{ route('submission') }}"> 
+                <a class="nav-link" href="{{ route('mc_submission') }}">
                     <i class="fas fa-fw fa-chart-area"></i>
                     <span>Submission</span></a>
             </li>
 
-             <!-- Divider -->
-            <hr class="sidebar-divider d-none d-md-block">
-
-            <!-- Nav Item - Report -->
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ route('record') }}"> 
-                    <i class="fas fa-fw fa-qrcode"></i>
-                    <span>Record</span></a>
-            </li>
-
             <!-- Divider -->
-            <hr class="sidebar-divider">
-
-                        <!-- Nav Item - Report -->
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ route('user_report') }}"> 
-                    <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Report</span></a>
-            </li>
-
-             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
-
-            
 
             <!-- Sidebar Toggler (Sidebar) -->
             <div class="text-center d-none d-md-inline">
@@ -183,7 +144,7 @@
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="{{ route('logout.member') }}">Logout</a>
+                    <a class="btn btn-primary" href="{{ route('logout') }}">Logout</a>
                 </div>
             </div>
         </div>

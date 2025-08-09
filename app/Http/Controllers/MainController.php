@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Type_User;
+use App\Models\Member;
 
 class MainController extends Controller
 {
@@ -15,8 +16,10 @@ class MainController extends Controller
                 return redirect()->route('dashboard');
             }
             else if (session('Id_Type_User') == 1){
-                return redirect()->route('home');
+                return redirect()->route('mc_submission');
             }
+        } else if (session()->has('Id_Member')) {
+            return redirect()->route('home');
         }
         return view('login');
     }
@@ -49,11 +52,38 @@ class MainController extends Controller
         return back()->withErrors(['loginError' => 'Invalid username or password']);
     }
 
+    public function login_member(Request $request)
+    {
+        $request->validate([
+            'NIK_Member' => 'required'
+        ]);
+
+        $member = Member::where('NIK_Member', $request->NIK_Member)->first();
+
+        if (!$member) {
+            return back()->withErrors(['loginError' => 'Invalid NIK']);
+        }
+
+        session(['Id_Member' => $member->Id_Member]);
+        session(['NIK_Member' => $member->NIK_Member]);
+        session(['Name_Member' => $member->Name_Member]);
+
+        return redirect()->route('home');
+    }
+
     public function logout()
     {
         session()->forget('Id_User');
         session()->forget('Id_Type_User');
         session()->forget('Username_User');
+        return redirect()->route('/');
+    }
+
+    public function logout_member()
+    {
+        session()->forget('Id_Member');
+        session()->forget('NIK_Member');
+        session()->forget('Name_Member');
         return redirect()->route('/');
     }
 
