@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Iseki</title>
+    <title>Iseki Scan - Supply Part</title>
     <link rel="icon" type="image/x-icon" href="{{asset('img/logo-iseki.png')}}">
 
     <!-- Custom fonts for this template-->
@@ -38,14 +38,14 @@
                 <div class="sidebar-brand-icon rotate-n-15">
                     <i class="fas fa-globe"></i>
                 </div>
-                <div class="sidebar-brand-text mx-3">Iseki</div>
+                <div class="sidebar-brand-text mx-3">Iseki Scan</div>
             </a>
 
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
             <!-- Nav Item - Dashboard -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('home') }}">
                     <i class="fas fa-fw fa-home"></i>
                     <span>Home</span></a>
@@ -54,28 +54,20 @@
             <!-- Divider -->
             <hr class="sidebar-divider">
 
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Action
+            </div>
+
             <!-- Nav Item - Request -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('request') }}"> 
-                    <i class="fas fa-fw fa-chart-area"></i>
+                    <i class="fas fa-fw fa-bullhorn"></i>
                     <span>Request</span></a>
             </li>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider d-none d-md-block">
-
             <!-- Nav Item - Report -->
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ route('submission') }}"> 
-                    <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Submission</span></a>
-            </li>
-
-             <!-- Divider -->
-            <hr class="sidebar-divider d-none d-md-block">
-
-            <!-- Nav Item - Report -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('record') }}"> 
                     <i class="fas fa-fw fa-qrcode"></i>
                     <span>Record</span></a>
@@ -84,17 +76,27 @@
             <!-- Divider -->
             <hr class="sidebar-divider">
 
-                        <!-- Nav Item - Report -->
-            <li class="nav-item active">
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Report
+            </div>
+
+            <!-- Nav Item - Report -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('submission') }}"> 
+                    <i class="fas fa-fw fa-file"></i>
+                    <span>Requesting</span></a>
+            </li>
+
+            <!-- Nav Item - Report -->
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('user_report') }}"> 
-                    <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Report</span></a>
+                    <i class="fas fa-fw fa-file-image"></i>
+                    <span>Recording</span></a>
             </li>
 
              <!-- Divider -->
-            <hr class="sidebar-divider d-none d-md-block">
-
-            
+            <hr class="sidebar-divider">
 
             <!-- Sidebar Toggler (Sidebar) -->
             <div class="text-center d-none d-md-inline">

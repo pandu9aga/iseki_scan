@@ -30,10 +30,10 @@
                                             </a>
                                         </div>
                                         <span style="font-size: small;">Rack Code</span>
-                                        <input type="text" name="Code_Rack" id="Code_Rack" class="form-control form-control-user @error('Code_Rack') is-invalid @enderror" value="{{ old('Code_Rack') }}">
+                                        <input type="text" name="Code_Rack" id="Code_Rack" class="form-control form-control-user @error('Code_Rack') is-invalid @enderror" value="{{ old('Code_Rack') }}" required>
                                         <br>
                                         <span style="font-size: small;">Item Code</span>
-                                        <input type="text" name="Code_Item" id="Code_Item" class="form-control form-control-user @error('Code_Item') is-invalid @enderror" value="{{ old('Code_Item') }}">
+                                        <input type="text" name="Code_Item" id="Code_Item" class="form-control form-control-user @error('Code_Item') is-invalid @enderror" value="{{ old('Code_Item') }}" required>
                                         @error('Code_Rack')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -46,7 +46,7 @@
                                 <div class="col-lg-12 text-center">
                                     <div class="form-group mb-3">
                                         <label for="Sum_Request" style="font-size: small;">Sum Request</label>
-                                        <input type="number" name="Sum_Request" id="Sum_Request" class="form-control form-control-user @error('Sum_Request') is-invalid @enderror" value="{{ old('Sum_Request', 1) }}" min="1" step="1">
+                                        <input type="number" name="Sum_Request" id="Sum_Request" class="form-control form-control-user @error('Sum_Request') is-invalid @enderror" value="{{ old('Sum_Request', 1) }}" min="1" step="1" required>
                                         @error('Sum_Request')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -107,7 +107,7 @@
 
         // AJAX request ke backend untuk dapat Code_Item
         $.ajax({
-            url: '/api/get-code-item',  // route API yang akan dibuat
+            url: './api/get-code-item',  // route API yang akan dibuat
             method: 'POST',
             data: {
                 code_rack: decodedText,

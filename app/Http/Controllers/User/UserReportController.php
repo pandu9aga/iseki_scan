@@ -17,7 +17,7 @@ class UserReportController extends Controller
 {
     public function index(){
         $date = Carbon::today();
-        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_Member'))->get();
+        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_Member'))->orderBy('Time_Record', 'desc')->with('member', 'request')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRecords = $records->count();
         $date = Carbon::parse($date)->isoFormat('YYYY-MM-DD');
@@ -32,7 +32,7 @@ class UserReportController extends Controller
 
     public function submit(Request $request){
         $date = $request->input('Day_Record');
-        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_Member'))->get();
+        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_Member'))->orderBy('Time_Record', 'desc')->with('member', 'request')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRecords = $records->count();
 
@@ -47,7 +47,7 @@ class UserReportController extends Controller
     public function export(Request $request) {
         $date = $request->input('Day_Record_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
-        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_Member'))->get();
+        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_Member'))->with('member', 'request')->get();
         $name = Member::where('Id_Member', session('Id_Member'))->value('Name_Member');
     
         // Buat Spreadsheet
@@ -98,7 +98,7 @@ class UserReportController extends Controller
         }
     
         // Simpan ke file
-        $fileName = "Report_" . $name . "_" . $date . ".xlsx";
+        $fileName = "Record_" . $name . "_" . $date . ".xlsx";
         $writer = new Xlsx($spreadsheet);
         $filePath = storage_path('app/public/' . $fileName);
         $writer->save($filePath);

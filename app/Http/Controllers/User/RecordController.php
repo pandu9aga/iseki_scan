@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\Record;
+use App\Models\Request as RequestModel; // alias supaya tidak bentrok
 
 class RecordController extends Controller
 {
@@ -20,7 +21,7 @@ class RecordController extends Controller
         $timeNow = Carbon::now()->format('H:i:s');
         $Id_User = session('Id_Member');
 
-        // melakukan validasi data
+        // validasi
         $request->validate([
             'Code_Item' => 'required',
             'Code_Rack' => 'required',
@@ -34,20 +35,49 @@ class RecordController extends Controller
             'Sum_Record.min' => 'Jumlah permintaan minimal 1',
         ]);
 
-        $codeItem = substr($request->input('Code_Item'), 0, 12);
-        
-        //tambah data item
-        DB::table('records')->insert([
-            'Day_Record' => $date,
-            'Time_Record' => $timeNow,
-            'Code_Item_Rack' => $codeItem,
-            'Code_Rack' => $request->input('Code_Rack'),
-            'Correctness_Record' => $request->input('Correctness'),
-            'Sum_Record' => $request->input('Sum_Record'),
-            'Id_User' => $Id_User
-        ]);
-        
-        return redirect()->route('home');
+        $rawItem = $request->input('Code_Item');
+        // hapus semua spasi & tanda baca, hanya sisakan huruf/angka
+        $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
+        // ambil 12 karakter pertama
+        $codeItem = substr($cleanItem, 0, 12);
+
+        DB::beginTransaction();
+        try {
+            // cari request yang matching
+            $matchingRequest = RequestModel::where('Code_Item_Rack', $codeItem)
+                // ->where('Code_Rack', $request->input('Code_Rack'))
+                ->where('Id_User', $Id_User)
+                ->where('Status_Request', 'Waiting')
+                ->first();
+
+            $Id_Request = null;
+
+            if ($matchingRequest) {
+                // update status jadi Done
+                $matchingRequest->Status_Request = 'Done';
+                $matchingRequest->save();
+
+                $Id_Request = $matchingRequest->Id_Request; // ambil id
+            }
+
+            // insert record
+            Record::create([
+                'Day_Record' => $date,
+                'Time_Record' => $timeNow,
+                'Code_Item_Rack' => $codeItem,
+                'Code_Rack' => $request->input('Code_Rack'),
+                'Correctness_Record' => $request->input('Correctness'),
+                'Sum_Record' => $request->input('Sum_Record'),
+                'Id_User' => $Id_User,
+                'Id_Request' => $Id_Request, // bisa null kalau tidak ada
+            ]);
+
+            DB::commit();
+            return redirect()->route('user_report')->with('success', 'Record berhasil dibuat.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('user_report')->with('error', 'Gagal membuat record: '.$e->getMessage());
+        }
     }
 
     public function check(Request $request)

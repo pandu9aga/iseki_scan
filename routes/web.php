@@ -106,6 +106,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/user_submission', [SubmissionController::class, 'index'])->name('submission');
     Route::get('/user_submission/submit', [SubmissionController::class, 'submit'])->name('user_submission.submit');
     Route::get('/submission/export', [SubmissionController::class, 'export'])->name('submission.export');
+    Route::put('/submission/update/{id}', [SubmissionController::class, 'update'])->name('submission.update');
     Route::post('/user_submission/reset', [SubmissionController::class, 'reset'])->name('submission.reset'); 
 });
 

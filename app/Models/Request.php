@@ -20,12 +20,18 @@ class Request extends Model
         'Code_Rack',
         'Id_User',
         'Sum_Request',
-        'Correctness_Request',
+        'Status_Request',
+        'Updated_At_Request',
     ];
 
     // Relasi ke Member
     public function member()
     {
         return $this->belongsTo(Member::class, 'Id_User', 'Id_Member');
+    }
+
+    public function record()
+    {
+        return $this->hasOne(Record::class, 'Id_Request', 'Id_Request');
     }
 }

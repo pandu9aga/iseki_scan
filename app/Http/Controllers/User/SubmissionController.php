@@ -17,7 +17,7 @@ class SubmissionController extends Controller
     {
         $date = Carbon::today();
         $dateForInput = $date->format('Y-m-d');  // Untuk input date di view
-        $submissions = RequestModel::whereDate('Day_Request', $date)->with('member')->where('Id_User', session('Id_Member'))->get();
+        $submissions = RequestModel::whereDate('Day_Request', $date)->with('member', 'record')->where('Id_User', session('Id_Member'))->orderBy('Time_Request', 'desc')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
 
         $totalSubmissions = $submissions->count();
@@ -31,7 +31,7 @@ class SubmissionController extends Controller
     {
         $date = $request->input('Day_Request');
         $dateForInput = Carbon::parse($date)->format('Y-m-d');
-        $submissions = RequestModel::whereDate('Day_Request', $date)->with('member')->where('Id_User', session('Id_Member'))->get();
+        $submissions = RequestModel::whereDate('Day_Request', $date)->with('member', 'record')->where('Id_User', session('Id_Member'))->orderBy('Time_Request', 'desc')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
 
         $totalSubmissions = $submissions->count();
@@ -47,7 +47,7 @@ class SubmissionController extends Controller
     {
         $date = $request->input('Day_Request_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
-        $submissions = RequestModel::whereDate('Day_Request', $date)->where('Id_User', session('Id_Member'))->with('member')->get();
+        $submissions = RequestModel::whereDate('Day_Request', $date)->where('Id_User', session('Id_Member'))->with('member', 'record')->get();
         $name = Member::where('Id_Member', session('Id_Member'))->value('Name_Member');
 
         $spreadsheet = new Spreadsheet();
@@ -99,5 +99,19 @@ class SubmissionController extends Controller
         return redirect()->route('submission')->with('success', "Submission data on {$date} has been reset.");
     }
 
-    
+    public function update(Request $request, $id)
+    {
+        $req = RequestModel::findOrFail($id);
+
+        $request->validate([
+            'Sum_Request' => 'required|integer|min:1',
+        ]);
+
+        $req->Sum_Request = $request->Sum_Request;
+        $req->Updated_At_Request = now(); // isi timestamp
+        $req->save();
+
+        return redirect()->back()->with('success', 'Request berhasil diperbarui.');
+    }
+
 }
