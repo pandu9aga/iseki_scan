@@ -61,11 +61,33 @@
 
             <!-- Nav Item - Request -->
             <li class="nav-item">
-                <a class="nav-link" href="{{ route('request') }}"> 
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseRequest"
+                    aria-expanded="false" aria-controls="collapseRequest">
                     <i class="fas fa-fw fa-bullhorn"></i>
-                    <span>Request</span></a>
+                    <span>Request</span>
+                </a>
+                <div id="collapseRequest" class="collapse" aria-labelledby="headingRequest" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Request Menu:</h6>
+                        <a class="collapse-item" href="{{ route('request') }}">Normal</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=AGV">AGV</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Main">Main</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=LO">LO</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-0">Sub-0</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-1">Sub-1</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-2">Sub-2</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-3">Sub-3</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-4">Sub-4</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-5">Sub-5</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-6">Sub-6</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-7">Sub-7</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-8">Sub-8</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-9">Sub-9</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-10">Sub-10</a>
+                    </div>
+                </div>
             </li>
-
+            
             <!-- Nav Item - Report -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('record') }}"> 
@@ -81,14 +103,14 @@
                 Report
             </div>
 
-            <!-- Nav Item - Report -->
+            <!-- Nav Item - Requesting -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('submission') }}"> 
                     <i class="fas fa-fw fa-file"></i>
                     <span>Requesting</span></a>
             </li>
 
-            <!-- Nav Item - Report -->
+            <!-- Nav Item - Recording -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user_report') }}"> 
                     <i class="fas fa-fw fa-file-image"></i>
@@ -127,7 +149,7 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-lg-inline text-gray-600 small">{{ session('Username_User') }}</span>
+                                <span class="mr-2 d-lg-inline text-gray-600 small">{{ session('Name_Member') }}</span>
                                 <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                             </a>
                             <!-- Dropdown - User Information -->

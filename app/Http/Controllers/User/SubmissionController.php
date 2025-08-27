@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Request as RequestModel;
+use App\Models\Record;
 use App\Models\Member;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -47,36 +48,51 @@ class SubmissionController extends Controller
     {
         $date = $request->input('Day_Request_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
-        $submissions = RequestModel::whereDate('Day_Request', $date)->where('Id_User', session('Id_Member'))->with('member', 'record')->get();
+        $submissions = RequestModel::whereDate('Day_Request', $date)
+            ->where('Id_User', session('Id_Member'))
+            ->with('member', 'record')
+            ->orderBy('Area_Request')
+            ->get();
+
         $name = Member::where('Id_Member', session('Id_Member'))->value('Name_Member');
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header
-        $headers = ['No', 'Date', 'Time', 'Item', 'Rack', 'Person', 'Sum Request'];
+        $headers = ['No', 'Time Request', 'Time Record', 'Item', 'Area', 'Rack', 'Sum Request', 'Sum Record', 'Member', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Header style
-        $sheet->getStyle('A1:G1')->applyFromArray([
+        $sheet->getStyle('A1:J1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ]);
 
         $row = 2;
         foreach ($submissions as $index => $submission) {
+            $timeRequest = ($submission->Day_Request ?? '') . " " . ($submission->Time_Request ?? '');
+            $timeRecord = ($submission->record->Day_Record ?? '') . " " . ($submission->record->Time_Record ?? '');
 
             $sheet->fromArray([
                 $index + 1,
-                $date,
-                $submission->Time_Request,
+                $timeRequest,
+                $timeRecord,
                 $submission->Code_Item_Rack,
+                $submission->Area_Request ?? '',
                 $submission->Code_Rack,
-                $submission->member->Name_Member ?? '-',
                 $submission->Sum_Request,
+                optional($submission->record)->Sum_Record ?? '',
+                $submission->member->Name_Member ?? '-',
+                $submission->Updated_At_Request,
             ], null, 'A' . $row);
 
             $row++;
+        }
+
+        // 🔑 Auto size kolom
+        foreach (range('A', $sheet->getHighestColumn()) as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
         $fileName = "Request_" . $name . "_" . $date . ".xlsx";
@@ -114,4 +130,18 @@ class SubmissionController extends Controller
         return redirect()->back()->with('success', 'Request berhasil diperbarui.');
     }
 
+    public function destroy($id)
+    {
+        $submission = RequestModel::findOrFail($id);
+
+        // Hapus record yang terkait (kalau ada)
+        if ($submission->record) {
+            $submission->record->delete();
+        }
+
+        // Hapus request
+        $submission->delete();
+
+        return redirect()->route('submission')->with('success', 'Request berhasil dihapus.');
+    }
 }

@@ -2,7 +2,7 @@
 @section('content')
 <!-- Begin Page Content -->
 <div class="container-fluid">
-    <h1 class="h3 mb-2 text-gray-800">Request</h1>
+    <h1 class="h3 mb-2 text-gray-800">All Request</h1>
 
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
 
@@ -32,35 +32,44 @@
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>Day</th>
-                            <th>Time</th>
+                            <th>Time Request</th>
+                            <th>Time Record</th>
                             <th>Item</th>
                             <th>Rack</th>
-                            <th>Person</th>
+                            <th>Name</th>
                             <th>Sum Request</th>
+                            <th>Sum Record</th>
+                            <th>Member</th>
+                            <th>Updated</th>
                         </tr>
                     </thead>
                     <tfoot>
                         <tr>
                             <th>No</th>
-                            <th>Day</th>
-                            <th>Time</th>
+                            <th>Time Request</th>
+                            <th>Time Record</th>
                             <th>Item</th>
                             <th>Rack</th>
-                            <th>Person</th>
+                            <th>Name</th>
                             <th>Sum Request</th>
+                            <th>Sum Record</th>
+                            <th>Member</th>
+                            <th>Updated</th>
                         </tr>
                     </tfoot>
                     <tbody>
                         @foreach ($requests as $s)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $s->Day_Request }}</td>
-                            <td>{{ $s->Time_Request }}</td>
+                            <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
+                            <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
                             <td>{{ $s->Code_Item_Rack }}</td>
                             <td>{{ $s->Code_Rack }}</td>
-                            <td>{{ $s->member->Name_Member ?? '-' }}</td>
+                            <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
                             <td>{{ $s->Sum_Request }}</td>
+                            <td>{{  optional($s->record)->Sum_Record ?? '' }}</td>
+                            <td>{{ $s->member->Name_Member ?? '' }}</td>
+                            <td>{{ $s->Updated_At_Request ?? '' }}</td>
                         </tr>
                         @endforeach
                     </tbody>

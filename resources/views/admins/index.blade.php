@@ -85,6 +85,24 @@
             <!-- Project Card Example -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Missing Part Request</h6>
+                </div>
+                <div class="card-body">
+                    <h3 class="font-weigth-bold text-primary"><b>{{ $totalRequests }}</b></h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+
+        <!-- Content Column -->
+        <div class="col-lg-9 mb-4">
+
+            <!-- Project Card Example -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">Today's Accuracy</h6>
                 </div>
                 <div class="card-body">

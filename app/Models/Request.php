@@ -20,6 +20,7 @@ class Request extends Model
         'Code_Rack',
         'Id_User',
         'Sum_Request',
+        'Area_Request',
         'Status_Request',
         'Updated_At_Request',
     ];
@@ -33,5 +34,10 @@ class Request extends Model
     public function record()
     {
         return $this->hasOne(Record::class, 'Id_Request', 'Id_Request');
+    }
+
+    public function rack()
+    {
+        return $this->belongsTo(Rack::class, 'Code_Rack', 'Code_Rack');
     }
 }

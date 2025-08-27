@@ -74,12 +74,14 @@
                             <th>No</th>
                             <th>Time Request</th>
                             <th>Time Record</th>
+                            <th>Area</th>
                             <th>Item</th>
                             <th>Rack</th>
                             <th>Sum Request</th>
                             <th>Sum Record</th>
                             <th>Member</th>
                             <th>Updated</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tfoot>
@@ -87,12 +89,14 @@
                             <th>No</th>
                             <th>Time Request</th>
                             <th>Time Record</th>
+                            <th>Area</th>
                             <th>Item</th>
                             <th>Rack</th>
                             <th>Sum Request</th>
                             <th>Sum Record</th>
                             <th>Member</th>
                             <th>Updated</th>
+                            <th>Action</th>
                         </tr>
                     </tfoot>
                     <tbody>
@@ -101,17 +105,34 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
                             <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
+                            <td>{{ $s->Area_Request ?? '' }}</td>
                             <td>{{ $s->Code_Item_Rack }}</td>
                             <td>{{ $s->Code_Rack }}</td>
                             <td>
-                                {{ $s->Sum_Request }}
-                                <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#editModal{{ $s->Id_Request }}">
-                                    Edit
-                                </button>
+                                <div class="row">
+                                    <div class="col-6">
+                                        {{ $s->Sum_Request }}
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#editModal{{ $s->Id_Request }}">
+                                            <i class="fas fa-fw fa-pen"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </td>
                             <td>{{  optional($s->record)->Sum_Record ?? '' }}</td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
                             <td>{{ $s->Updated_At_Request ?? '' }}</td>
+                            <td>
+                                {{-- tombol delete --}}
+                                <form action="{{ route('submission.destroy', $s->Id_Request) }}" method="POST" onsubmit="return confirm('Yakin mau hapus request ini?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-fw fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                         <div class="modal fade" id="editModal{{ $s->Id_Request }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ $s->Id_Request }}" aria-hidden="true">
                             <div class="modal-dialog" role="document">
@@ -119,7 +140,7 @@
                                     @csrf
                                     @method('PUT')
                                     <div class="modal-content">
-                                        <div class="modal-header">
+                                        <div class="modal-header bg-primary text-white">
                                             <h5 class="modal-title" id="editModalLabel{{ $s->Id_Request }}">Edit Request</h5>
                                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                 <span aria-hidden="true">&times;</span>
@@ -133,7 +154,7 @@
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                                            <button type="submit" class="btn btn-success">Simpan</button>
+                                            <button type="submit" class="btn btn-primary">Simpan</button>
                                         </div>
                                     </div>
                                 </form>

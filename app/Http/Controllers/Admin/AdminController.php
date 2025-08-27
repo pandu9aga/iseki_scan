@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Record;
+use App\Models\Request as RequestModel;
 
 class AdminController extends Controller
 {
@@ -22,6 +23,15 @@ class AdminController extends Controller
         $maxValue = max($correct, $incorrect);
         $maxProgress = pow(10, ceil(log10($maxValue)));
 
-        return view('admins.index', compact('totalRecords', 'correct', 'incorrect', 'maxProgress'));
+        $date = Carbon::today()->format('Y-m-d');
+        $requests = RequestModel::with('member', 'record')
+            ->where('Status_Request', '!=', 'Done')
+            ->whereRaw("TIMESTAMP(Day_Request, Time_Request) < ?", [Carbon::now()->subHours(48)])
+            ->orderBy('Day_Request', 'desc')
+            ->get();
+        $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
+        $totalRequests = $requests->count();
+
+        return view('admins.index', compact('totalRecords', 'correct', 'incorrect', 'maxProgress', 'totalRequests'));
     }    
 }

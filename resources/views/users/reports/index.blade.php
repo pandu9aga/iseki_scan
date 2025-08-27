@@ -81,12 +81,15 @@
                             <th>No</th>
                             <th>Time Request</th>
                             <th>Time Record</th>
+                            <th>Area</th>
                             <th>Item</th>
                             <th>Rack</th>
                             <th>Sum Request</th>
                             <th>Sum Record</th>
                             <th>Member</th>
                             <th>Correctness</th>
+                            <th>Updated</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tfoot>
@@ -94,12 +97,15 @@
                             <th>No</th>
                             <th>Time Request</th>
                             <th>Time Record</th>
+                            <th>Area</th>
                             <th>Item</th>
                             <th>Rack</th>
                             <th>Sum Request</th>
                             <th>Sum Record</th>
                             <th>Member</th>
                             <th>Correctness</th>
+                            <th>Updated</th>
+                            <th>Action</th>
                         </tr>
                     </tfoot>
                     <tbody>
@@ -108,10 +114,22 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ optional($r->request)->Day_Request ?? '' }} {{ optional($r->request)->Time_Request ?? '' }}</td>
                             <td>{{ $r->Day_Record }} {{ $r->Time_Record }}</td>
+                            <td>{{ $r->request->Area_Request ?? '' }}</td>
                             <td>{{ $r->Code_Item_Rack }}</td>
                             <td>{{ $r->Code_Rack }}</td>
                             <td>{{  optional($r->request)->Sum_Request ?? '' }}</td>
-                            <td>{{ $r->Sum_Record }}</td>
+                            <td>
+                                <div class="row">
+                                    <div class="col-6">
+                                        {{ $r->Sum_Record }}
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#editModal{{ $r->Id_Record }}">
+                                            <i class="fas fa-fw fa-pen"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
                             <td>{{ $r->member->Name_Member ?? '' }}</td>
                             <td>
                                 @if ($r->Correctness_Record == 1)
@@ -124,7 +142,44 @@
                                     </span>
                                 @endif
                             </td>
+                            <td>{{ $r->Updated_At_Record ?? '' }}</td>
+                            <td>
+                                {{-- tombol delete --}}
+                                <form action="{{ route('user_report.destroy', $r->Id_Record) }}" method="POST" onsubmit="return confirm('Yakin mau hapus record ini?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-fw fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
+                        <div class="modal fade" id="editModal{{ $r->Id_Record }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ $r->Id_Record }}" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <form method="POST" action="{{ route('user_report.update', $r->Id_Record) }}">
+                                    @csrf
+                                    @method('PUT')
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title" id="editModalLabel{{ $r->Id_Record }}">Edit Record</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="form-group">
+                                                <label>Jumlah Record</label>
+                                                <input type="number" name="Sum_Record" class="form-control" value="{{ $r->Sum_Record }}" required min="1">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                                            <button type="submit" class="btn btn-primary">Simpan</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                         @endforeach
                     </tbody>
                 </table>

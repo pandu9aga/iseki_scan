@@ -17,66 +17,59 @@ class RecordController extends Controller
 
     public function create(Request $request)
     {
-        $date = Carbon::today();
+        $date    = Carbon::today();
         $timeNow = Carbon::now()->format('H:i:s');
         $Id_User = session('Id_Member');
 
-        // validasi
-        $request->validate([
-            'Code_Item' => 'required',
-            'Code_Rack' => 'required',
-            'Sum_Record' => 'required|integer|min:1',
-        ],
-        [
-            'Code_Item.required' => 'Kode item wajib diisi',
-            'Code_Rack.required' => 'Kode rack wajib diisi',
+        // Validasi input
+        $validated = $request->validate([
+            'Code_Item'   => 'required',
+            'Code_Rack'   => 'required',
+            'Sum_Record'  => 'required|integer|min:1',
+        ], [
+            'Code_Item.required'  => 'Kode item wajib diisi',
+            'Code_Rack.required'  => 'Kode rack wajib diisi',
             'Sum_Record.required' => 'Jumlah permintaan wajib diisi',
-            'Sum_Record.integer' => 'Jumlah permintaan harus berupa angka',
-            'Sum_Record.min' => 'Jumlah permintaan minimal 1',
+            'Sum_Record.integer'  => 'Jumlah permintaan harus berupa angka',
+            'Sum_Record.min'      => 'Jumlah permintaan minimal 1',
         ]);
 
-        $rawItem = $request->input('Code_Item');
-        // hapus semua spasi & tanda baca, hanya sisakan huruf/angka
+        // Bersihkan input Code_Item
+        $rawItem   = $validated['Code_Item'];
         $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
-        // ambil 12 karakter pertama
-        $codeItem = substr($cleanItem, 0, 12);
+        $codeItem  = substr($cleanItem, 0, 12);
 
         DB::beginTransaction();
         try {
-            // cari request yang matching
-            $matchingRequest = RequestModel::where('Code_Item_Rack', $codeItem)
-                // ->where('Code_Rack', $request->input('Code_Rack'))
-                ->where('Id_User', $Id_User)
-                ->where('Status_Request', 'Waiting')
-                ->first();
-
             $Id_Request = null;
 
-            if ($matchingRequest) {
-                // update status jadi Done
-                $matchingRequest->Status_Request = 'Done';
-                $matchingRequest->save();
+            // Jika form mengirim Id_Request → cek request terkait
+            if ($request->filled('Id_Request')) {
+                $matchingRequest = RequestModel::find($request->input('Id_Request'));
 
-                $Id_Request = $matchingRequest->Id_Request; // ambil id
+                if ($matchingRequest && $matchingRequest->Status_Request === 'Waiting') {
+                    $matchingRequest->update(['Status_Request' => 'Done']);
+                    $Id_Request = $matchingRequest->Id_Request;
+                }
             }
 
-            // insert record
+            // Insert record baru
             Record::create([
-                'Day_Record' => $date,
-                'Time_Record' => $timeNow,
-                'Code_Item_Rack' => $codeItem,
-                'Code_Rack' => $request->input('Code_Rack'),
-                'Correctness_Record' => $request->input('Correctness'),
-                'Sum_Record' => $request->input('Sum_Record'),
-                'Id_User' => $Id_User,
-                'Id_Request' => $Id_Request, // bisa null kalau tidak ada
+                'Day_Record'        => $date,
+                'Time_Record'       => $timeNow,
+                'Code_Item_Rack'    => $codeItem,
+                'Code_Rack'         => $validated['Code_Rack'],
+                'Correctness_Record'=> $request->input('Correctness'),
+                'Sum_Record'        => $validated['Sum_Record'],
+                'Id_User'           => $Id_User,
+                'Id_Request'        => $Id_Request, // bisa null kalau tidak ada
             ]);
 
             DB::commit();
-            return redirect()->route('user_report')->with('success', 'Record berhasil dibuat.');
-        } catch (\Exception $e) {
+            return redirect()->back()->with('success', 'Record berhasil dibuat.');
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return redirect()->route('user_report')->with('error', 'Gagal membuat record: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Gagal membuat record: ' . $e->getMessage());
         }
     }
 
@@ -92,6 +85,30 @@ class RecordController extends Controller
 
         return response()->json([
             'status' => $exists ? 'correct' : 'incorrect'
+        ]);
+    }
+
+    public function checkMultiple(Request $request)
+    {
+        $Id_User = session('Id_Member');
+        $rawItem = $request->input('Code_Item');
+
+        $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
+        $codeItem = substr($cleanItem, 0, 12);
+
+        $requests = RequestModel::where('Code_Item_Rack', $codeItem)
+            ->where('Id_User', $Id_User)
+            ->where('Status_Request', 'Waiting')
+            ->get(['Id_Request', 'Area_Request']);
+
+        return response()->json([
+            'count' => $requests->count(),
+            'requests' => $requests->map(function ($r) {
+                return [
+                    'id' => $r->Id_Request,
+                    'area' => $r->Area_Request ?: 'Normal'
+                ];
+            }),
         ]);
     }
 

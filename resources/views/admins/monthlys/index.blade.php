@@ -3,18 +3,18 @@
 <!-- Begin Page Content -->
 <div class="container-fluid">
 
-    <h1 class="h3 mb-2 text-gray-800">Report</h1>
+    <h1 class="h3 mb-2 text-gray-800">All Record</h1>
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <form class="user" action="{{ route('monthly.export') }}" method="GET" target="_blank">
             <input name="Day_Record_Hidden" type="hidden" class="form-control form-control-user" value="{{ $date }}">
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
-                <i class="fas fa-download fa-sm text-white-50"></i> Download Report
+                <i class="fas fa-download fa-sm text-white-50"></i> Download Record
             </button>
         </form>
         <button class="d-sm-inline-block btn btn-md btn-danger shadow-sm my-2" type="button" data-toggle="modal"
             data-target="#resetReportModal">
-            <i class="fas fa-trash fa-sm text-white-50"></i> Reset Report
+            <i class="fas fa-trash fa-sm text-white-50"></i> Reset Record
         </button>
         <!-- Logout Modal-->
         <div class="modal fade" id="resetReportModal" tabindex="-1" role="dialog" aria-labelledby="resetReportModalLabel" aria-hidden="true">
@@ -42,7 +42,7 @@
     <div class="card shadow mb-4">
         <div class="card-header py-3">
             <div class="row d-flex">
-                <h6 class="m-0 font-weight-bold text-primary col-md-8">All Report</h6>
+                <h6 class="m-0 font-weight-bold text-primary col-md-8">All Record</h6>
                 <h6 class="m-0 font-weight-bold text-success col-md-2">Correct: {{ $correct }}</h6>
                 <h6 class="m-0 font-weight-bold text-danger col-md-2">Incorrect: {{ $incorrect }}</h6>
             </div>
@@ -53,48 +53,57 @@
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>Day</th>
-                            <th>Time</th>
+                            <th>Time Request</th>
+                            <th>Time Record</th>
                             <th>Item</th>
                             <th>Rack</th>
+                            <th>Name</th>
+                            <th>Sum Request</th>
                             <th>Sum Record</th>
+                            <th>Member</th>
                             <th>Correctness</th>
-                            <th>Person</th>
+                            <th>Updated</th>
                         </tr>
                     </thead>
                     <tfoot>
                         <tr>
                             <th>No</th>
-                            <th>Day</th>
-                            <th>Time</th>
+                            <th>Time Request</th>
+                            <th>Time Record</th>
                             <th>Item</th>
                             <th>Rack</th>
+                            <th>Name</th>
+                            <th>Sum Request</th>
                             <th>Sum Record</th>
+                            <th>Member</th>
                             <th>Correctness</th>
-                            <th>Person</th>
+                            <th>Updated</th>
                         </tr>
                     </tfoot>
                     <tbody>
-                        @foreach ( $records as $i )
+                        @foreach ( $records as $r )
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{$i->Day_Record}}</td>
-                            <td>{{ $i->Time_Record }}</td>
-                            <td>{{ $i->Code_Item_Rack }}</td>
-                            <td>{{ $i->Code_Rack }}</td>
-                            <td>{{ $i->Sum_Record }}</td>
+                            <td>{{ optional($r->request)->Day_Request ?? '' }} {{ optional($r->request)->Time_Request ?? '' }}</td>
+                            <td>{{ $r->Day_Record }} {{ $r->Time_Record }}</td>
+                            <td>{{ $r->Code_Item_Rack }}</td>
+                            <td>{{ $r->Code_Rack }}</td>
+                            <td>{{ $r->rack->Name_Item_Rack ?? '' }}</td>
+                            <td>{{  optional($r->request)->Sum_Request ?? '' }}</td>
+                            <td>{{ $r->Sum_Record }}</td>
+                            <td>{{ $r->member->Name_Member ?? '' }}</td>
                             <td>
-                                @if ($i->Correctness_Record == 1)
-                                <span class="text-white px-1 py-1 bg-gradient-success">
-                                    Correct
-                                </span>
+                                @if ($r->Correctness_Record == 1)
+                                    <span class="text-white px-1 py-1 bg-gradient-success">
+                                        Correct
+                                    </span>
                                 @else
-                                <span class="text-white px-1 py-1 bg-gradient-danger">
-                                    Incorrect
-                                </span>
+                                    <span class="text-white px-1 py-1 bg-gradient-danger">
+                                        Incorrect
+                                    </span>
                                 @endif
                             </td>
-                            <td>{{ $i->member->Name_Member ?? '-' }}</td>
+                            <td>{{ $r->Updated_At_Record ?? '' }}</td>
                         </tr>
                         @endforeach
                     </tbody>

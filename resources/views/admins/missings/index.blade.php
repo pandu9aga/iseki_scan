@@ -2,46 +2,29 @@
 @section('content')
 <!-- Begin Page Content -->
 <div class="container-fluid">
-    <h1 class="h3 mb-2 text-gray-800">Request</h1>
+    <h1 class="h3 mb-2 text-gray-800">Missing List</h1>
+
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <!-- Earnings (Monthly) Card Example -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col-xl-12">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Choose Day
-                            </div>
-                            <form class="user" action="{{ route('request.submit') }}" method="GET">
-                                @csrf
-                                <div class="row d-flex align-items-center">
-                                    <div class="col-lg-8 col-md-6 mb-1">
-                                        <input name="Day_Request" type="date" class="form-control form-control-user" value="{{ $dateForInput }}">
-                                    </div>
-                                    <div class="col-lg-4 col-md-6">
-                                        <button class="d-sm-inline btn btn-md btn-primary shadow-sm" type="submit">
-                                            Apply
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <form class="user" action="{{ route('request.export') }}" method="GET" target="_blank">
-            <input name="Day_Request_Hidden" type="hidden" class="form-control form-control-user" value="{{ $dateForInput }}">
+
+        {{-- <form action="{{ route('admin_submission.export') }}" method="GET" target="_blank" class="mr-2">
+            <input name="Day_Request_Hidden" type="hidden" value="{{ $date }}">
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
                 <i class="fas fa-download fa-sm text-white-50"></i> Download Request
             </button>
-        </form>
+        </form> --}}
+
+        {{-- <form action="{{ route('admin_submission.reset') }}" method="POST" class="d-inline">
+            @csrf
+            <input type="hidden" name="Day_Request" value="{{ $date }}">
+            <button class="btn btn-danger btn-md shadow-sm" type="submit" onclick="return confirm('Are you sure want to reset this submission data?')">
+                <i class="fas fa-trash-alt"></i> Reset Request
+            </button>
+        </form> --}}
     </div>
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Request: {{ $formattedDate }}</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Missing List</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">

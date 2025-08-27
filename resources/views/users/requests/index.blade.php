@@ -12,17 +12,34 @@
             <div class="row">
                 <div class="col">
                     <div class="p-5">
+                        @if (session('success'))
+                            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                <span class="badge bg-success">Success</span> {{ session('success') }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        @endif
+
+                        @if (session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <span class="badge bg-danger">Error</span> {{ session('error') }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        @endif
                         <form class="user text-center" action="{{ route('request.create') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <div class="row">
                                 <div class="col-lg-12 col-md-12 text-center">
                                     <div class="form-group mb-3">
                                         <div>
-                                            <span style="font-size: small;">QR Code Rack</span>
+                                            {{-- <span style="font-size: small;">QR Code Rack</span>
                                             <div id="parent_qrcode" class="container-fluid d-flex justify-content-start p-0" style="max-width: 150px;">
                                                 <div id="qrcode_rack"></div>
                                             </div>
-                                            <br>
+                                            <br> --}}
                                             <a href="#top">
                                                 <button type="button" id="scanRack" class="btn btn-warning btn-sm">
                                                     Scan
@@ -48,6 +65,15 @@
                                         <label for="Sum_Request" style="font-size: small;">Sum Request</label>
                                         <input type="number" name="Sum_Request" id="Sum_Request" class="form-control form-control-user @error('Sum_Request') is-invalid @enderror" value="{{ old('Sum_Request', 1) }}" min="1" step="1" required>
                                         @error('Sum_Request')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-lg-12 text-center">
+                                    <div class="form-group mb-3">
+                                        <label for="Area_Request" style="font-size: small;">Area Request</label>
+                                        <input type="text" name="Area_Request" id="Area_Request" class="form-control form-control-user @error('Area_Request') is-invalid @enderror" value="{{ old('Area_Request', $area) }}" readonly>
+                                        @error('Area_Request')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -84,8 +110,9 @@
 <script src="{{ asset('js/qrcode.min.js') }}"></script>
 
 <script>
-    var element = document.getElementById('parent_qrcode');
-    var width = element.offsetWidth;
+    // var element = document.getElementById('reader_rack');
+    // var width = element.offsetWidth;
+    var width = 150;
 
     let rackScanner = new Html5QrcodeScanner(
         "reader_rack", {
@@ -97,21 +124,21 @@
         }
     );
 
-    var qrcode_rack = new QRCode("qrcode_rack", {
-        width: width,
-        height: width
-    });
+    // var qrcode_rack = new QRCode("qrcode_rack", {
+    //     width: width,
+    //     height: width
+    // });
 
-    function onScanSuccessRack(decodedText, decodedResult) {
-        document.getElementById("Code_Rack").value = decodedText;
+    // === fungsi fetch code item ===
+    function fetchCodeItemRack(codeRack) {
+        if (!codeRack) return;
 
-        // AJAX request ke backend untuk dapat Code_Item
         $.ajax({
-            url: './api/get-code-item',  // route API yang akan dibuat
+            url: './api/get-code-item',  
             method: 'POST',
             data: {
-                code_rack: decodedText,
-                _token: $('meta[name="csrf-token"]').attr('content') // pastikan token csrf ada
+                code_rack: codeRack,
+                _token: $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
                 if(response.code_item) {
@@ -125,90 +152,40 @@
                 alert('Error fetching Code Item');
             }
         });
-
-        rackScanner.clear();
-        makeCodeRack();
-        checkCorrectness();
     }
 
+    // === callback qr scanner ===
+    function onScanSuccessRack(decodedText, decodedResult) {
+        document.getElementById("Code_Rack").value = decodedText;
+
+        // panggil fetch
+        fetchCodeItemRack(decodedText);
+
+        rackScanner.clear();
+        // makeCodeRack();
+    }
+
+    // === tombol scan ===
     document.getElementById("scanRack").addEventListener("click", function () {
-        let imgElement = document.querySelector("#qrcode_rack img");
-        if (imgElement) {
-            imgElement.src = "";
-        }
+        // let imgElement = document.querySelector("#qrcode_rack img");
+        // if (imgElement) {
+        //     imgElement.src = "";
+        // }
         rackScanner.render(onScanSuccessRack);
     });
 
-    function makeCodeRack() {
-        var rackText = document.getElementById("Code_Rack");
-        qrcode_rack.makeCode(rackText.value);
-    }
+    // === generate qr ===
+    // function makeCodeRack() {
+    //     var rackText = document.getElementById("Code_Rack");
+    //     qrcode_rack.makeCode(rackText.value);
+    // }
 
+    // === saat blur ===
     $("#Code_Rack").on("blur", function () {
-        makeCodeRack();
+        let codeRack = $(this).val();
+        // makeCodeRack();
+        fetchCodeItemRack(codeRack); // panggil juga
     });
-
-    function checkCorrectness() {
-        let itemValue = $("#Code_Item").val().trim();
-        let rackValue = $("#Code_Rack").val().trim();
-        let statusCode = $("#status_code");
-
-        itemValue = itemValue.replace(/[^\w]/g, '');
-
-        if (itemValue === "" || rackValue === "") {
-            statusCode.html("").removeClass("bg-gradient-success bg-gradient-danger text-white");
-            return;
-        }
-
-        $.get('./request/check', {
-            Code_Rack: rackValue,
-            Code_Item: itemValue
-        }, function(response) {
-            if (response.status === "correct") {
-                statusCode
-                    .html(`
-                        <div style="font-size: 3rem;">✅</div>
-                        <div style="font-size: 1.8rem; font-weight: bold;">Correct!</div>
-                        <div style="font-size: 2rem;">😊</div>
-                    `)
-                    .removeClass("bg-gradient-danger")
-                    .addClass("text-white bg-gradient-success p-3 rounded")
-                    .css({
-                        height: '180px',
-                        display: 'flex',
-                        'flex-direction': 'column',
-                        'align-items': 'center',
-                        'justify-content': 'center',
-                        'text-align': 'center'
-                    });
-
-                statusCode[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                document.getElementById("Correctness").value = 1;
-            } else {
-                statusCode
-                    .html(`
-                        <div style="font-size: 3rem;">❌</div>
-                        <div style="font-size: 1.8rem; font-weight: bold;">Incorrect!</div>
-                        <div style="font-size: 2rem;">😢</div>
-                    `)
-                    .removeClass("bg-gradient-success")
-                    .addClass("text-white bg-gradient-danger p-3 rounded")
-                    .css({
-                        height: '180px',
-                        display: 'flex',
-                        'flex-direction': 'column',
-                        'align-items': 'center',
-                        'justify-content': 'center',
-                        'text-align': 'center'
-                    });
-
-                statusCode[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                document.getElementById("Correctness").value = 2;
-            }
-        });
-    }
-
-    $("#Code_Item, #Code_Rack").on("blur", checkCorrectness);
 </script>
 @endsection
 

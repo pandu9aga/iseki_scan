@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Iseki</title>
+    <title>Iseki Scan - Supply Part</title>
     <link rel="icon" type="image/x-icon" href="{{asset('img/logo-iseki.png')}}">
 
     <!-- Custom fonts for this template-->
@@ -38,14 +38,14 @@
                 <div class="sidebar-brand-icon rotate-n-15">
                     <i class="fas fa-globe"></i>
                 </div>
-                <div class="sidebar-brand-text mx-3">Iseki</div>
+                <div class="sidebar-brand-text mx-3">Iseki Scan</div>
             </a>
 
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
             <!-- Nav Item - Dashboard -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('dashboard') }}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
@@ -54,78 +54,86 @@
             <!-- Divider -->
             <hr class="sidebar-divider">
 
-            <!-- Nav Item - Report -->
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ route('admin_submission') }}">
-                    <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Submission</span></a>
-            </li>
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Request
+            </div>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
+            <!-- Nav Item - Report -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin_submission') }}">
+                    <i class="fas fa-fw fa-bullhorn"></i>
+                    <span>All</span></a>
+            </li>
 
              <!-- Nav Item - Report -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin_request') }}">
-                    <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Request</span></a>
+                    <i class="fas fa-fw fa-bullhorn"></i>
+                    <span>Daily</span></a>
             </li>
 
             <!-- Divider -->
             <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Record
+            </div>
 
             <!-- Nav Item - Monthly -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('monthly') }}">
-                    <i class="fas fa-fw fa-calendar"></i>
-                    <span>Monthly</span></a>
+                    <i class="fas fa-fw fa-qrcode"></i>
+                    <span>All</span></a>
             </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
 
             <!-- Nav Item - Report -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('report') }}">
-                    <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Report</span></a>
+                    <i class="fas fa-fw fa-qrcode"></i>
+                    <span>Daily</span></a>
             </li>
 
             <!-- Divider -->
             <hr class="sidebar-divider">
 
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Missing
+            </div>
+
+            <!-- Nav Item - Monthly -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('missing') }}">
+                    <i class="fas fa-fw fa-ban"></i>
+                    <span>All</span></a>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Data
+            </div>
+
             <!-- Nav Item - User -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('user') }}">
                     <i class="fas fa-fw fa-user"></i>
                     <span>User</span></a>
             </li>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
             <!-- Nav Item - Member -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{route('member')}}">
                     <i class="fas fa-fw fa-user-circle"></i>
                     <span>Member</span></a>
             </li>
-            
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            {{-- <!-- Nav Item - Report -->
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ route('item') }}">
-                    <i class="fas fa-fw fa-cubes"></i>
-                    <span>Item</span></a>
-            </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider"> --}}
 
             <!-- Nav Item - Report -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('rack') }}">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Rack</span></a>

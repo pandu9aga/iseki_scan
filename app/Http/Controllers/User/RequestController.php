@@ -9,9 +9,11 @@ use App\Models\Request as RequestModel; // alias supaya tidak bentrok
 
 class RequestController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('users.requests.index');
+        $area = $request->query('area');
+
+        return view('users.requests.index', compact('area'));
     }
 
     public function create(Request $request)
@@ -39,10 +41,12 @@ class RequestController extends Controller
             ->where('Code_Rack', $request->input('Code_Rack'))
             ->where('Code_Item_Rack', $codeItem)
             ->where('Status_Request', 'Waiting')
+            ->where('Area_Request', $request->input('Area_Request'))
             ->first();
 
         if ($existing) {
-            return redirect()->route('submission')->with('error', 'Item ini sudah pernah direquest dan masih menunggu.');
+            // return redirect()->route('submission')->with('error', 'Item ini sudah pernah direquest dan masih menunggu.');
+            return redirect()->back()->with('error', 'Item ini sudah pernah direquest dan masih menunggu.');
         }
 
         $newRequest = new RequestModel();
@@ -58,9 +62,14 @@ class RequestController extends Controller
             $newRequest->Correctness_Request = $request->input('Correctness');
         }
 
+        if ($request->input('Area_Request') !== '') {
+            $newRequest->Area_Request = $request->input('Area_Request');
+        }
+
         $newRequest->save();
 
-        return redirect()->route('submission')->with('success', 'Request berhasil dibuat.');
+        // return redirect()->route('submission')->with('success', 'Request berhasil dibuat.');
+        return redirect()->back()->with('success', 'Request berhasil dibuat.');
     }
 
     public function check(Request $request)

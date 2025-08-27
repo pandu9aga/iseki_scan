@@ -23,6 +23,7 @@ class Record extends Model
         'Correctness_Record',
         'Sum_Record',
         'Id_Request',
+        'Updated_At_Record',
     ];
 
     // Relasi ke model User
@@ -34,5 +35,10 @@ class Record extends Model
     public function request()
     {
         return $this->belongsTo(Request::class, 'Id_Request', 'Id_Request');
+    }
+
+    public function rack()
+    {
+        return $this->belongsTo(Rack::class, 'Code_Rack', 'Code_Rack');
     }
 }

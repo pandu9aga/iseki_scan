@@ -15,7 +15,7 @@ class AdminSubmissionController extends Controller
 {
     public function index(){
         $date = Carbon::today()->format('Y-m-d');
-        $requests = RequestModel::with('member')->get();
+        $requests = RequestModel::with('member', 'record', 'rack')->orderBy('Day_Request', 'desc')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRequests = $requests->count();
 
@@ -28,14 +28,14 @@ class AdminSubmissionController extends Controller
     public function export(Request $request) {
         $date = $request->input('Day_Request_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
-        $requests = RequestModel::with('member')->get();
+        $requests = RequestModel::with('member', 'record', 'rack')->orderBy('Day_Request', 'desc')->get();
 
         // Buat Spreadsheet
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
-        $headers = ['No', 'Date', 'Time', 'Item', 'Rack', 'Person', 'Sum Request'];
+        $headers = ['No', 'Time Request', 'Time Record', 'Item', 'Rack', 'Name', 'Sum Request', 'Sum Record', 'Member', 'Updated'];
         $sheet->fromArray([$headers], NULL, 'A1');
 
         // Style header (tebal & background abu-abu)
@@ -43,23 +43,33 @@ class AdminSubmissionController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:G1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
 
         // Isi data
         $row = 2;
-        foreach ($requests as $index => $req) {
+        foreach ($requests as $index => $request) {
+            $timeRequest = ($request->Day_Request ?? '') . " " . ($request->Time_Request ?? '');
+            $timeRecord = ($request->record->Day_Record ?? '') . " " . ($request->record->Time_Record ?? '');
 
             $sheet->fromArray([
                 $index + 1,
-                $req->Day_Request,
-                $req->Time_Request,
-                $req->Code_Item_Rack,
-                $req->Code_Rack,
-                $req->member->Name_Member ?? '-',
-                $req->Sum_Request
-            ], NULL, 'A' . $row);
+                $timeRequest,
+                $timeRecord,
+                $request->Code_Item_Rack,
+                $request->Code_Rack,
+                $request->rack->Name_Item_Rack ?? '',
+                $request->Sum_Request,
+                optional($request->record)->Sum_Record ?? '',
+                $request->member->Name_Member ?? '-',
+                $request->Updated_At_Request,
+            ], null, 'A' . $row);
 
             $row++;
+        }
+
+        // 🔑 Auto size kolom
+        foreach (range('A', $sheet->getHighestColumn()) as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
         // Simpan ke file di storage/app/public

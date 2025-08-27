@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\MonthlyController;
 use App\Http\Controllers\Admin\MemberController;
 use App\Http\Controllers\Admin\AdminSubmissionController;
 use App\Http\Controllers\Admin\AdminRequestController;
+use App\Http\Controllers\Admin\MissingController;
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\UserReportController;
 use App\Http\Controllers\User\RecordController;
@@ -86,6 +87,8 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/admin_request/submit', [AdminRequestController::class, 'submit'])->name('request.submit');
     Route::get('/admin_request/export', [AdminRequestController::class, 'export'])->name('request.export');
     Route::post('/admin_request/reset', [AdminRequestController::class, 'reset'])->name('admin_request.reset');
+    
+    Route::get('/missing', [MissingController::class, 'index'])->name('missing');
 });
 
 Route::middleware(AuthMiddleware::class)->group(function () {
@@ -94,10 +97,13 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/user_report', [UserReportController::class, 'index'])->name('user_report');
     Route::get('/user_report/submit', [UserReportController::class, 'submit'])->name('user_report.submit');
     Route::get('/user_report/export', [UserReportController::class, 'export'])->name('user_report.export');
+    Route::put('/user_report/update/{id}', [UserReportController::class, 'update'])->name('user_report.update');
+    Route::delete('user_report/{id}', [UserReportController::class, 'destroy'])->name('user_report.destroy');
 
     Route::get('/record', [RecordController::class, 'index'])->name('record');
     Route::post('/record/create', [RecordController::class, 'create'])->name('record.create');
     Route::get('/record/check', [RecordController::class, 'check'])->name('record.check');
+    Route::post('/record/check-multiple', [RecordController::class, 'checkMultiple'])->name('record.checkMultiple');
 
     Route::get('/request', [RequestController::class, 'index'])->name('request');
     Route::post('/request/create', [RequestController::class, 'create'])->name('request.create');
@@ -107,7 +113,8 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/user_submission/submit', [SubmissionController::class, 'submit'])->name('user_submission.submit');
     Route::get('/submission/export', [SubmissionController::class, 'export'])->name('submission.export');
     Route::put('/submission/update/{id}', [SubmissionController::class, 'update'])->name('submission.update');
-    Route::post('/user_submission/reset', [SubmissionController::class, 'reset'])->name('submission.reset'); 
+    Route::post('/user_submission/reset', [SubmissionController::class, 'reset'])->name('submission.reset');
+    Route::delete('user_submission/{id}', [SubmissionController::class, 'destroy'])->name('submission.destroy'); 
 });
 
 Route::middleware(McMiddleware::class)->group(function () {
