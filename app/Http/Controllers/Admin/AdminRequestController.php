@@ -113,7 +113,7 @@ class AdminRequestController extends Controller
                 $request->Updated_At_Request,
             ], null, 'A' . $row);
 
-            $lastUser = $record->Id_User;
+            $lastUser = $request->Id_User;
             $no++;
             $row++;
         }

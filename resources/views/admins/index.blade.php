@@ -85,10 +85,10 @@
             <!-- Project Card Example -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Missing Part Request</h6>
+                    <h1 class="m-0 font-weight-bold text-danger">Missing Part Request</h1>
                 </div>
                 <div class="card-body">
-                    <h3 class="font-weigth-bold text-primary"><b>{{ $totalRequests }}</b></h3>
+                    <h1 class="font-weigth-bold text-danger" style="font-size: 100pt;"><b>{{ $totalRequests }}</b></h1>
                 </div>
             </div>
         </div>

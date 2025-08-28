@@ -160,6 +160,22 @@
     <!-- Custom scripts for all pages-->
     <script src="{{asset('js/sb-admin-2.min.js')}}"></script>
 
+    <script>
+        $(document).ready(function () {
+            var table;
+
+            if ($.fn.DataTable.isDataTable('#dataTable')) {
+                table = $('#dataTable').DataTable();
+                table.page.len(100).draw(); // ✅ paksa default 100
+            } else {
+                table = $('#dataTable').DataTable({
+                    pageLength: 100,
+                    lengthMenu: [[10,25,50,100,-1],[10,25,50,100,"All"]]
+                });
+            }
+        });
+    </script>
+
     @yield('script')
 
 </body>

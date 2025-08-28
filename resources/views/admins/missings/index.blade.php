@@ -2,7 +2,21 @@
 @section('content')
 <!-- Begin Page Content -->
 <div class="container-fluid">
-    <h1 class="h3 mb-2 text-gray-800">Missing List</h1>
+    <div class="marquee-container">
+        <div class="marquee">
+            <span>Missing List</span>
+            <span>Missing List</span>
+            <span>Missing List</span>
+            <span>Missing List</span>
+            <span>Missing List</span>
+            <!-- duplikat lagi biar seamless -->
+            <span>Missing List</span>
+            <span>Missing List</span>
+            <span>Missing List</span>
+            <span>Missing List</span>
+            <span>Missing List</span>
+        </div>
+    </div>
 
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
 
@@ -29,47 +43,50 @@
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                    <thead>
+                    <thead class="text-primary">
                         <tr>
                             <th>No</th>
-                            <th>Time Request</th>
-                            <th>Time Record</th>
-                            <th>Item</th>
                             <th>Rack</th>
                             <th>Name</th>
-                            <th>Sum Request</th>
-                            <th>Sum Record</th>
-                            <th>Member</th>
-                            <th>Updated</th>
+                            <th>Time Request</th>
+                            <th>Overdue</th>
+                            <th>PIC</th>
                         </tr>
                     </thead>
-                    <tfoot>
+                    {{-- <tfoot>
                         <tr>
                             <th>No</th>
-                            <th>Time Request</th>
-                            <th>Time Record</th>
-                            <th>Item</th>
                             <th>Rack</th>
                             <th>Name</th>
-                            <th>Sum Request</th>
-                            <th>Sum Record</th>
-                            <th>Member</th>
-                            <th>Updated</th>
+                            <th>Time Request</th>
+                            <th>Overdue</th>
+                            <th>PIC</th>
                         </tr>
-                    </tfoot>
+                    </tfoot> --}}
                     <tbody>
                         @foreach ($requests as $s)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
-                            <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
-                            <td>{{ $s->Code_Item_Rack }}</td>
                             <td>{{ $s->Code_Rack }}</td>
                             <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
+                            <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
+                            @php
+                                $now = \Carbon\Carbon::now();
+                                $requestDateTime = \Carbon\Carbon::parse($s->Day_Request . ' ' . $s->Time_Request);
+                                $interval = $requestDateTime->diff($now);
+                            @endphp
+
+                            <td class="text-danger font-weight-bold overdue">
+                                {{ $interval->d ? $interval->d . ' day(s) ' : '' }}
+                                {{ $interval->h ? $interval->h . ' hour(s) ' : '' }}
+                                {{ $interval->i ? $interval->i . ' minute(s) ' : '' }}
+                            </td>
+                            <td>{{ $s->member->Name_Member ?? '' }}</td>
+                            {{-- <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
+                            <td>{{ $s->Code_Item_Rack }}</td>
                             <td>{{ $s->Sum_Request }}</td>
                             <td>{{  optional($s->record)->Sum_Record ?? '' }}</td>
-                            <td>{{ $s->member->Name_Member ?? '' }}</td>
-                            <td>{{ $s->Updated_At_Request ?? '' }}</td>
+                            <td>{{ $s->Updated_At_Request ?? '' }}</td> --}}
                         </tr>
                         @endforeach
                     </tbody>
@@ -82,6 +99,68 @@
 
 @section('style')
 <link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
+<style>
+  .marquee-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding: 10px 0;
+  }
+
+  .marquee {
+    display: flex;
+    width: max-content;
+    animation: marquee 30s linear infinite;
+  }
+
+  .marquee span {
+    font-size: 5vw; /* gede, responsif */
+    font-weight: 900;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, red, indigo, violet, red);
+    background-size: 300% auto; /* penting biar bisa bergerak */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    padding: 0 2rem;
+    white-space: nowrap;
+    animation: colorChange 6s linear infinite;
+  }
+
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  @keyframes colorChange {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Hilangkan padding bawaan table */
+  table th,
+  table td {
+      vertical-align: middle;
+  }
+
+  /* Header biar besar full seukuran kolom */
+  table th {
+      font-size: 3rem; /* gede sesuai kebutuhan */
+      white-space: nowrap;
+      text-align: center;
+      padding-right: 0 !important;
+      padding-left: 0 !important;
+  }
+
+  /* Kolom overdue custom */
+  table td.overdue {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: red;
+      width:1%;
+      white-space: nowrap;
+  }
+</style>
 @endsection
 
 @section('script')
