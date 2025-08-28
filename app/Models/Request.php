@@ -21,6 +21,7 @@ class Request extends Model
         'Id_User',
         'Sum_Request',
         'Area_Request',
+        'Urgent_Request',
         'Status_Request',
         'Updated_At_Request',
     ];

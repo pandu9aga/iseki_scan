@@ -53,30 +53,32 @@
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>Time Request</th>
                             <th>Time Record</th>
-                            <th>Item</th>
+                            <th>Area</th>
                             <th>Rack</th>
-                            <th>Name</th>
-                            <th>Sum Request</th>
                             <th>Sum Record</th>
-                            <th>Member</th>
+                            <th>Item</th>
+                            <th>Name</th>
                             <th>Correctness</th>
+                            <th>Time Request</th>
+                            <th>Sum Request</th>
+                            <th>Member</th>
                             <th>Updated</th>
                         </tr>
                     </thead>
                     <tfoot>
                         <tr>
                             <th>No</th>
-                            <th>Time Request</th>
                             <th>Time Record</th>
-                            <th>Item</th>
+                            <th>Area</th>
                             <th>Rack</th>
-                            <th>Name</th>
-                            <th>Sum Request</th>
                             <th>Sum Record</th>
-                            <th>Member</th>
+                            <th>Item</th>
+                            <th>Name</th>
                             <th>Correctness</th>
+                            <th>Time Request</th>
+                            <th>Sum Request</th>
+                            <th>Member</th>
                             <th>Updated</th>
                         </tr>
                     </tfoot>
@@ -84,14 +86,12 @@
                         @foreach ( $records as $r )
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ optional($r->request)->Day_Request ?? '' }} {{ optional($r->request)->Time_Request ?? '' }}</td>
                             <td>{{ $r->Day_Record }} {{ $r->Time_Record }}</td>
-                            <td>{{ $r->Code_Item_Rack }}</td>
+                            <td>{{ optional($r->request)->Area_Request ?? '' }}</td>
                             <td>{{ $r->Code_Rack }}</td>
-                            <td>{{ $r->rack->Name_Item_Rack ?? '' }}</td>
-                            <td>{{  optional($r->request)->Sum_Request ?? '' }}</td>
                             <td>{{ $r->Sum_Record }}</td>
-                            <td>{{ $r->member->Name_Member ?? '' }}</td>
+                            <td>{{ $r->Code_Item_Rack }}</td>
+                            <td>{{ $r->rack->Name_Item_Rack ?? '' }}</td>
                             <td>
                                 @if ($r->Correctness_Record == 1)
                                     <span class="text-white px-1 py-1 bg-gradient-success">
@@ -103,6 +103,9 @@
                                     </span>
                                 @endif
                             </td>
+                            <td>{{ optional($r->request)->Day_Request ?? '' }} {{ optional($r->request)->Time_Request ?? '' }}</td>
+                            <td>{{ optional($r->request)->Sum_Request ?? '' }}</td>
+                            <td>{{ $r->member->Name_Member ?? '' }}</td>
                             <td>{{ $r->Updated_At_Record ?? '' }}</td>
                         </tr>
                         @endforeach

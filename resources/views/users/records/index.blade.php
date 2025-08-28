@@ -77,7 +77,7 @@
                                     </div>
                                 </div>
                                 
-                                <div class="col-lg-12 text-center">
+                                <div class="col-12 text-center">
                                     <div class="form-group mb-3">
                                         <label for="Sum_Record" style="font-size: small;">Sum Record</label>
                                         <input type="number" name="Sum_Record" id="Sum_Record" class="form-control form-control-user @error('Sum_Record') is-invalid @enderror" value="{{ old('Sum_Record', 1) }}" min="1" step="1" required>

@@ -51,14 +51,20 @@ class AdminRequestController extends Controller
     {
         $date = $request->input('Day_Request_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
-        $requests = RequestModel::whereDate('Day_Request', $date)->with('member', 'record', 'rack')->get();
+        $requests = RequestModel::whereDate('Day_Request', $date)
+            ->with('member', 'record', 'rack')
+            ->orderBy('Id_User')
+            ->orderBy('Urgent_Request', 'desc')
+            ->orderBy('Area_Request')
+            ->orderBy('Time_Request')
+            ->get();
 
         // Buat Spreadsheet
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
-        $headers = ['No', 'Time Request', 'Time Record', 'Item', 'Rack', 'Name', 'Sum Request', 'Sum Record', 'Member', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 'Time Record', 'Sum Record', 'Member', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Style header (tebal & background abu-abu)
@@ -66,27 +72,49 @@ class AdminRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:L1')->applyFromArray($headerStyle);
+
+        $sheet->setAutoFilter(
+            $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
+        );
 
         // Isi data
         $row = 2;
+        $lastUser = null;
+        $no = 1;
+
         foreach ($requests as $index => $request) {
+            // Reset nomor & kasih spasi kalau ganti user
+            if ($lastUser !== null && $lastUser != $request->Id_User) {
+                $sheet->fromArray(
+                    array_fill(0, 12, '-'), // 12 kolom sesuai header
+                    null,
+                    'A' . $row
+                );
+                $row++;
+                $no = 1; // reset nomor
+            }
+
             $timeRequest = ($request->Day_Request ?? '') . " " . ($request->Time_Request ?? '');
             $timeRecord = ($request->record->Day_Record ?? '') . " " . ($request->record->Time_Record ?? '');
 
             $sheet->fromArray([
-                $index + 1,
+                $no,
                 $timeRequest,
-                $timeRecord,
-                $request->Code_Item_Rack,
+                $request->Area_Request ?? '',
                 $request->Code_Rack,
-                $request->rack->Name_Item_Rack ?? '',
                 $request->Sum_Request,
+                $request->Urgent_Request == 1 ? '✓' : '',
+                $request->Code_Item_Rack,
+                $request->rack->Name_Item_Rack ?? '',
+                $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '-',
                 $request->Updated_At_Request,
             ], null, 'A' . $row);
 
+            $lastUser = $record->Id_User;
+            $no++;
             $row++;
         }
 

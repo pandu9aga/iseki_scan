@@ -47,7 +47,17 @@ class ReportController extends Controller
     public function export(Request $request) {
         $date = $request->input('Day_Record_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
-        $records = Record::whereDate('Day_Record', $date)->with('member', 'request')->get();
+
+        // Ambil data
+        $records = Record::whereDate('records.Day_Record', $date)
+            ->with('member', 'request', 'rack')
+            ->leftJoin('requests', 'records.Id_Request', '=', 'requests.Id_Request')
+            ->select('records.*') // supaya tetap model Record
+            ->orderBy('records.Id_User', 'asc')
+            ->orderByRaw("COALESCE(requests.Area_Request, '') asc") // null duluan
+            ->orderBy('records.Day_Record', 'asc')
+            ->orderBy('records.Time_Record', 'asc')
+            ->get();
 
         // Buat Spreadsheet
         $spreadsheet = new Spreadsheet();
@@ -55,16 +65,9 @@ class ReportController extends Controller
 
         // Header kolom
         $headers = [
-            'No',
-            'Time Request',
-            'Time Record',
-            'Item',
-            'Rack',
-            'Sum Request',
-            'Sum Record',
-            'Member',
-            'Correctness',
-            'Updated'
+            'No', 'Time Record', 'Area', 'Rack', 'Sum Record',
+            'Item', 'Name', 'Correctness', 'Time Request',
+            'Sum Request', 'Member', 'Updated'
         ];
         $sheet->fromArray([$headers], NULL, 'A1');
 
@@ -73,43 +76,61 @@ class ReportController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:L1')->applyFromArray($headerStyle);
+        $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
 
         // Isi data
         $row = 2;
-        foreach ($records as $index => $record) {
+        $lastUser = null;
+        $no = 1;
+
+        foreach ($records as $record) {
+            // Reset nomor & kasih spasi kalau ganti user
+            if ($lastUser !== null && $lastUser != $request->Id_User) {
+                $sheet->fromArray(
+                    array_fill(0, 12, '-'), // 12 kolom sesuai header
+                    null,
+                    'A' . $row
+                );
+                $row++;
+                $no = 1; // reset nomor
+            }
+
             $correctness = $record->Correctness_Record == 1 ? 'Correct' : 'Incorrect';
+            $timeRecord = ($record->Day_Record ?? '') . " " . ($record->Time_Record ?? '');
+            $timeRequest = ($record->request->Day_Request ?? '') . " " . ($record->request->Time_Request ?? '');
 
             $sheet->fromArray([
-                $index + 1,
-                optional($record->request)->Time_Request ?? '',
-                $record->Time_Record,
-                $record->Code_Item_Rack,
+                $no,
+                $timeRecord,
+                optional($record->request)->Area_Request ?? '',
                 $record->Code_Rack,
-                optional($record->request)->Sum_Request ?? '',
                 $record->Sum_Record,
-                $record->member->Name_Member ?? '-',
+                $record->Code_Item_Rack,
+                $record->rack->Name_Item_Rack ?? '',
                 $correctness,
+                $timeRequest,
+                optional($record->request)->Sum_Request ?? '',
+                $record->member->Name_Member ?? '-',
                 $record->Updated_At_Record ?? '',
             ], NULL, 'A' . $row);
 
-            // Set warna dan tebal untuk "Correct" & "Incorrect"
-            $correctnessCell = 'I' . $row;
-            if ($correctness === 'Correct') {
-                $sheet->getStyle($correctnessCell)->applyFromArray([
-                    'font' => ['bold' => true, 'color' => ['rgb' => '008000']] // Hijau
-                ]);
-            } else {
-                $sheet->getStyle($correctnessCell)->applyFromArray([
-                    'font' => ['bold' => true, 'color' => ['rgb' => 'FF0000']] // Merah
-                ]);
-            }
+            // Warna correctness
+            $correctnessCell = 'H' . $row;
+            $sheet->getStyle($correctnessCell)->applyFromArray([
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => $correctness === 'Correct' ? '008000' : 'FF0000']
+                ]
+            ]);
 
+            $lastUser = $record->Id_User;
+            $no++;
             $row++;
         }
 
-        // Auto-size kolom sesuai konten
-        foreach (range('A', 'J') as $col) {
+        // Auto-size kolom
+        foreach (range('A', 'L') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

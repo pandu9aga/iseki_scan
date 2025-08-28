@@ -60,13 +60,28 @@
 
                             <!-- Tambahan input Sum_Request -->
                             <div class="row">
-                                <div class="col-lg-12 text-center">
+                                <div class="col-8 text-center">
                                     <div class="form-group mb-3">
                                         <label for="Sum_Request" style="font-size: small;">Sum Request</label>
                                         <input type="number" name="Sum_Request" id="Sum_Request" class="form-control form-control-user @error('Sum_Request') is-invalid @enderror" value="{{ old('Sum_Request', 1) }}" min="1" step="1" required>
                                         @error('Sum_Request')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
+                                    </div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="form-group mb-3">
+                                        <label class="form-check-label ms-2" for="Urgent_Request" style="font-size: small;">
+                                                Urgent Request
+                                            </label>
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input type="checkbox" 
+                                                name="Urgent_Request" 
+                                                id="Urgent_Request" 
+                                                class="form-check-input"
+                                                value="1"
+                                                {{ old('Urgent_Request') ? 'checked' : '' }}>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-lg-12 text-center">
@@ -84,7 +99,6 @@
 
                             <hr>
                             <span id="status_code" class="status"></span>
-                            <hr>
                             <div class="row">
                                 <div class="col-lg-3 col-md-3 text-center"></div>
                                 <div class="col-lg-6 col-md-6 text-center">

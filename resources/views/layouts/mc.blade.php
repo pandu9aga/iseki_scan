@@ -48,10 +48,10 @@
             <hr class="sidebar-divider">
 
             <!-- Nav Item - Report -->
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc_submission') }}">
                     <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Submission</span></a>
+                    <span>Request</span></a>
             </li>
 
             <!-- Divider -->

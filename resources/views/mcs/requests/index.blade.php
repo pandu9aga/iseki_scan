@@ -49,35 +49,50 @@
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>Day</th>
-                            <th>Time</th>
-                            <th>Item</th>
+                            <th>Time Request</th>
+                            <th>Area</th>
                             <th>Rack</th>
-                            <th>Person</th>
                             <th>Sum Request</th>
+                            <th>Urgenity</th>
+                            <th>Item</th>
+                            <th>Name</th>
+                            <th>Time Record</th>
+                            <th>Sum Record</th>
+                            <th>Member</th>
+                            <th>Updated</th>
                         </tr>
                     </thead>
                     <tfoot>
                         <tr>
                             <th>No</th>
-                            <th>Day</th>
-                            <th>Time</th>
-                            <th>Item</th>
+                            <th>Time Request</th>
+                            <th>Area</th>
                             <th>Rack</th>
-                            <th>Person</th>
                             <th>Sum Request</th>
+                            <th>Urgenity</th>
+                            <th>Item</th>
+                            <th>Name</th>
+                            <th>Time Record</th>
+                            <th>Sum Record</th>
+                            <th>Member</th>
+                            <th>Updated</th>
                         </tr>
                     </tfoot>
                     <tbody>
                         @foreach ($requests as $s)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ $s->Day_Request }}</td>
-                            <td>{{ $s->Time_Request }}</td>
-                            <td>{{ $s->Code_Item_Rack }}</td>
+                            <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
+                            <td>{{ $s->Area_Request ?? '' }}</td>
                             <td>{{ $s->Code_Rack }}</td>
-                            <td>{{ $s->member->Name_Member ?? '-' }}</td>
                             <td>{{ $s->Sum_Request }}</td>
+                            <td class="text-center">{{ $s->Urgent_Request == 1 ? '✓' : '' }}</td>
+                            <td>{{ $s->Code_Item_Rack }}</td>
+                            <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
+                            <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
+                            <td>{{  optional($s->record)->Sum_Record ?? '' }}</td>
+                            <td>{{ $s->member->Name_Member ?? '' }}</td>
+                            <td>{{ $s->Updated_At_Request ?? '' }}</td>
                         </tr>
                         @endforeach
                     </tbody>

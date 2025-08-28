@@ -17,7 +17,7 @@
             @csrf
             <input type="hidden" name="Day_Request" value="{{ $date }}">
             <button class="btn btn-danger btn-md shadow-sm" type="submit" onclick="return confirm('Are you sure want to reset this submission data?')">
-                <i class="fas fa-trash-alt"></i> Reset Request
+                <i class="fas fa-trash-alt"></i> Reset All Request
             </button>
         </form>
     </div>
@@ -33,11 +33,13 @@
                         <tr>
                             <th>No</th>
                             <th>Time Request</th>
-                            <th>Time Record</th>
-                            <th>Item</th>
+                            <th>Area</th>
                             <th>Rack</th>
-                            <th>Name</th>
                             <th>Sum Request</th>
+                            <th>Urgenity</th>
+                            <th>Item</th>
+                            <th>Name</th>
+                            <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member</th>
                             <th>Updated</th>
@@ -47,11 +49,13 @@
                         <tr>
                             <th>No</th>
                             <th>Time Request</th>
-                            <th>Time Record</th>
-                            <th>Item</th>
+                            <th>Area</th>
                             <th>Rack</th>
-                            <th>Name</th>
                             <th>Sum Request</th>
+                            <th>Urgenity</th>
+                            <th>Item</th>
+                            <th>Name</th>
+                            <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member</th>
                             <th>Updated</th>
@@ -62,11 +66,13 @@
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
-                            <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
-                            <td>{{ $s->Code_Item_Rack }}</td>
+                            <td>{{ $s->Area_Request ?? '' }}</td>
                             <td>{{ $s->Code_Rack }}</td>
-                            <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
                             <td>{{ $s->Sum_Request }}</td>
+                            <td class="text-center">{{ $s->Urgent_Request == 1 ? '✓' : '' }}</td>
+                            <td>{{ $s->Code_Item_Rack }}</td>
+                            <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
+                            <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
                             <td>{{  optional($s->record)->Sum_Record ?? '' }}</td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
                             <td>{{ $s->Updated_At_Request ?? '' }}</td>

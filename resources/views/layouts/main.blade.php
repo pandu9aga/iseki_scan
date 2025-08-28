@@ -60,17 +60,17 @@
             </div>
 
             <!-- Nav Item - Report -->
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin_submission') }}">
                     <i class="fas fa-fw fa-bullhorn"></i>
                     <span>All</span></a>
-            </li>
+            </li> --}}
 
              <!-- Nav Item - Report -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin_request') }}">
                     <i class="fas fa-fw fa-bullhorn"></i>
-                    <span>Daily</span></a>
+                    <span>Request</span></a>
             </li>
 
             <!-- Divider -->
@@ -82,17 +82,17 @@
             </div>
 
             <!-- Nav Item - Monthly -->
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('monthly') }}">
                     <i class="fas fa-fw fa-qrcode"></i>
                     <span>All</span></a>
-            </li>
+            </li> --}}
 
             <!-- Nav Item - Report -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('report') }}">
                     <i class="fas fa-fw fa-qrcode"></i>
-                    <span>Daily</span></a>
+                    <span>Record</span></a>
             </li>
 
             <!-- Divider -->
@@ -244,6 +244,22 @@
 
     <!-- Custom scripts for all pages-->
     <script src="{{asset('js/sb-admin-2.min.js')}}"></script>
+
+    <script>
+        $(document).ready(function () {
+            var table;
+
+            if ($.fn.DataTable.isDataTable('#dataTable')) {
+                table = $('#dataTable').DataTable();
+                table.page.len(100).draw(); // ✅ paksa default 100
+            } else {
+                table = $('#dataTable').DataTable({
+                    pageLength: 100,
+                    lengthMenu: [[10,25,50,100,-1],[10,25,50,100,"All"]]
+                });
+            }
+        });
+    </script>
 
     @yield('script')
 

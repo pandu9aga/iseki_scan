@@ -18,7 +18,7 @@ class UserReportController extends Controller
 {
     public function index(){
         $date = Carbon::today();
-        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_Member'))->orderBy('Time_Record', 'desc')->with('member', 'request')->get();
+        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_Member'))->orderBy('Time_Record', 'desc')->with('member', 'request', 'rack')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRecords = $records->count();
         $date = Carbon::parse($date)->isoFormat('YYYY-MM-DD');
@@ -33,7 +33,7 @@ class UserReportController extends Controller
 
     public function submit(Request $request){
         $date = $request->input('Day_Record');
-        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_Member'))->orderBy('Time_Record', 'desc')->with('member', 'request')->get();
+        $records = Record::whereDate('Day_Record', $date)->where('Id_User', session('Id_Member'))->orderBy('Time_Record', 'desc')->with('member', 'request', 'rack')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRecords = $records->count();
 
@@ -50,13 +50,23 @@ class UserReportController extends Controller
         $date = $request->input('Day_Record_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
 
-        $records = Record::whereDate('Day_Record', $date)
-    ->where('Id_User', session('Id_Member'))
-    ->with('member', 'request')
-    ->get()
-    ->sortBy(function($record) {
-        return $record->request->Area_Request ?? '';
-    });
+        // $records = Record::whereDate('Day_Record', $date)
+        //     ->where('Id_User', session('Id_Member'))
+        //     ->with('member', 'request', 'rack')
+        //     ->get()
+        //     ->sortBy(function($record) {
+        //         return $record->request->Area_Request ?? '';
+        //     });
+
+        $records = Record::with('member', 'request', 'rack')
+            ->leftJoin('requests', 'records.Id_Request', '=', 'requests.Id_Request')
+            ->select('records.*') // supaya tetap model Record
+            ->whereDate('records.Day_Record', $date)
+            ->where('records.Id_User', session('Id_Member'))
+            ->orderByRaw("COALESCE(requests.Area_Request, '') asc") // null duluan
+            ->orderBy('records.Day_Record', 'asc')
+            ->orderBy('records.Time_Record', 'asc')
+            ->get();
 
         $name = Member::where('Id_Member', session('Id_Member'))->value('Name_Member');
 
@@ -67,15 +77,16 @@ class UserReportController extends Controller
         // Header kolom
         $headers = [
             'No',
-            'Time Request',
             'Time Record',
-            'Item',
             'Area',
             'Rack',
-            'Sum Request',
             'Sum Record',
-            'Member',
+            'Item',
+            'Name',
             'Correctness',
+            'Time Request',
+            'Sum Request',
+            'Member',
             'Updated'
         ];
         $sheet->fromArray([$headers], NULL, 'A1');
@@ -85,29 +96,32 @@ class UserReportController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:L1')->applyFromArray($headerStyle);
 
         // Isi data
         $row = 2;
         foreach ($records as $index => $record) {
             $correctness = $record->Correctness_Record == 1 ? 'Correct' : 'Incorrect';
+            $timeRecord = ($record->Day_Record ?? '') . " " . ($record->Time_Record ?? '');
+            $timeRequest = ($record->request->Day_Request ?? '') . " " . ($record->request->Time_Request ?? '');
 
             $sheet->fromArray([
                 $index + 1,
-                optional($record->request)->Time_Request ?? '',
-                $record->Time_Record,
-                $record->Code_Item_Rack,
-                $record->request->Area_Request ?? '',
+                $timeRecord,
+                optional($record->request)->Area_Request ?? '',
                 $record->Code_Rack,
-                optional($record->request)->Sum_Request ?? '',
                 $record->Sum_Record,
-                $record->member->Name_Member ?? $name,
+                $record->Code_Item_Rack,
+                $record->rack->Name_Item_Rack,
                 $correctness,
+                $timeRequest,
+                optional($record->request)->Sum_Request ?? '',
+                $record->member->Name_Member ?? $name,
                 $record->Updated_At_Record ?? '',
             ], NULL, 'A' . $row);
 
             // Warna khusus untuk Correctness
-            $correctnessCell = 'J' . $row;
+            $correctnessCell = 'H' . $row;
             if ($correctness === 'Correct') {
                 $sheet->getStyle($correctnessCell)->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => '008000']] // Hijau
@@ -122,7 +136,7 @@ class UserReportController extends Controller
         }
 
         // Auto-size kolom sesuai konten
-        foreach (range('A', 'K') as $col) {
+        foreach (range('A', 'L') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

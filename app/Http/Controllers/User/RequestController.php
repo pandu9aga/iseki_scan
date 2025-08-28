@@ -26,6 +26,7 @@ class RequestController extends Controller
             'Code_Item' => 'required',
             'Code_Rack' => 'required',
             'Sum_Request' => 'required|integer|min:1',
+            'Urgent_Request' => 'nullable|boolean',
         ], [
             'Code_Item.required' => 'Kode item wajib diisi',
             'Code_Rack.required' => 'Kode rack wajib diisi',
@@ -65,6 +66,9 @@ class RequestController extends Controller
         if ($request->input('Area_Request') !== '') {
             $newRequest->Area_Request = $request->input('Area_Request');
         }
+
+        // tambahkan urgent_request
+        $newRequest->Urgent_Request = $request->has('Urgent_Request') ? 1 : 0;
 
         $newRequest->save();
 

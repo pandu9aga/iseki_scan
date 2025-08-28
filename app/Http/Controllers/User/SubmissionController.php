@@ -18,7 +18,7 @@ class SubmissionController extends Controller
     {
         $date = Carbon::today();
         $dateForInput = $date->format('Y-m-d');  // Untuk input date di view
-        $submissions = RequestModel::whereDate('Day_Request', $date)->with('member', 'record')->where('Id_User', session('Id_Member'))->orderBy('Time_Request', 'desc')->get();
+        $submissions = RequestModel::whereDate('Day_Request', $date)->with('member', 'record', 'rack')->where('Id_User', session('Id_Member'))->orderBy('Time_Request', 'desc')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
 
         $totalSubmissions = $submissions->count();
@@ -32,7 +32,7 @@ class SubmissionController extends Controller
     {
         $date = $request->input('Day_Request');
         $dateForInput = Carbon::parse($date)->format('Y-m-d');
-        $submissions = RequestModel::whereDate('Day_Request', $date)->with('member', 'record')->where('Id_User', session('Id_Member'))->orderBy('Time_Request', 'desc')->get();
+        $submissions = RequestModel::whereDate('Day_Request', $date)->with('member', 'record', 'rack')->where('Id_User', session('Id_Member'))->orderBy('Time_Request', 'desc')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
 
         $totalSubmissions = $submissions->count();
@@ -50,8 +50,10 @@ class SubmissionController extends Controller
         $date = Carbon::parse($date)->format('Y-m-d');
         $submissions = RequestModel::whereDate('Day_Request', $date)
             ->where('Id_User', session('Id_Member'))
-            ->with('member', 'record')
+            ->with('member', 'record', 'rack')
+            ->orderBy('Urgent_Request', 'desc')
             ->orderBy('Area_Request')
+            ->orderBy('Time_Request')
             ->get();
 
         $name = Member::where('Id_Member', session('Id_Member'))->value('Name_Member');
@@ -60,11 +62,11 @@ class SubmissionController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header
-        $headers = ['No', 'Time Request', 'Time Record', 'Item', 'Area', 'Rack', 'Sum Request', 'Sum Record', 'Member', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 'Time Record', 'Sum Record', 'Member', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Header style
-        $sheet->getStyle('A1:J1')->applyFromArray([
+        $sheet->getStyle('A1:L1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ]);
@@ -77,11 +79,13 @@ class SubmissionController extends Controller
             $sheet->fromArray([
                 $index + 1,
                 $timeRequest,
-                $timeRecord,
-                $submission->Code_Item_Rack,
                 $submission->Area_Request ?? '',
                 $submission->Code_Rack,
                 $submission->Sum_Request,
+                $submission->Urgent_Request == 1 ? '✓' : '',
+                $submission->Code_Item_Rack,
+                $submission->rack->Name_Item_Rack ?? '',
+                $timeRecord,
                 optional($submission->record)->Sum_Record ?? '',
                 $submission->member->Name_Member ?? '-',
                 $submission->Updated_At_Request,
