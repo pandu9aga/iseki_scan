@@ -237,16 +237,21 @@
                 });
             }
 
-            // Tutup collapse saat klik di luar elemen collapse
-            $(document).on("click", function (e) {
-                // cek kalau target klik bukan elemen di dalam collapse dan bukan tombol toggle
-                if (
-                    !$(e.target).closest('#collapseRequest').length &&
-                    !$(e.target).closest('[data-target="#collapseRequest"]').length
-                ) {
-                    $('#collapseRequest').collapse('hide');
+            $(document).ready(function () {
+
+                var table;
+
+                if ($.fn.DataTable.isDataTable('#dataTable')) {
+                    table = $('#dataTable').DataTable();
+                    table.page.len(100).draw();
+                } else {
+                    table = $('#dataTable').DataTable({
+                        pageLength: 100,
+                        lengthMenu: [[10,25,50,100,-1],[10,25,50,100,"All"]]
+                    });
                 }
             });
+
         });
     </script>
 
