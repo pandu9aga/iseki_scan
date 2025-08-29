@@ -3,7 +3,7 @@
 <!-- Begin Page Content -->
 <div class="container-fluid">
     <h1 class="h3 mb-2 text-gray-800">Request</h1>
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div class="d-sm-flex align-items-center justify-content-between mb-1">
         <!-- Earnings (Monthly) Card Example -->
         <div class="col-xl-4 col-md-6 mb-4">
             <div class="card border-left-primary shadow h-100 py-2">
@@ -16,8 +16,19 @@
                             <form class="user" action="{{ route('request.submit') }}" method="GET">
                                 @csrf
                                 <div class="row d-flex align-items-center">
-                                    <div class="col-lg-8 col-md-6 mb-1">
-                                        <input name="Day_Request" type="date" class="form-control form-control-user" value="{{ $dateForInput }}">
+                                    <div class="col-lg-4 col-md-6 mb-1">
+                                        <input name="Day_Request" type="date" class="form-control" value="{{ $dateForInput }}" required>
+                                    </div>
+                                    <div class="col-lg-4 col-md-6 mb-1">
+                                        <select name="Id_User" class="form-control">
+                                            <option value="">All Members</option>
+                                            @foreach($members as $m)
+                                                <option value="{{ $m->Id_Member }}" 
+                                                    {{ request('Id_User') == $m->Id_Member ? 'selected' : '' }}>
+                                                    {{ $m->Name_Member }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
                                         <button class="d-sm-inline btn btn-md btn-primary shadow-sm" type="submit">
@@ -32,19 +43,21 @@
             </div>
         </div>
         <form class="user my-2" action="{{ route('request.export') }}" method="GET" target="_blank">
-            <input name="Day_Request_Hidden" type="hidden" class="form-control form-control-user" value="{{ $dateForInput }}">
+            <input name="Day_Request_Hidden" type="hidden" value="{{ $dateForInput }}">
+            <input name="Id_User" type="hidden" value="{{ request('Id_User') }}">
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
-                <i class="fas fa-download fa-sm text-white-50"></i> Download Request
-            </button>
-        </form>
-        <form action="{{ route('admin_submission.reset') }}" method="POST" class="d-inline my-2">
-            @csrf
-            <input type="hidden" name="Day_Request" value="{{ $date }}">
-            <button class="btn btn-danger btn-md shadow-sm" type="submit" onclick="return confirm('Are you sure want to reset this submission data?')">
-                <i class="fas fa-trash-alt"></i> Reset All Request
+                <i class="fas fa-download fa-sm text-white-50"></i> Download Report
             </button>
         </form>
     </div>
+
+    <form action="{{ route('admin_submission.reset') }}" method="POST" class="d-inline">
+        @csrf
+        <input type="hidden" name="Day_Request" value="{{ $date }}">
+        <button class="btn btn-danger btn-md shadow-sm mb-4" type="submit" onclick="return confirm('Are you sure want to reset this submission data?')">
+            <i class="fas fa-trash-alt"></i> Reset All Request
+        </button>
+    </form>
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">

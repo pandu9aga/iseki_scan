@@ -19,7 +19,7 @@
                                 @csrf
                                 <div class="row d-flex align-items-center">
                                     <div class="col-lg-8 col-md-6 mb-1">
-                                        <input name="Day_Record" type="date" class="form-control form-control-user" value="{{ $date }}">
+                                        <input name="Day_Record" type="date" class="form-control" value="{{ $date }}">
                                     </div>
                                     <div class="col-lg-4 col-md-6">
                                         <button class="d-sm-inline btn btn-md btn-primary shadow-sm" type="submit">

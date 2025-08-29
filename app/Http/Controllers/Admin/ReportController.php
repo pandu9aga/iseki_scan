@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Record;
-use App\Models\User;
+use App\Models\Member;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Color;
@@ -17,7 +17,19 @@ class ReportController extends Controller
 {
     public function index(){
         $date = Carbon::today();
-        $records = Record::whereDate('Day_Record', $date)->orderBy('Time_Record', 'desc')->with('member', 'request')->get();
+        $dateForInput = $date->format('Y-m-d');
+        $memberId = request('Id_User'); // ambil filter member kalau ada
+
+        $query = Record::whereDate('Day_Record', $date)
+            ->orderBy('Time_Record', 'desc')
+            ->with('member', 'request');
+        
+        if ($memberId) {
+            $query->where('Id_User', $memberId);
+        }
+
+        $records = $query->get();
+        
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRecords = $records->count();
         $date = Carbon::parse($date)->isoFormat('YYYY-MM-DD');
@@ -27,12 +39,28 @@ class ReportController extends Controller
         })->count();
         $incorrect = $records->count() - $correct;
 
-        return view('admins.reports.index', compact('records','totalRecords', 'correct', 'incorrect','formattedDate','date'));
+        $members = Member::orderBy('Name_Member')->get();
+
+        return view('admins.reports.index', compact(
+            'records','totalRecords', 'correct', 'incorrect','formattedDate','date', 'dateForInput', 'members'
+        ));
     }
 
     public function submit(Request $request){
         $date = $request->input('Day_Record');
-        $records = Record::whereDate('Day_Record', $date)->orderBy('Time_Record', 'desc')->with('member', 'request')->get();
+        $dateForInput = Carbon::parse($date)->format('Y-m-d');
+        $memberId = $request->input('Id_User');
+
+        $query = Record::whereDate('Day_Record', $date)
+            ->orderBy('Time_Record', 'desc')
+            ->with('member', 'request');
+
+        if ($memberId) {
+            $query->where('Id_User', $memberId);
+        }
+
+        $records = $query->get();
+        
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRecords = $records->count();
         
@@ -41,23 +69,33 @@ class ReportController extends Controller
         })->count();
         $incorrect = $records->count() - $correct;
 
-        return view('admins.reports.index', compact('records','totalRecords', 'correct', 'incorrect','formattedDate','date'));
+        $members = Member::orderBy('Name_Member')->get();
+
+        return view('admins.reports.index', compact(
+            'records','totalRecords', 'correct', 'incorrect','formattedDate','date', 'dateForInput', 'members'
+        ));
     }
 
     public function export(Request $request) {
-        $date = $request->input('Day_Record_Hidden');
-        $date = Carbon::parse($date)->format('Y-m-d');
+        $date = Carbon::parse($request->input('Day_Record_Hidden'))->format('Y-m-d');
+        $memberId = $request->input('Id_User');
 
-        // Ambil data
-        $records = Record::whereDate('records.Day_Record', $date)
+        // Ambil data dengan join requests supaya bisa order by Area_Request
+        $query = Record::whereDate('records.Day_Record', $date)
             ->with('member', 'request', 'rack')
             ->leftJoin('requests', 'records.Id_Request', '=', 'requests.Id_Request')
             ->select('records.*') // supaya tetap model Record
             ->orderBy('records.Id_User', 'asc')
             ->orderByRaw("COALESCE(requests.Area_Request, '') asc") // null duluan
             ->orderBy('records.Day_Record', 'asc')
-            ->orderBy('records.Time_Record', 'asc')
-            ->get();
+            ->orderBy('records.Time_Record', 'asc');
+
+        // prefix table name supaya tidak ambiguous
+        if ($memberId) {
+            $query->where('records.Id_User', $memberId);
+        }
+
+        $records = $query->get();
 
         // Buat Spreadsheet
         $spreadsheet = new Spreadsheet();
@@ -71,7 +109,7 @@ class ReportController extends Controller
         ];
         $sheet->fromArray([$headers], NULL, 'A1');
 
-        // Style header (tebal & background abu-abu)
+        // Style header
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
@@ -85,20 +123,16 @@ class ReportController extends Controller
         $no = 1;
 
         foreach ($records as $record) {
-            // Reset nomor & kasih spasi kalau ganti user
-            if ($lastUser !== null && $lastUser != $request->Id_User) {
-                $sheet->fromArray(
-                    array_fill(0, 12, '-'), // 12 kolom sesuai header
-                    null,
-                    'A' . $row
-                );
+            // jika user berubah -> tambah satu baris pemisah yang berisi '-' lalu reset nomor
+            if ($lastUser !== null && $record->Id_User != $lastUser) {
+                $sheet->fromArray(array_fill(0, count($headers), '-'), null, 'A' . $row);
                 $row++;
-                $no = 1; // reset nomor
+                $no = 1;
             }
 
             $correctness = $record->Correctness_Record == 1 ? 'Correct' : 'Incorrect';
             $timeRecord = ($record->Day_Record ?? '') . " " . ($record->Time_Record ?? '');
-            $timeRequest = ($record->request->Day_Request ?? '') . " " . ($record->request->Time_Request ?? '');
+            $timeRequest = (optional($record->request)->Day_Request ?? '') . " " . (optional($record->request)->Time_Request ?? '');
 
             $sheet->fromArray([
                 $no,
@@ -115,7 +149,7 @@ class ReportController extends Controller
                 $record->Updated_At_Record ?? '',
             ], NULL, 'A' . $row);
 
-            // Warna correctness
+            // warna Correct/Incorrect
             $correctnessCell = 'H' . $row;
             $sheet->getStyle($correctnessCell)->applyFromArray([
                 'font' => [
@@ -134,7 +168,7 @@ class ReportController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        // Simpan ke file
+        // Simpan & download
         $fileName = "Record_" . $date . ".xlsx";
         $writer = new Xlsx($spreadsheet);
         $filePath = storage_path('app/public/' . $fileName);

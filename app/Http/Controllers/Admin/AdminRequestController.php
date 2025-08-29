@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Request as RequestModel;
-use App\Models\User;
+use App\Models\Member;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -16,48 +16,76 @@ class AdminRequestController extends Controller
     public function index()
     {
         $date = Carbon::today();
-        $dateForInput = $date->format('Y-m-d');  // Untuk input date di view
-        $requests = RequestModel::whereDate('Day_Request', $date)->with('member', 'record', 'rack')->orderBy('Time_Request', 'desc')->get();
+        $dateForInput = $date->format('Y-m-d');
+        $memberId = request('Id_User'); // ambil filter member kalau ada
+
+        $query = RequestModel::whereDate('Day_Request', $date)
+            ->with('member', 'record', 'rack')
+            ->orderBy('Time_Request', 'desc');
+
+        if ($memberId) {
+            $query->where('Id_User', $memberId);
+        }
+
+        $requests = $query->get();
+
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRequest = $requests->count();
-        $date = Carbon::parse($date)->isoFormat('YYYY-MM-DD');
-
-        $correct = $requests->filter(function ($request) {
-            return $request->Correctness_Request == 1;
-        })->count();
+        $correct = $requests->where('Correctness_Request', 1)->count();
         $incorrect = $totalRequest - $correct;
 
-        return view('admins.requests.index', compact('requests', 'totalRequest', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput'));
+        $members = Member::orderBy('Name_Member')->get();
+
+        return view('admins.requests.index', compact(
+            'requests', 'totalRequest', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput', 'members'
+        ));
     }
 
     public function submit(Request $request)
     {
         $date = $request->input('Day_Request');
         $dateForInput = Carbon::parse($date)->format('Y-m-d');
-        $requests = RequestModel::whereDate('Day_Request', $date)->with('member', 'record', 'rack')->orderBy('Time_Request', 'desc')->get();
-        $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
-        
-        $totalRequest = $requests->count();
+        $memberId = $request->input('Id_User');
 
-        $correct = $requests->filter(function ($request) {
-            return $request->Correctness_Request == 1;
-        })->count();
+        $query = RequestModel::whereDate('Day_Request', $date)
+            ->with('member', 'record', 'rack')
+            ->orderBy('Time_Request', 'desc');
+
+        if ($memberId) {
+            $query->where('Id_User', $memberId);
+        }
+
+        $requests = $query->get();
+
+        $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
+        $totalRequest = $requests->count();
+        $correct = $requests->where('Correctness_Request', 1)->count();
         $incorrect = $totalRequest - $correct;
 
-        return view('admins.requests.index', compact('requests', 'totalRequest', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput'));
+        $members = Member::orderBy('Name_Member')->get();
+
+        return view('admins.requests.index', compact(
+            'requests', 'totalRequest', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput', 'members'
+        ));
     }
 
     public function export(Request $request)
     {
-        $date = $request->input('Day_Request_Hidden');
-        $date = Carbon::parse($date)->format('Y-m-d');
-        $requests = RequestModel::whereDate('Day_Request', $date)
+        $date = Carbon::parse($request->input('Day_Request_Hidden'))->format('Y-m-d');
+        $memberId = $request->input('Id_User');
+
+        $query = RequestModel::whereDate('Day_Request', $date)
             ->with('member', 'record', 'rack')
             ->orderBy('Id_User')
             ->orderBy('Urgent_Request', 'desc')
             ->orderBy('Area_Request')
-            ->orderBy('Time_Request')
-            ->get();
+            ->orderBy('Time_Request');
+
+        if ($memberId) {
+            $query->where('Id_User', $memberId);
+        }
+
+        $requests = $query->get();
 
         // Buat Spreadsheet
         $spreadsheet = new Spreadsheet();

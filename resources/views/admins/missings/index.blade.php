@@ -18,23 +18,23 @@
         </div>
     </div>
 
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    {{-- <div class="d-sm-flex align-items-center justify-content-between mb-4">
 
-        {{-- <form action="{{ route('admin_submission.export') }}" method="GET" target="_blank" class="mr-2">
+        <form action="{{ route('admin_submission.export') }}" method="GET" target="_blank" class="mr-2">
             <input name="Day_Request_Hidden" type="hidden" value="{{ $date }}">
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
                 <i class="fas fa-download fa-sm text-white-50"></i> Download Request
             </button>
-        </form> --}}
+        </form>
 
-        {{-- <form action="{{ route('admin_submission.reset') }}" method="POST" class="d-inline">
+        <form action="{{ route('admin_submission.reset') }}" method="POST" class="d-inline">
             @csrf
             <input type="hidden" name="Day_Request" value="{{ $date }}">
             <button class="btn btn-danger btn-md shadow-sm" type="submit" onclick="return confirm('Are you sure want to reset this submission data?')">
                 <i class="fas fa-trash-alt"></i> Reset Request
             </button>
-        </form> --}}
-    </div>
+        </form>
+    </div> --}}
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">

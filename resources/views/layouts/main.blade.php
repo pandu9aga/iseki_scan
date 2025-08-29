@@ -107,7 +107,7 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('missing') }}">
                     <i class="fas fa-fw fa-ban"></i>
-                    <span>All</span></a>
+                    <span>Missing</span></a>
             </li>
 
             <!-- Divider -->

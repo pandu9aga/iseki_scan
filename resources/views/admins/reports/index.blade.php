@@ -5,7 +5,7 @@
 
     <h1 class="h3 mb-2 text-gray-800">Record</h1>
     <!-- Page Heading -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div class="d-sm-flex align-items-center justify-content-between mb-1">
         <!-- Earnings (Monthly) Card Example -->
         <div class="col-xl-4 col-md-6 mb-4">
             <div class="card border-left-primary shadow h-100 py-2">
@@ -18,8 +18,19 @@
                             <form class="user" action="{{ route('report.submit') }}" method="GET">
                                 @csrf
                                 <div class="row d-flex align-items-center">
-                                    <div class="col-lg-8 col-md-6 mb-1">
-                                        <input name="Day_Record" type="date" class="form-control form-control-user" value="{{ $date }}">
+                                    <div class="col-lg-4 col-md-6 mb-1">
+                                        <input name="Day_Record" type="date" class="form-control" value="{{ $dateForInput }}">
+                                    </div>
+                                    <div class="col-lg-4 col-md-6 mb-1">
+                                        <select name="Id_User" class="form-control">
+                                            <option value="">All Members</option>
+                                            @foreach($members as $m)
+                                                <option value="{{ $m->Id_Member }}" 
+                                                    {{ request('Id_User') == $m->Id_Member ? 'selected' : '' }}>
+                                                    {{ $m->Name_Member }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                     <div class="col-lg-4 col-md-6">
                                         <button class="d-sm-inline btn btn-md btn-primary shadow-sm" type="submit">
@@ -34,37 +45,40 @@
             </div>
         </div>
         <form class="user" action="{{ route('report.export') }}" method="GET" target="_blank">
-            <input name="Day_Record_Hidden" type="hidden" class="form-control form-control-user" value="{{ $date }}">
+            <input name="Day_Record_Hidden" type="hidden" value="{{ $dateForInput }}">
+            <input name="Id_User" type="hidden" value="{{ request('Id_User') }}">
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
                 <i class="fas fa-download fa-sm text-white-50"></i> Download Record
             </button>
         </form>
-        <button class="d-sm-inline-block btn btn-md btn-danger shadow-sm my-2" type="button" data-toggle="modal"
-            data-target="#resetReportModal">
-            <i class="fas fa-trash fa-sm text-white-50"></i> Reset Record
-        </button>
-        <!-- Logout Modal-->
-        <div class="modal fade" id="resetReportModal" tabindex="-1" role="dialog" aria-labelledby="resetReportModalLabel" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">Reset Confirmation?</h5>
-                        <button class="close" type="button" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">×</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div>Are you sure to reset records?</div>
-                        <div>This action cannot be returned!</div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                        <a class="btn btn-danger" href="{{ route('monthly.reset') }}">Reset</a>
-                    </div>
+    </div>
+
+    <button class="d-sm-inline-block btn btn-md btn-danger shadow-sm mb-4" type="button" data-toggle="modal"
+        data-target="#resetReportModal">
+        <i class="fas fa-trash fa-sm text-white-50"></i> Reset Record
+    </button>
+    <!-- Logout Modal-->
+    <div class="modal fade" id="resetReportModal" tabindex="-1" role="dialog" aria-labelledby="resetReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Reset Confirmation?</h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div>Are you sure to reset records?</div>
+                    <div>This action cannot be returned!</div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
+                    <a class="btn btn-danger" href="{{ route('monthly.reset') }}">Reset</a>
                 </div>
             </div>
         </div>
     </div>
+
     <!-- DataTales Example -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
