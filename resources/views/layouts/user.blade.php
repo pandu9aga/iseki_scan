@@ -62,7 +62,7 @@
             <!-- Nav Item - Request -->
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseRequest"
-                    aria-expanded="false" aria-controls="collapseRequest">
+                    aria-expanded="true" aria-controls="collapseRequest">
                     <i class="fas fa-fw fa-bullhorn"></i>
                     <span>Request</span>
                 </a>
