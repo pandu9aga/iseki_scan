@@ -68,8 +68,8 @@
                             <th>Urgenity</th>
                             <th>Item</th>
                             <th>Name</th>
-                            {{-- <th>Time Record</th>
-                            <th>Sum Record</th> --}}
+                            <th>Time Record</th>
+                            <th>Sum Record</th>
                             <th>Member</th>
                             <th>Updated</th>
                         </tr>
@@ -84,8 +84,8 @@
                             <th>Urgenity</th>
                             <th>Item</th>
                             <th>Name</th>
-                            {{-- <th>Time Record</th>
-                            <th>Sum Record</th> --}}
+                            <th>Time Record</th>
+                            <th>Sum Record</th>
                             <th>Member</th>
                             <th>Updated</th>
                         </tr>
@@ -101,8 +101,8 @@
                             <td class="text-center">{{ $s->Urgent_Request == 1 ? '✓' : '' }}</td>
                             <td>{{ $s->Code_Item_Rack }}</td>
                             <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
-                            {{-- <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
-                            <td>{{  optional($s->record)->Sum_Record ?? '' }}</td> --}}
+                            <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
+                            <td>{{ optional($s->record)->Sum_Record ?? '' }}</td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
                             <td>{{ $s->Updated_At_Request ?? '' }}</td>
                         </tr>

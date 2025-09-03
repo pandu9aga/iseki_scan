@@ -130,7 +130,7 @@
                                 </div>
                             </td>
                             <td>{{ $r->Code_Item_Rack }}</td>
-                            <td>{{ $r->rack->Name_Item_Rack }}</td>
+                            <td>{{ $r->rack->Name_Item_Rack ?? '' }}</td>
                             <td>
                                 @if ($r->Correctness_Record == 1)
                                     <span class="text-white px-1 py-1 bg-gradient-success">

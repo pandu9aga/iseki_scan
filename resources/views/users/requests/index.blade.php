@@ -47,10 +47,10 @@
                                             </a>
                                         </div>
                                         <span style="font-size: small;">Rack Code</span>
-                                        <input type="text" name="Code_Rack" id="Code_Rack" class="form-control form-control-user @error('Code_Rack') is-invalid @enderror" value="{{ old('Code_Rack') }}" required>
+                                        <input type="text" onkeyup="this.value = this.value.toUpperCase();" name="Code_Rack" id="Code_Rack" class="form-control form-control-user @error('Code_Rack') is-invalid @enderror" value="{{ old('Code_Rack') }}" required>
                                         <br>
                                         <span style="font-size: small;">Item Code</span>
-                                        <input type="text" name="Code_Item" id="Code_Item" class="form-control form-control-user @error('Code_Item') is-invalid @enderror" value="{{ old('Code_Item') }}" required>
+                                        <input type="text" name="Code_Item" id="Code_Item" class="form-control form-control-user @error('Code_Item') is-invalid @enderror" value="{{ old('Code_Item') }}" readonly required>
                                         @error('Code_Rack')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
