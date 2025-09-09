@@ -92,7 +92,7 @@ class McRequestController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 'Time Record', 'Sum Record', 'Member', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Style header (tebal & background abu-abu)
@@ -100,7 +100,7 @@ class McRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:L1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:M1')->applyFromArray($headerStyle);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -137,7 +137,8 @@ class McRequestController extends Controller
                 $request->rack->Name_Item_Rack ?? '',
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
-                $request->member->Name_Member ?? '-',
+                $request->member->Name_Member ?? '',
+                optional($request->record)->member->Name_Member ?? '',
                 $request->Updated_At_Request,
             ], null, 'A' . $row);
 

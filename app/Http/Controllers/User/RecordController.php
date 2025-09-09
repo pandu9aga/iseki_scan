@@ -97,7 +97,7 @@ class RecordController extends Controller
         $codeItem = substr($cleanItem, 0, 12);
 
         $requests = RequestModel::where('Code_Item_Rack', $codeItem)
-            ->where('Id_User', $Id_User)
+            // ->where('Id_User', $Id_User)
             ->where('Status_Request', 'Waiting')
             ->get(['Id_Request', 'Area_Request']);
 

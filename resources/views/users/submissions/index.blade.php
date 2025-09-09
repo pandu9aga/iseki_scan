@@ -81,7 +81,8 @@
                             <th>Name</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
-                            <th>Member</th>
+                            <th>Member Request</th>
+                            <th>Member Record</th>
                             <th>Updated</th>
                             <th>Action</th>
                         </tr>
@@ -98,7 +99,8 @@
                             <th>Name</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
-                            <th>Member</th>
+                            <th>Member Request</th>
+                            <th>Member Record</th>
                             <th>Updated</th>
                             <th>Action</th>
                         </tr>
@@ -126,8 +128,9 @@
                             <td>{{ $s->Code_Item_Rack }}</td>
                             <td>{{ $s->rack->Name_Item_Rack }}</td>
                             <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
-                            <td>{{  optional($s->record)->Sum_Record ?? '' }}</td>
+                            <td>{{ optional($s->record)->Sum_Record ?? '' }}</td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
+                            <td>{{ optional($s->record)->member->Name_Member ?? '' }}</td>
                             <td>{{ $s->Updated_At_Request ?? '' }}</td>
                             <td>
                                 {{-- tombol delete --}}

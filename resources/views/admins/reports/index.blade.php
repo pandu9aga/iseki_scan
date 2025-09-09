@@ -103,7 +103,8 @@
                             <th>Correctness</th>
                             <th>Time Request</th>
                             <th>Sum Request</th>
-                            <th>Member</th>
+                            <th>Member Request</th>
+                            <th>Member Record</th>
                             <th>Updated</th>
                         </tr>
                     </thead>
@@ -119,7 +120,8 @@
                             <th>Correctness</th>
                             <th>Time Request</th>
                             <th>Sum Request</th>
-                            <th>Member</th>
+                            <th>Member Request</th>
+                            <th>Member Record</th>
                             <th>Updated</th>
                         </tr>
                     </tfoot>
@@ -146,6 +148,7 @@
                             </td>
                             <td>{{ optional($r->request)->Day_Request ?? '' }} {{ optional($r->request)->Time_Request ?? '' }}</td>
                             <td>{{ optional($r->request)->Sum_Request ?? '' }}</td>
+                            <td>{{ optional($r->request)->member->Name_Member ?? '' }}</td>
                             <td>{{ $r->member->Name_Member ?? '' }}</td>
                             <td>{{ $r->Updated_At_Record ?? '' }}</td>
                         </tr>

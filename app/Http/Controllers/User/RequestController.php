@@ -38,8 +38,7 @@ class RequestController extends Controller
         $codeItem = substr($request->input('Code_Item'), 0, 12);
 
         // Cek apakah sudah ada request dengan status Waiting
-        $existing = RequestModel::where('Id_User', $Id_User)
-            ->where('Code_Rack', $request->input('Code_Rack'))
+        $existing = RequestModel::where('Code_Rack', $request->input('Code_Rack')) //where('Id_User', $Id_User)
             ->where('Code_Item_Rack', $codeItem)
             ->where('Status_Request', 'Waiting')
             ->where('Area_Request', $request->input('Area_Request'))
