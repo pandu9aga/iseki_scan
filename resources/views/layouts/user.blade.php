@@ -23,6 +23,22 @@
 
     @yield('style')
 
+    <style>
+        /* Kecilkan font submenu */
+        #collapseRequest .collapse-item {
+            font-size: 0.75rem;      /* lebih kecil (default 0.85rem) */
+            padding-top: 0.25rem;    /* kecilkan jarak atas */
+            padding-bottom: 0.25rem; /* kecilkan jarak bawah */
+        }
+
+        /* Judul "Request Menu:" juga kecil */
+        #collapseRequest .collapse-header {
+            font-size: 0.7rem;
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+        }
+    </style>
+
 </head>
 
 <body id="page-top" class="sidebar-toggled">
