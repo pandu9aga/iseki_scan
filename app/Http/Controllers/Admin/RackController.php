@@ -99,44 +99,53 @@ class RackController extends Controller
         $request->validate([
             'excel' => 'required|file|mimes:xlsx,xls'
         ]);
-    
-        ini_set('max_execution_time', 300);
+
+        ini_set('max_execution_time', 600);
         ini_set('memory_limit', '512M');
-    
+
         $file = $request->file('excel');
         $spreadsheet = IOFactory::load($file->getPathname());
         $sheet = $spreadsheet->getActiveSheet();
         $rows = $sheet->toArray();
-    
+
         $inserted = 0;
-        $skipped = 0;
-    
+        $updated = 0;
+
         foreach (array_slice($rows, 1) as $row) {
             if (count($row) >= 3) {
                 $codeRack = trim($row[0]);
                 $codeItem = trim($row[1]);
                 $nameItem = trim($row[2]);
-    
-                $exists = DB::table('racks')
-                    ->where('Code_Rack', $codeRack)
-                    ->where('Code_Item_Rack', $codeItem)
-                    ->exists();
-    
-                if (!$exists) {
-                    DB::table('racks')->insert([
-                        'Code_Rack' => $codeRack,
+
+                if (!empty($codeRack)) {
+                    $exists = DB::table('racks')
+                        ->where('Code_Rack', $codeRack)
+                        ->first();
+
+                    $data = [
+                        'Code_Rack'      => $codeRack,
                         'Code_Item_Rack' => $codeItem,
                         'Name_Item_Rack' => $nameItem,
-                        'Update_Rack' => Carbon::now()->format('Y-m-d H:i:s'),
-                    ]);
-                    $inserted++;
-                } else {
-                    $skipped++;
+                        'Update_Rack'    => Carbon::now()->format('Y-m-d H:i:s'),
+                    ];
+
+                    if ($exists) {
+                        DB::table('racks')
+                            ->where('Code_Rack', $codeRack)
+                            ->update($data);
+                        $updated++;
+                    } else {
+                        DB::table('racks')->insert($data);
+                        $inserted++;
+                    }
                 }
             }
         }
-    
-        return redirect()->back()->with('success', "Import selesai: $inserted data ditambahkan, $skipped data dilewati karena duplikat.");
+
+        return redirect()->back()->with(
+            'success',
+            "Import selesai: $inserted data baru ditambahkan, $updated data diperbarui."
+        );
     }
 
     public function export()
