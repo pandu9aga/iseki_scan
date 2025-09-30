@@ -24,18 +24,26 @@
     @yield('style')
 
     <style>
-        /* Kecilkan font submenu */
-        #collapseRequest .collapse-item {
-            font-size: 0.75rem;      /* lebih kecil (default 0.85rem) */
-            padding-top: 0.25rem;    /* kecilkan jarak atas */
-            padding-bottom: 0.25rem; /* kecilkan jarak bawah */
+        /* Jadikan submenu dua kolom */
+        #collapseRequest .collapse-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 kolom sama besar */
+            gap: 0.25rem 0.5rem;            /* jarak antar item */
         }
 
-        /* Judul "Request Menu:" juga kecil */
+        /* Styling link item */
+        #collapseRequest .collapse-item {
+            font-size: 0.75rem;      /* kecilkan font */
+            padding: 0.25rem 0.5rem; /* lebih rapat */
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        /* Judul tetap full width */
         #collapseRequest .collapse-header {
+            grid-column: span 2;
             font-size: 0.7rem;
-            padding-top: 0.25rem;
-            padding-bottom: 0.25rem;
+            padding: 0.25rem 0.5rem;
         }
     </style>
 
@@ -85,21 +93,22 @@
                 <div id="collapseRequest" class="collapse" aria-labelledby="headingRequest" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Request Menu:</h6>
-                        <a class="collapse-item" href="{{ route('request') }}">Normal</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=AGV">AGV</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Main">Main</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=LO">LO</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-0">Sub-0</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-1">Sub-1</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-2">Sub-2</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-3">Sub-3</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-4">Sub-4</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-5">Sub-5</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-6">Sub-6</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-7">Sub-7</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-8">Sub-8</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-9">Sub-9</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-10">Sub-10</a>
+                        <a class="collapse-item" href="{{ route('request') }}">Normal</a><a class="collapse-item" href="{{ route('request') }}?area=Main-1">Main-1</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=AGV">AGV</a><a class="collapse-item" href="{{ route('request') }}?area=Main-2">Main-2</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Main">Main</a><a class="collapse-item" href="{{ route('request') }}?area=Main-3">Main-3</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=LO">LO</a><a class="collapse-item" href="{{ route('request') }}?area=Main-4">Main-4</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-0">Sub-0</a><a class="collapse-item" href="{{ route('request') }}?area=Sub-Front-MK">Sub-Front-MK</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-1">Sub-1</a><a class="collapse-item" href="{{ route('request') }}?area=Sub-Front-HST">Sub-Front-HST</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-2">Sub-2</a><a class="collapse-item" href="{{ route('request') }}?area=Sub-Arm-MK">Sub-Arm-MK</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-3">Sub-3</a><a class="collapse-item" href="{{ route('request') }}?area=Sub-Arm-HST">Sub-Arm-HST</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-4">Sub-4</a><a class="collapse-item" href="{{ route('request') }}?area=Sub-Mid-HST">Sub-Mid-HST</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-5">Sub-5</a><a class="collapse-item" href="{{ route('request') }}?area=Sub-Gear-MK">Sub-Gear-MK</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-6">Sub-6</a><a class="collapse-item" href="{{ route('request') }}?area=Sub-Gear-HST">Sub-Gear-HST</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-7">Sub-7</a><a class="collapse-item" href="{{ route('request') }}?area=Sub-Cylinder-1">Sub-Cylinder-1</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-8">Sub-8</a><a class="collapse-item" href="{{ route('request') }}?area=Sub-Cylinder-2">Sub-Cylinder-2</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-9">Sub-9</a><a class="collapse-item" href="{{ route('request') }}?area=Cucian-Cylinder">Cucian-Cylinder</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-10">Sub-10</a><a class="collapse-item" href="{{ route('request') }}?area=Cucian-Houshing">Cucian-Houshing</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-Houshing">Sub-Houshing</a>
                     </div>
                 </div>
             </li>
