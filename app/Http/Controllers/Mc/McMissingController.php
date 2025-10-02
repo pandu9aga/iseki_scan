@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Mc;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;           // untuk HTTP Request
@@ -12,7 +12,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-class MissingController extends Controller
+class McMissingController extends Controller
 {
     public function index(){
         $date = Carbon::today()->format('Y-m-d');
@@ -28,7 +28,7 @@ class MissingController extends Controller
         // $correct = $requests->filter(fn($request) => $request->Correctness_Request == 1)->count();
         // $incorrect = $totalRequests - $correct;
 
-        return view('admins.missings.index', compact('requests', 'totalRequests', 'formattedDate', 'date'));
+        return view('mcs.missings.index', compact('requests', 'totalRequests', 'formattedDate', 'date'));
     }
 
     public function export(Request $request) {

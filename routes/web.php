@@ -20,6 +20,7 @@ use App\Http\Controllers\User\RecordController;
 use App\Http\Controllers\User\RequestController;
 use App\Http\Controllers\User\SubmissionController;
 use App\Http\Controllers\Mc\McRequestController;
+use App\Http\Controllers\Mc\McMissingController;
 
 use App\Models\Rack;
 use Illuminate\Http\Request;
@@ -89,6 +90,7 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::post('/admin_request/reset', [AdminRequestController::class, 'reset'])->name('admin_request.reset');
     
     Route::get('/missing', [MissingController::class, 'index'])->name('missing');
+    Route::get('/missing/export', [MissingController::class, 'export'])->name('missing.export');
 });
 
 Route::middleware(AuthMiddleware::class)->group(function () {
@@ -121,6 +123,9 @@ Route::middleware(McMiddleware::class)->group(function () {
     Route::get('/mc_submission', [McRequestController::class, 'index'])->name('mc_submission');
     Route::get('/mc_submission/submit', [McRequestController::class, 'submit'])->name('mc_submission.submit');
     Route::get('/mc_submission/export', [McRequestController::class, 'export'])->name('mc_submission.export');
+
+    Route::get('/mc_missing', [McMissingController::class, 'index'])->name('mc.missing');
+    Route::get('/mc_missing/export', [McMissingController::class, 'export'])->name('mc.missing.export');
 });
 
 Route::post('/api/get-code-item', function(Request $request) {

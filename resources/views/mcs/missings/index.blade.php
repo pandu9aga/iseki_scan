@@ -1,4 +1,4 @@
-@extends('layouts.main')
+@extends('layouts.mc')
 @section('content')
 <!-- Begin Page Content -->
 <div class="container-fluid">
@@ -20,7 +20,7 @@
 
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
 
-        <form action="{{ route('missing.export') }}" method="GET" target="_blank" class="mr-2">
+        <form action="{{ route('mc.missing.export') }}" method="GET" target="_blank" class="mr-2">
             <input name="Day_Request_Hidden" type="hidden" value="{{ $date }}">
             <button class="d-sm-inline-block btn btn-md btn-success shadow-sm" type="submit">
                 <i class="fas fa-download fa-sm text-white-50"></i> Download Request

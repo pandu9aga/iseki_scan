@@ -54,6 +54,12 @@
                     <span>Request</span></a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('mc.missing') }}">
+                    <i class="fas fa-fw fa-ban"></i>
+                    <span>Missing</span></a>
+            </li>
+
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
 
