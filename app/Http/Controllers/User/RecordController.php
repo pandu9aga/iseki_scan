@@ -96,7 +96,7 @@ class RecordController extends Controller
         $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
         $codeItem = substr($cleanItem, 0, 12);
 
-        $requests = RequestModel::where('Code_Item_Rack', $codeItem)
+        $requests = RequestModel::where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
             // ->where('Id_User', $Id_User)
             ->where('Status_Request', 'Waiting')
             ->get(['Id_Request', 'Area_Request']);
