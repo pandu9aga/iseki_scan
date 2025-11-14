@@ -16,11 +16,22 @@ class MissingController extends Controller
 {
     public function index(){
         $date = Carbon::today()->format('Y-m-d');
-        $requests = RequestModel::with('member', 'record', 'rack')
+        $now = Carbon::now();
+        // Hitung waktu 2 hari kerja lalu (tanpa Sabtu dan Minggu)
+        $workdaysAgo = $now->copy();
+        $daysCounted = 0;
+        while ($daysCounted < 2) {
+            $workdaysAgo->subDay();
+            // Lewati Sabtu (6) dan Minggu (0)
+            if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
+                $daysCounted++;
+            }
+        }
+
+        $requests = RequestModel::with('member', 'record')
             ->where('Status_Request', '!=', 'Done')
-            ->whereRaw("TIMESTAMP(Day_Request, Time_Request) < ?", [Carbon::now()->subHours(48)])
+            ->whereRaw("TIMESTAMP(Day_Request, Time_Request) < ?", [$workdaysAgo])
             ->orderBy('Day_Request', 'desc')
-            ->orderBy('Time_Request', 'desc')
             ->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRequests = $requests->count();
@@ -34,11 +45,22 @@ class MissingController extends Controller
     public function export(Request $request) {
         $date = $request->input('Day_Request_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
-        $requests = RequestModel::with('member', 'record', 'rack')
+        $now = Carbon::now();
+        // Hitung waktu 2 hari kerja lalu (tanpa Sabtu dan Minggu)
+        $workdaysAgo = $now->copy();
+        $daysCounted = 0;
+        while ($daysCounted < 2) {
+            $workdaysAgo->subDay();
+            // Lewati Sabtu (6) dan Minggu (0)
+            if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
+                $daysCounted++;
+            }
+        }
+
+        $requests = RequestModel::with('member', 'record')
             ->where('Status_Request', '!=', 'Done')
-            ->whereRaw("TIMESTAMP(Day_Request, Time_Request) < ?", [Carbon::now()->subHours(48)])
+            ->whereRaw("TIMESTAMP(Day_Request, Time_Request) < ?", [$workdaysAgo])
             ->orderBy('Day_Request', 'desc')
-            ->orderBy('Time_Request', 'desc')
             ->get();
 
         // Buat Spreadsheet
