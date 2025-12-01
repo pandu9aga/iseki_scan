@@ -53,6 +53,18 @@
                     <i class="fas fa-fw fa-chart-area"></i>
                     <span>Request</span></a>
             </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('mc.validate') }}">
+                    <i class="fas fa-fw fa-qrcode"></i>
+                    <span>Validate</span></a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('mc_validation') }}">
+                    <i class="fas fa-fw fa-file"></i>
+                    <span>Validation</span></a>
+            </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.missing') }}">

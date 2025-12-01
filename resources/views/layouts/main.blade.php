@@ -100,6 +100,21 @@
 
             <!-- Heading -->
             <div class="sidebar-heading">
+                Validation
+            </div>
+
+            <!-- Nav Item - Validation -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('validation') }}">
+                    <i class="fas fa-fw fa-file"></i>
+                    <span>Validation</span></a>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
                 Missing
             </div>
 

@@ -23,6 +23,7 @@ class Request extends Model
         'Area_Request',
         'Urgent_Request',
         'Status_Request',
+        'Status_Validation',
         'Updated_At_Request',
     ];
 

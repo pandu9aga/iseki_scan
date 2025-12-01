@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\RackController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\MonthlyController;
+use App\Http\Controllers\Admin\ValidationController;
 use App\Http\Controllers\Admin\MemberController;
 use App\Http\Controllers\Admin\AdminSubmissionController;
 use App\Http\Controllers\Admin\AdminRequestController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\User\RecordController;
 use App\Http\Controllers\User\RequestController;
 use App\Http\Controllers\User\SubmissionController;
 use App\Http\Controllers\Mc\McRequestController;
+use App\Http\Controllers\Mc\McValidationController;
 use App\Http\Controllers\Mc\McMissingController;
 
 use App\Models\Rack;
@@ -70,6 +72,10 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/monthly', [MonthlyController::class, 'index'])->name('monthly');
     Route::get('/monthly/export', [MonthlyController::class, 'export'])->name('monthly.export');
     Route::get('/monthly/reset', [MonthlyController::class, 'reset'])->name('monthly.reset');
+
+    Route::get('/validation', [ValidationController::class, 'index'])->name('validation');
+    Route::get('/validation/submit', [ValidationController::class, 'submit'])->name('validation.submit');
+    Route::get('/validation/export', [ValidationController::class, 'export'])->name('validation.export');
 
     Route::get('/member', [MemberController::class, 'index'])->name('member');
     Route::get('/member/add', [MemberController::class, 'add'])->name('member.add');
@@ -123,6 +129,15 @@ Route::middleware(McMiddleware::class)->group(function () {
     Route::get('/mc_submission', [McRequestController::class, 'index'])->name('mc_submission');
     Route::get('/mc_submission/submit', [McRequestController::class, 'submit'])->name('mc_submission.submit');
     Route::get('/mc_submission/export', [McRequestController::class, 'export'])->name('mc_submission.export');
+
+    Route::get('/mc_validation', [McValidationController::class, 'index'])->name('mc_validation');
+    Route::get('/mc_validation/submit', [McValidationController::class, 'submit'])->name('mc_validation.submit');
+    Route::get('/mc_validation/export', [McValidationController::class, 'export'])->name('mc_validation.export');
+
+    Route::get('/mc_validate', [McValidationController::class, 'validate'])->name('mc.validate');
+    Route::post('/mc_validate/check-rack', [McValidationController::class, 'checkRack'])->name('mc.validate.check.rack');
+    Route::post('/mc_validate/check-requests', [McValidationController::class, 'checkRequests'])->name('mc.validate.check.requests');
+    Route::post('/mc_validate', [McValidationController::class, 'store'])->name('mc.validate.store');
 
     Route::get('/mc_missing', [McMissingController::class, 'index'])->name('mc.missing');
     Route::get('/mc_missing/export', [McMissingController::class, 'export'])->name('mc.missing.export');
