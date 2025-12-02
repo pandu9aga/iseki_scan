@@ -143,8 +143,9 @@
     }
 
     function onScanSuccess(decodedText) {
-        const cleanText = decodedText.trim().toUpperCase();
-        document.getElementById("Code_Item_Rack").value = cleanText;
+        // Ambil bagian pertama sebelum karakter '|'
+        const firstPart = decodedText.split('|')[0].trim().toUpperCase();
+        document.getElementById("Code_Item_Rack").value = firstPart;
         checkRackAuto();
         scanner.clear();
     }
@@ -162,12 +163,23 @@
         const status = document.getElementById("rackStatus");
         const saveBtn = document.getElementById("saveBtn");
 
+        // Reset tampilan
         rackInput.value = "";
         status.textContent = "";
         saveBtn.disabled = true;
 
-        if (codeItemRack === "") return;
+        // Jangan lakukan apa-apa jika belum 10 karakter
+        if (codeItemRack.length < 10) {
+            if (codeItemRack.length === 0) {
+                status.textContent = "";
+            } else {
+                status.textContent = "Masukkan minimal 10 karakter";
+                status.className = "form-text text-muted";
+            }
+            return;
+        }
 
+        // Jika sudah ≥10 karakter, lakukan pengecekan
         status.textContent = "Checking rack...";
 
         $.ajax({

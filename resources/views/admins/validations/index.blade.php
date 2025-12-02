@@ -46,7 +46,7 @@
             <input name="Day_Validation_Hidden" type="hidden" value="{{ $dateForInput }}">
             <input name="Id_User" type="hidden" value="{{ request('Id_User') }}">
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
-                <i class="fas fa-download fa-sm text-white-50"></i> Download Report
+                <i class="fas fa-download fa-sm text-white-50"></i> Download Validation
             </button>
         </form>
     </div>

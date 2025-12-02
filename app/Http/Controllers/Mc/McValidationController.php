@@ -25,7 +25,11 @@ class McValidationController extends Controller
     {
         $request->validate(['Code_Item_Rack' => 'required|string']);
 
-        $rack = Rack::where('Code_Item_Rack', $request->Code_Item_Rack)->first();
+        // Ambil 10 karakter pertama dari input
+        $prefix = substr($request->Code_Item_Rack, 0, 10);
+
+        // Cari rack yang Code_Item_Rack diawali dengan $prefix
+        $rack = Rack::where('Code_Item_Rack', 'like', $prefix . '%')->first();
 
         if ($rack) {
             return response()->json([
