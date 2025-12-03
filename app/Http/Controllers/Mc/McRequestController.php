@@ -10,6 +10,8 @@ use App\Models\Member;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\Validator;
 
 class McRequestController extends Controller
 {
@@ -92,7 +94,11 @@ class McRequestController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = [
+            'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
+            'Ready Status', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
+            'Member Record', 'Updated', 'Id'
+        ];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Style header (tebal & background abu-abu)
@@ -100,7 +106,7 @@ class McRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:M1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:P1')->applyFromArray($headerStyle);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -135,11 +141,14 @@ class McRequestController extends Controller
                 $request->Urgent_Request == 1 ? '✓' : '',
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
+                $request->Ready_Request !== null ? '1' : '',
+                $request->Ready_Request ?? '',
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',
                 optional($request->record)->member->Name_Member ?? '',
                 $request->Updated_At_Request,
+                $request->Id_Request,
             ], null, 'A' . $row);
 
             $lastUser = $request->Id_User;
@@ -159,5 +168,66 @@ class McRequestController extends Controller
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    public function uploadReady(Request $request)
+    {
+        $request->validate([
+            'ready_excel' => 'required|mimes:xlsx,xls'
+        ]);
+
+        $file = $request->file('ready_excel');
+        $spreadsheet = IOFactory::load($file->getRealPath());
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray(null, true, true, true); // index by column A, B, ...
+
+        // Lewati header
+        unset($rows[1]);
+
+        $updatedCount = 0;
+
+        foreach ($rows as $row) {
+            // Asumsi: kolom 'Id' ada di kolom terakhir → cari key terakhir
+            $idColumn = array_key_last($row);
+            $idRequest = $row[$idColumn] ?? null;
+
+            if (!$idRequest || !is_numeric($idRequest)) {
+                continue;
+            }
+
+            // Cari kolom "Ready Status" → pastikan index-nya benar
+            // Header: ..., 'Name', 'Ready Status', 'Ready Stock', ..., 'Id'
+            // Kita cari posisi "Ready Status" berdasarkan header
+            // Tapi untuk efisiensi, asumsikan kolom "Ready Status" di posisi ke-9 (I)
+            // Atau ambil dari header baris pertama (jika perlu dinamis)
+
+            // Alternatif: karena kita tahu strukturnya, ambil kolom ke-9 (I)
+            $readyStatus = $row['I'] ?? ''; // I = kolom ke-9
+
+            // Cek apakah ada centang (1)
+            if (trim($readyStatus) !== '1') {
+                continue;
+            }
+
+            // Ambil data request dari DB
+            $requestModel = RequestModel::find($idRequest);
+
+            if (!$requestModel) {
+                continue;
+            }
+
+            // Jika Ready_Request sudah ada (not null), **jangan update**
+            if ($requestModel->Ready_Request !== null) {
+                continue;
+            }
+
+            // Update dengan waktu sekarang
+            $requestModel->Ready_Request = Carbon::now();
+            $requestModel->save();
+
+            $updatedCount++;
+        }
+
+        return redirect()->back()->with('success', "Berhasil memperbarui $updatedCount data Ready Status.");
     }
 }

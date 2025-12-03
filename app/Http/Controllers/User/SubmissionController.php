@@ -62,11 +62,11 @@ class SubmissionController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Header style
-        $sheet->getStyle('A1:M1')->applyFromArray([
+        $sheet->getStyle('A1:N1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ]);
@@ -85,6 +85,7 @@ class SubmissionController extends Controller
                 $submission->Urgent_Request == 1 ? '✓' : '',
                 $submission->Code_Item_Rack,
                 $submission->rack->Name_Item_Rack ?? '',
+                $submission->Ready_Request ?? '',
                 $timeRecord,
                 optional($submission->record)->Sum_Record ?? '',
                 $submission->member->Name_Member ?? '',

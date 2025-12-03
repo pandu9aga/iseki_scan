@@ -24,6 +24,7 @@ class Request extends Model
         'Urgent_Request',
         'Status_Request',
         'Status_Validation',
+        'Ready_Request',
         'Updated_At_Request',
     ];
 

@@ -92,7 +92,7 @@ class AdminRequestController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Style header (tebal & background abu-abu)
@@ -100,7 +100,7 @@ class AdminRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:M1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:N1')->applyFromArray($headerStyle);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -135,6 +135,7 @@ class AdminRequestController extends Controller
                 $request->Urgent_Request == 1 ? '✓' : '',
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
+                $request->Ready_Request ?? '',
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',

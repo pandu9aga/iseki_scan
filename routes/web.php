@@ -141,6 +141,7 @@ Route::middleware(McMiddleware::class)->group(function () {
 
     Route::get('/mc_missing', [McMissingController::class, 'index'])->name('mc.missing');
     Route::get('/mc_missing/export', [McMissingController::class, 'export'])->name('mc.missing.export');
+    Route::post('/mc_submission/upload-ready', [McRequestController::class, 'uploadReady'])->name('mc_submission.upload_ready');
 });
 
 Route::post('/api/get-code-item', function(Request $request) {

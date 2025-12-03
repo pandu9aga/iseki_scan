@@ -3,7 +3,7 @@
 <!-- Begin Page Content -->
 <div class="container-fluid">
     <h1 class="h3 mb-2 text-gray-800">Request</h1>
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div class="d-sm-flex align-items-center justify-content-between mb-1">
         <!-- Earnings (Monthly) Card Example -->
         <div class="col-xl-4 col-md-6 mb-4">
             <div class="card border-left-primary shadow h-100 py-2">
@@ -51,6 +51,28 @@
         </form>
     </div>
 
+    <div class="card mb-4 col-md-4 col-lg-3">
+        <div class="card-header">
+            <div class="font-weight-bold text-primary text-uppercase">
+                Update Ready Stock
+            </div>
+        </div>
+        <div class="card-body">
+            <div>
+                <form action="{{ route('mc_submission.upload_ready') }}" method="POST" enctype="multipart/form-data" class="d-inline">
+                    @csrf
+                    <div class="input-group">
+                        <input type="file" name="ready_excel" class="form-control" accept=".xlsx,.xls" required>
+                        <button class="btn btn-success ml-1" type="submit">Upload</button>
+                    </div>
+                    @if ($errors->has('ready_excel'))
+                        <div class="text-danger mt-1">{{ $errors->first('ready_excel') }}</div>
+                    @endif
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div class="card shadow mb-4">
         <div class="card-header py-3">
             <h6 class="m-0 font-weight-bold text-primary">Request: {{ $formattedDate }}</h6>
@@ -68,6 +90,7 @@
                             <th>Urgenity</th>
                             <th>Item</th>
                             <th>Name</th>
+                            <th>Ready Stock</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -85,6 +108,7 @@
                             <th>Urgenity</th>
                             <th>Item</th>
                             <th>Name</th>
+                            <th>Ready Stock</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -103,6 +127,7 @@
                             <td class="text-center">{{ $s->Urgent_Request == 1 ? '✓' : '' }}</td>
                             <td>{{ $s->Code_Item_Rack }}</td>
                             <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
+                            <td>{{ $s->Ready_Request ?? '' }}</td>
                             <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
                             <td>{{ optional($s->record)->Sum_Record ?? '' }}</td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
