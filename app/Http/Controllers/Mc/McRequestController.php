@@ -96,7 +96,7 @@ class McRequestController extends Controller
         // Header kolom
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
-            'Ready Status', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
+            'Ready Status (1)', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
             'Member Record', 'Updated', 'Id'
         ];
         $sheet->fromArray([$headers], null, 'A1');

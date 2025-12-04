@@ -12,10 +12,10 @@
                 <i class="fas fa-download fa-sm text-white-50"></i> Download Record
             </button>
         </form>
-        <button class="d-sm-inline-block btn btn-md btn-danger shadow-sm my-2" type="button" data-toggle="modal"
+        {{-- <button class="d-sm-inline-block btn btn-md btn-danger shadow-sm my-2" type="button" data-toggle="modal"
             data-target="#resetReportModal">
             <i class="fas fa-trash fa-sm text-white-50"></i> Reset Record
-        </button>
+        </button> --}}
         <!-- Logout Modal-->
         <div class="modal fade" id="resetReportModal" tabindex="-1" role="dialog" aria-labelledby="resetReportModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">

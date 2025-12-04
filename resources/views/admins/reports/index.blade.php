@@ -53,10 +53,10 @@
         </form>
     </div>
 
-    <button class="d-sm-inline-block btn btn-md btn-danger shadow-sm mb-4" type="button" data-toggle="modal"
+    {{-- <button class="d-sm-inline-block btn btn-md btn-danger shadow-sm mb-4" type="button" data-toggle="modal"
         data-target="#resetReportModal">
         <i class="fas fa-trash fa-sm text-white-50"></i> Reset Record
-    </button>
+    </button> --}}
     <!-- Logout Modal-->
     <div class="modal fade" id="resetReportModal" tabindex="-1" role="dialog" aria-labelledby="resetReportModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">

@@ -13,13 +13,13 @@
             </button>
         </form>
 
-        <form action="{{ route('admin_submission.reset') }}" method="POST" class="d-inline">
+        {{-- <form action="{{ route('admin_submission.reset') }}" method="POST" class="d-inline">
             @csrf
             <input type="hidden" name="Day_Request" value="{{ $date }}">
             <button class="btn btn-danger btn-md shadow-sm" type="submit" onclick="return confirm('Are you sure want to reset this submission data?')">
                 <i class="fas fa-trash-alt"></i> Reset All Request
             </button>
-        </form>
+        </form> --}}
     </div>
 
     <div class="card shadow mb-4">
