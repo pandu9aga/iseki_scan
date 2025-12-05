@@ -108,8 +108,9 @@
                         <a class="collapse-item" href="{{ route('request') }}?area=Sub-8">Sub-8</a><a class="collapse-item" href="{{ route('request') }}?area=Sub-Cylinder-2">Sub-Cylinder-2</a>
                         <a class="collapse-item" href="{{ route('request') }}?area=Sub-9">Sub-9</a><a class="collapse-item" href="{{ route('request') }}?area=Cucian-Cylinder">Cucian-Cylinder</a>
                         <a class="collapse-item" href="{{ route('request') }}?area=Sub-10">Sub-10</a><a class="collapse-item" href="{{ route('request') }}?area=Cucian-Houshing">Cucian-Houshing</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-Houshing">Sub-Houshing</a>
-                        <a class="collapse-item" href="{{ route('request') }}?area=SXG-3">SXG-3</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Sub-Houshing">Sub-Houshing</a><a class="collapse-item" href="{{ route('request') }}?area=SXG-3">SXG-3</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Painting-A">Painting-A</a><a class="collapse-item" href="{{ route('request') }}?area=Painting-B">Painting-B</a>
+                        <a class="collapse-item" href="{{ route('request') }}?area=Palletina">Palletina</a>
                     </div>
                 </div>
             </li>
