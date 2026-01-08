@@ -93,6 +93,7 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/admin_request', [AdminRequestController::class, 'index'])->name('admin_request');
     Route::get('/admin_request/submit', [AdminRequestController::class, 'submit'])->name('request.submit');
     Route::get('/admin_request/export', [AdminRequestController::class, 'export'])->name('request.export');
+    Route::get('/admin_request/search', [AdminRequestController::class, 'search'])->name('request.search');
     Route::post('/admin_request/reset', [AdminRequestController::class, 'reset'])->name('admin_request.reset');
     
     Route::get('/missing', [MissingController::class, 'index'])->name('missing');

@@ -10,6 +10,7 @@ use App\Models\Member;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use Yajra\DataTables\Facades\DataTables;
 
 class AdminRequestController extends Controller
 {
@@ -160,5 +161,52 @@ class AdminRequestController extends Controller
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    public function search()
+    {
+        if (request()->ajax()) {
+            $query = RequestModel::with('member', 'record', 'rack');
+                // ->orderBy('Time_Request', 'desc');
+
+            return DataTables::eloquent($query)
+                ->editColumn('Day_Request', function ($r) {
+                    return $r->Day_Request . ' ' . $r->Time_Request;
+                })
+                ->addColumn('Urgent_Request', function ($r) {
+                    return $r->Urgent_Request == 1 ? '✓' : '';
+                })
+                ->addColumn('Name', function ($r) {
+                    return optional($r->rack)->Name_Item_Rack ?? '';
+                })
+                ->addColumn('Time_Record', function ($r) {
+                    $day = optional($r->record)->Day_Record ?? '';
+                    $time = optional($r->record)->Time_Record ?? '';
+                    return trim("$day $time");
+                })
+                ->addColumn('Sum_Record', function ($r) {
+                    return optional($r->record)->Sum_Record ?? '';
+                })
+                ->addColumn('Member_Request', function ($r) {
+                    return optional($r->member)->Name_Member ?? '';
+                })
+                ->addColumn('Member_Record', function ($r) {
+                    return optional($r->record)?->member?->Name_Member ?? '';
+                })
+                ->editColumn('Updated_At_Request', function ($r) {
+                    return $r->Updated_At_Request ?? '';
+                })
+                ->filterColumn('Id_User', function ($query, $keyword) {
+                    if ($keyword !== '') {
+                        $query->where('Id_User', $keyword); // ✅ exact match
+                    }
+                })
+                ->rawColumns(['Urgent_Request'])
+                ->make(true);
+        }
+
+        // Non-AJAX: kirim daftar member ke view
+        $members = Member::orderBy('Name_Member')->get(['Id_Member', 'Name_Member']);
+        return view('admins.requests.search', compact('members'));
     }
 }

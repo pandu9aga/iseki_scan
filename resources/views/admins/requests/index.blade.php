@@ -42,6 +42,9 @@
                 </div>
             </div>
         </div>
+        <a class="d-sm-inline-block btn btn-md btn-info shadow-sm" href="{{ route('request.search') }}"">
+            <i class="fas fa-search fa-sm text-white-50"></i> Advanced Search
+        </a>
         <form class="user my-2" action="{{ route('request.export') }}" method="GET" target="_blank">
             <input name="Day_Request_Hidden" type="hidden" value="{{ $dateForInput }}">
             <input name="Id_User" type="hidden" value="{{ request('Id_User') }}">
