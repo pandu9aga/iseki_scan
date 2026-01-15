@@ -1,36 +1,35 @@
-@extends('layouts.mc')
+@extends('layouts.main')
 @section('content')
 <!-- Begin Page Content -->
 <div class="container-fluid">
     <div class="marquee-container">
         <div class="marquee">
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
+            <span>Missing List MC</span>
+            <span>Missing List MC</span>
+            <span>Missing List MC</span>
+            <span>Missing List MC</span>
+            <span>Missing List MC</span>
             <!-- duplikat lagi biar seamless -->
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
+            <span>Missing List MC</span>
+            <span>Missing List MC</span>
+            <span>Missing List MC</span>
+            <span>Missing List MC</span>
+            <span>Missing List MC</span>
         </div>
     </div>
 
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-
-        <form action="{{ route('mc.missing.export') }}" method="GET" target="_blank" class="mr-2">
+    <div class="mb-4 col-md-4 col-lg-3">
+        <form action="{{ route('missing.mc.export') }}" method="GET" target="_blank" class="mr-2">
             <input name="Day_Request_Hidden" type="hidden" value="{{ $date }}">
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
-                <i class="fas fa-download fa-sm text-white-50"></i> Download Missing DST
+                <i class="fas fa-download fa-sm text-white-50"></i> Download Missing MC
             </button>
         </form>
     </div>
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Missing List DST</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Missing List MC</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -43,13 +42,11 @@
                             <th>Name</th>
                             <th>Sum</th>
                             <th>Time Request</th>
-                            <th>Ready Stock</th>
                             <th>Overdue</th>
                             <th>PIC</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach ($requests as $s)
+                        @foreach ($missingRequests as $s)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $s->Code_Rack }}</td>
@@ -57,31 +54,10 @@
                             <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
                             <td>{{ $s->Sum_Request }}</td>
                             <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
-                            <td>
-                                @php
-                                    $statuses = [];
-                                    if ($s->Ready_Request) $statuses[] = '<span class="badge badge-success">Ready</span>:' . $s->Ready_Request . '</span>';
-                                    if ($s->Shipping_Request) $statuses[] = '<span class="badge badge-info">Shipping</span>:' . $s->Shipping_Request;
-                                    if ($s->Production_Area_Request) $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
-                                    if ($s->Design_Changes_Request) $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
-                                    echo implode(' | ', $statuses);
-                                @endphp
-                            </td>
                             <td class="text-danger font-weight-bold overdue">
                                 @php
-                                    $statusTimestamp = null;
-                                    if ($s->Design_Changes_Request) {
-                                        $statusTimestamp = $s->Design_Changes_Request;
-                                    } elseif ($s->Production_Area_Request) {
-                                        $statusTimestamp = $s->Production_Area_Request;
-                                    } elseif ($s->Shipping_Request) {
-                                        $statusTimestamp = $s->Shipping_Request;
-                                    } elseif ($s->Ready_Request) {
-                                        $statusTimestamp = $s->Ready_Request;
-                                    }
-
-                                    if ($statusTimestamp) {
-                                        $statusTime = \Carbon\Carbon::parse($statusTimestamp);
+                                    if ($s->Day_Request && $s->Time_Request) {
+                                        $statusTime = \Carbon\Carbon::parse($s->Day_Request . ' ' . $s->Time_Request);
                                         $now = \Carbon\Carbon::now();
                                         $totalSeconds = $now->timestamp - $statusTime->timestamp;
 

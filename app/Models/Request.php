@@ -25,6 +25,9 @@ class Request extends Model
         'Status_Request',
         'Status_Validation',
         'Ready_Request',
+        'Shipping_Request',
+        'Production_Area_Request',
+        'Design_Changes_Request',
         'Updated_At_Request',
     ];
 

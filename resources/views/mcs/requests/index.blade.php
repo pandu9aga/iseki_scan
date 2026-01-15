@@ -20,11 +20,11 @@
                                         <input name="Day_Request" type="date" class="form-control" value="{{ $dateForInput }}" required>
                                     </div>
                                     <div class="col-lg-4 col-md-6 mb-1">
-                                        <select name="Id_User" class="form-control">
+                                        <select name="Id_User[]" class="form-control" multiple>
                                             <option value="">All Members</option>
                                             @foreach($members as $m)
                                                 <option value="{{ $m->Id_Member }}" 
-                                                    {{ request('Id_User') == $m->Id_Member ? 'selected' : '' }}>
+                                                    {{ in_array($m->Id_Member, request('Id_User', [])) ? 'selected' : '' }}>
                                                     {{ $m->Name_Member }}
                                                 </option>
                                             @endforeach
@@ -44,7 +44,9 @@
         </div>
         <form class="user" action="{{ route('mc_submission.export') }}" method="GET" target="_blank">
             <input name="Day_Request_Hidden" type="hidden" value="{{ $dateForInput }}">
-            <input name="Id_User" type="hidden" value="{{ request('Id_User') }}">
+            @foreach(request('Id_User', []) as $id)
+                <input type="hidden" name="Id_User[]" value="{{ $id }}">
+            @endforeach
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
                 <i class="fas fa-download fa-sm text-white-50"></i> Download Report
             </button>
@@ -127,7 +129,16 @@
                             <td class="text-center">{{ $s->Urgent_Request == 1 ? '✓' : '' }}</td>
                             <td>{{ $s->Code_Item_Rack }}</td>
                             <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
-                            <td>{{ $s->Ready_Request ?? '' }}</td>
+                            <td>
+                                @php
+                                    $statuses = [];
+                                    if ($s->Ready_Request) $statuses[] = '<span class="badge badge-success">Ready</span>:' . $s->Ready_Request . '</span>';
+                                    if ($s->Shipping_Request) $statuses[] = '<span class="badge badge-info">Shipping</span>:' . $s->Shipping_Request;
+                                    if ($s->Production_Area_Request) $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
+                                    if ($s->Design_Changes_Request) $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
+                                    echo implode(' | ', $statuses);
+                                @endphp
+                            </td>
                             <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
                             <td>{{ optional($s->record)->Sum_Record ?? '' }}</td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
@@ -145,10 +156,20 @@
 
 @section('style')
 <link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
+<link href="{{ asset('css/select2.min.css') }}" rel="stylesheet">
 @endsection
 
 @section('script')
 <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
 <script src="{{ asset('js/demo/datatables-demo.js') }}"></script>
+<script src="{{ asset('js/select2.min.js') }}"></script>
+<script>
+$(document).ready(function() {
+    $('select[multiple]').select2({
+        placeholder: "Pilih member...",
+        allowClear: false
+    });
+});
+</script>
 @endsection

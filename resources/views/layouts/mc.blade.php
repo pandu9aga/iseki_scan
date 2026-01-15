@@ -19,7 +19,7 @@
         rel="stylesheet"> --}}
 
     <!-- Custom styles for this template-->
-    <link href="{{asset('css/sb-admin-2.min.css')}}" rel="stylesheet">
+    <link href="{{ asset('css/sb-admin-2.min.css') }}?v=1" rel="stylesheet">
 
     @yield('style')
 
@@ -54,7 +54,7 @@
                     <span>Request</span></a>
             </li>
             
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.validate') }}">
                     <i class="fas fa-fw fa-qrcode"></i>
                     <span>Validate</span></a>
@@ -64,12 +64,18 @@
                 <a class="nav-link" href="{{ route('mc_validation') }}">
                     <i class="fas fa-fw fa-file"></i>
                     <span>Validation</span></a>
-            </li>
+            </li> --}}
 
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.missing') }}">
                     <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing</span></a>
+                    <span>Missing DST</span></a>
+            </li> --}}
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('mc.missing.mc') }}">
+                    <i class="fas fa-fw fa-ban"></i>
+                    <span>Missing MC</span></a>
             </li>
 
             <!-- Divider -->

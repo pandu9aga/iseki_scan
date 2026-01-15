@@ -62,7 +62,7 @@ class SubmissionController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 'Ready Stock (1)', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Header style
@@ -70,12 +70,31 @@ class SubmissionController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ]);
+        $sheet->getStyle('A1:N1')->getAlignment()->setWrapText(true);
 
         $row = 2;
         foreach ($submissions as $index => $submission) {
             $timeRequest = ($submission->Day_Request ?? '') . " " . ($submission->Time_Request ?? '');
             $timeRecord = ($submission->record->Day_Record ?? '') . " " . ($submission->record->Time_Record ?? '');
 
+            // Di dalam foreach ($requests as $request)
+            $readyDisplay = [];
+
+            if ($request->Ready_Request) {
+                $readyDisplay[] = 'Ready: ' . $request->Ready_Request;
+            }
+            if ($request->Shipping_Request) {
+                $readyDisplay[] = 'Shipping: ' . $request->Shipping_Request;
+            }
+            if ($request->Production_Area_Request) {
+                $readyDisplay[] = 'Production: ' . $request->Production_Area_Request;
+            }
+            if ($request->Design_Changes_Request) {
+                $readyDisplay[] = 'Design: ' . $request->Design_Changes_Request;
+            }
+
+            $readyStockDisplay = implode(' | ', $readyDisplay);
+            
             $sheet->fromArray([
                 $index + 1,
                 $timeRequest,
@@ -86,6 +105,7 @@ class SubmissionController extends Controller
                 $submission->Code_Item_Rack,
                 $submission->rack->Name_Item_Rack ?? '',
                 $submission->Ready_Request ?? '',
+                $readyStockDisplay,
                 $timeRecord,
                 optional($submission->record)->Sum_Record ?? '',
                 $submission->member->Name_Member ?? '',

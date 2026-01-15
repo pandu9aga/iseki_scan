@@ -80,15 +80,29 @@
     <div class="row">
 
         <!-- Content Column -->
-        <div class="col-lg-9 mb-4">
+        <div class="col-lg-4 mb-4">
 
             <!-- Project Card Example -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h1 class="m-0 font-weight-bold text-danger">Missing Part Request</h1>
+                    <h1 class="m-0 font-weight-bold text-danger">Missing DST</h1>
                 </div>
                 <div class="card-body">
                     <h1 class="font-weigth-bold text-danger" style="font-size: 100pt;"><b>{{ $totalRequests }}</b></h1>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Column -->
+        <div class="col-lg-4 mb-4">
+
+            <!-- Project Card Example -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h1 class="m-0 font-weight-bold text-danger">Missing MC</h1>
+                </div>
+                <div class="card-body">
+                    <h1 class="font-weigth-bold text-danger" style="font-size: 100pt;"><b>{{ $missingRequests }}</b></h1>
                 </div>
             </div>
         </div>

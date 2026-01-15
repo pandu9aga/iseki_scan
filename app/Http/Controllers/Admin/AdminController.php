@@ -37,15 +37,77 @@ class AdminController extends Controller
             }
         }
 
+        $now = Carbon::now();
+        // Hitung waktu 2 hari kerja lalu (tanpa Sabtu dan Minggu)
+        $workdaysAgo = $now->copy();
+        $daysCounted = 0;
+        while ($daysCounted < 1) {
+            $workdaysAgo->subDay();
+            // Lewati Sabtu (6) dan Minggu (0)
+            if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
+                $daysCounted++;
+            }
+        }
+
         $requests = RequestModel::with('member', 'record')
             ->where('Status_Request', '!=', 'Done')
-            ->whereRaw("TIMESTAMP(Day_Request, Time_Request) < ?", [$workdaysAgo])
+            ->where(function ($query) use ($workdaysAgo) {
+                $query->where(function ($q) use ($workdaysAgo) {
+                    $q->whereNotNull('Ready_Request')
+                    ->where('Ready_Request', '<', $workdaysAgo);
+                })
+                ->orWhere(function ($q) use ($workdaysAgo) {
+                    $q->whereNotNull('Shipping_Request')
+                    ->where('Shipping_Request', '<', $workdaysAgo);
+                })
+                ->orWhere(function ($q) use ($workdaysAgo) {
+                    $q->whereNotNull('Production_Area_Request')
+                    ->where('Production_Area_Request', '<', $workdaysAgo);
+                })
+                ->orWhere(function ($q) use ($workdaysAgo) {
+                    $q->whereNotNull('Design_Changes_Request')
+                    ->where('Design_Changes_Request', '<', $workdaysAgo);
+                });
+            })
             ->orderBy('Day_Request', 'desc')
             ->get();
+
+        // Ambil semua request yang belum ada status sama sekali
+        $mcMiss = RequestModel::with('member', 'record')
+            ->where('Status_Request', '!=', 'Done')
+            ->whereNull('Ready_Request')
+            ->whereNull('Shipping_Request')
+            ->whereNull('Production_Area_Request')
+            ->whereNull('Design_Changes_Request')
+            ->get();
+
+        $missingRequests = $mcMiss->filter(function ($mcMiss) use ($now) {
+            $requestTime = Carbon::parse($mcMiss->Day_Request . ' ' . $mcMiss->Time_Request);
+
+            // Jika request di masa depan, skip
+            if ($requestTime->gt($now)) {
+                return false;
+            }
+
+            $current = $requestTime->copy();
+            $workingHours = 0;
+
+            // Loop per jam sampai mencapai now
+            while ($current->lt($now)) {
+                // Lewati Sabtu (6) dan Minggu (0)
+                if (!in_array($current->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
+                    $workingHours++;
+                }
+                $current->addHour();
+            }
+
+            // Jika sudah lewat 36 jam kerja → missing
+            return $workingHours >= 36;
+        })->count();
 
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRequests = $requests->count();
 
-        return view('admins.index', compact('totalRecords', 'correct', 'incorrect', 'maxProgress', 'totalRequests'));
+        return view('admins.index', compact('totalRecords', 'correct', 'incorrect', 'maxProgress', 'totalRequests', 'missingRequests'));
     }    
 }

@@ -19,7 +19,7 @@
         rel="stylesheet"> --}}
 
     <!-- Custom styles for this template-->
-    <link href="{{asset('css/sb-admin-2.min.css')}}" rel="stylesheet">
+    <link href="{{ asset('css/sb-admin-2.min.css') }}?v=1" rel="stylesheet">
 
     @yield('style')
 
@@ -96,19 +96,19 @@
             </li>
 
             <!-- Divider -->
-            <hr class="sidebar-divider">
+            {{-- <hr class="sidebar-divider"> --}}
 
             <!-- Heading -->
-            <div class="sidebar-heading">
+            {{-- <div class="sidebar-heading">
                 Validation
-            </div>
+            </div> --}}
 
             <!-- Nav Item - Validation -->
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('validation') }}">
                     <i class="fas fa-fw fa-file"></i>
                     <span>Validation</span></a>
-            </li>
+            </li> --}}
 
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -122,7 +122,13 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('missing') }}">
                     <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing</span></a>
+                    <span>Missing DST</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('missing.mc') }}">
+                    <i class="fas fa-fw fa-ban"></i>
+                    <span>Missing MC</span></a>
             </li>
 
             <!-- Divider -->

@@ -19,14 +19,14 @@ class McRequestController extends Controller
     {
         $date = Carbon::today();
         $dateForInput = $date->format('Y-m-d');
-        $memberId = request('Id_User'); // ambil filter member kalau ada
+        $memberIds = request('Id_User', []); // ← sekarang array
 
         $query = RequestModel::whereDate('Day_Request', $date)
             ->with('member', 'record', 'rack')
             ->orderBy('Time_Request', 'desc');
 
-        if ($memberId) {
-            $query->where('Id_User', $memberId);
+        if (!empty($memberIds)) {
+            $query->whereIn('Id_User', $memberIds); // ← whereIn, bukan where
         }
 
         $requests = $query->get();
@@ -47,14 +47,14 @@ class McRequestController extends Controller
     {
         $date = $request->input('Day_Request');
         $dateForInput = Carbon::parse($date)->format('Y-m-d');
-        $memberId = $request->input('Id_User');
+        $memberIds = $request->input('Id_User', []); // ← array
 
         $query = RequestModel::whereDate('Day_Request', $date)
             ->with('member', 'record', 'rack')
             ->orderBy('Time_Request', 'desc');
 
-        if ($memberId) {
-            $query->where('Id_User', $memberId);
+        if (!empty($memberIds)) {
+            $query->whereIn('Id_User', $memberIds);
         }
 
         $requests = $query->get();
@@ -74,7 +74,7 @@ class McRequestController extends Controller
     public function export(Request $request)
     {
         $date = Carbon::parse($request->input('Day_Request_Hidden'))->format('Y-m-d');
-        $memberId = $request->input('Id_User');
+        $memberIds = $request->input('Id_User', []); // ← array
 
         $query = RequestModel::whereDate('Day_Request', $date)
             ->with('member', 'record', 'rack')
@@ -83,8 +83,8 @@ class McRequestController extends Controller
             ->orderBy('Area_Request')
             ->orderBy('Time_Request');
 
-        if ($memberId) {
-            $query->where('Id_User', $memberId);
+        if (!empty($memberIds)) {
+            $query->whereIn('Id_User', $memberIds);
         }
 
         $requests = $query->get();
@@ -96,7 +96,8 @@ class McRequestController extends Controller
         // Header kolom
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
-            'Ready Status (1)', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
+            "1=Ready,2=Ship,\n3=Prod,4=Design", // ← \n = line break
+            'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
             'Member Record', 'Updated', 'Id'
         ];
         $sheet->fromArray([$headers], null, 'A1');
@@ -107,6 +108,7 @@ class McRequestController extends Controller
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
         $sheet->getStyle('A1:P1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:P1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -129,8 +131,37 @@ class McRequestController extends Controller
                 $no = 1; // reset nomor
             }
 
+            // Di dalam foreach ($requests as $request)
+            $readyDisplay = [];
+
+            if ($request->Ready_Request) {
+                $readyDisplay[] = 'Ready: ' . $request->Ready_Request;
+            }
+            if ($request->Shipping_Request) {
+                $readyDisplay[] = 'Shipping: ' . $request->Shipping_Request;
+            }
+            if ($request->Production_Area_Request) {
+                $readyDisplay[] = 'Production: ' . $request->Production_Area_Request;
+            }
+            if ($request->Design_Changes_Request) {
+                $readyDisplay[] = 'Design: ' . $request->Design_Changes_Request;
+            }
+
+            $readyStockDisplay = implode(' | ', $readyDisplay);
+
             $timeRequest = ($request->Day_Request ?? '') . " " . ($request->Time_Request ?? '');
             $timeRecord = ($request->record->Day_Record ?? '') . " " . ($request->record->Time_Record ?? '');
+
+            $statusCode = '';
+            if ($request->Ready_Request !== null) {
+                $statusCode = '1';
+            } elseif ($request->Shipping_Request !== null) {
+                $statusCode = '2';
+            } elseif ($request->Production_Area_Request !== null) {
+                $statusCode = '3';
+            } elseif ($request->Design_Changes_Request !== null) {
+                $statusCode = '4';
+            }
 
             $sheet->fromArray([
                 $no,
@@ -141,8 +172,8 @@ class McRequestController extends Controller
                 $request->Urgent_Request == 1 ? '✓' : '',
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
-                $request->Ready_Request !== null ? '1' : '',
-                $request->Ready_Request ?? '',
+                $statusCode,
+                $readyStockDisplay,
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',
@@ -154,6 +185,16 @@ class McRequestController extends Controller
             $lastUser = $request->Id_User;
             $no++;
             $row++;
+        }
+
+        $lastRow = $row - 1;
+        if ($lastRow >= 2) {
+            $columnsToCenter = ['E', 'F', 'I', 'L'];
+            foreach ($columnsToCenter as $col) {
+                $range = $col . '2:' . $col . $lastRow;
+                $sheet->getStyle($range)->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            }
         }
 
         // 🔑 Auto size kolom
@@ -172,22 +213,17 @@ class McRequestController extends Controller
 
     public function uploadReady(Request $request)
     {
-        $request->validate([
-            'ready_excel' => 'required|mimes:xlsx,xls'
-        ]);
+        $request->validate(['ready_excel' => 'required|mimes:xlsx,xls']);
 
         $file = $request->file('ready_excel');
         $spreadsheet = IOFactory::load($file->getRealPath());
         $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray(null, true, true, true); // index by column A, B, ...
-
-        // Lewati header
-        unset($rows[1]);
+        $rows = $sheet->toArray(null, true, true, true);
+        unset($rows[1]); // skip header
 
         $updatedCount = 0;
 
         foreach ($rows as $row) {
-            // Asumsi: kolom 'Id' ada di kolom terakhir → cari key terakhir
             $idColumn = array_key_last($row);
             $idRequest = $row[$idColumn] ?? null;
 
@@ -195,36 +231,45 @@ class McRequestController extends Controller
                 continue;
             }
 
-            // Cari kolom "Ready Status" → pastikan index-nya benar
-            // Header: ..., 'Name', 'Ready Status', 'Ready Stock', ..., 'Id'
-            // Kita cari posisi "Ready Status" berdasarkan header
-            // Tapi untuk efisiensi, asumsikan kolom "Ready Status" di posisi ke-9 (I)
-            // Atau ambil dari header baris pertama (jika perlu dinamis)
-
-            // Alternatif: karena kita tahu strukturnya, ambil kolom ke-9 (I)
-            $readyStatus = $row['I'] ?? ''; // I = kolom ke-9
-
-            // Cek apakah ada centang (1)
-            if (trim($readyStatus) !== '1') {
-                continue;
-            }
-
-            // Ambil data request dari DB
             $requestModel = RequestModel::find($idRequest);
-
             if (!$requestModel) {
                 continue;
             }
 
-            // Jika Ready_Request sudah ada (not null), **jangan update**
-            if ($requestModel->Ready_Request !== null) {
+            // 🔑 Cek: apakah SUDAH ADA salah satu status terisi?
+            $anyStatusFilled = 
+                $requestModel->Ready_Request !== null ||
+                $requestModel->Shipping_Request !== null ||
+                $requestModel->Production_Area_Request !== null ||
+                $requestModel->Design_Changes_Request !== null;
+
+            // ❌ Jika sudah ada yang terisi, LEWATI (jangan update apapun)
+            if ($anyStatusFilled) {
                 continue;
             }
 
-            // Update dengan waktu sekarang
-            $requestModel->Ready_Request = Carbon::now();
-            $requestModel->save();
+            // 🟢 Hanya lanjut jika BELUM ADA SATU PUN yang terisi
+            $now = Carbon::now();
+            $readyStatus = trim($row['I'] ?? '');
 
+            switch ($readyStatus) {
+                case '1':
+                    $requestModel->Ready_Request = $now;
+                    break;
+                case '2':
+                    $requestModel->Shipping_Request = $now;
+                    break;
+                case '3':
+                    $requestModel->Production_Area_Request = $now;
+                    break;
+                case '4':
+                    $requestModel->Design_Changes_Request = $now;
+                    break;
+                default:
+                    continue 2; // skip row ini jika status tidak valid
+            }
+
+            $requestModel->save();
             $updatedCount++;
         }
 

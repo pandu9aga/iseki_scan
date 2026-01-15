@@ -91,7 +91,7 @@
                             <th>Member Request</th>
                             <th>Member Record</th>
                             <th>Updated</th>
-                            <th>Action</th>
+                            {{-- <th>Action</th> --}}
                         </tr>
                     </thead>
                     <tfoot>
@@ -109,7 +109,7 @@
                             <th>Member Request</th>
                             <th>Member Record</th>
                             <th>Updated</th>
-                            <th>Action</th>
+                            {{-- <th>Action</th> --}}
                         </tr>
                     </tfoot>
                     <tbody>
@@ -149,8 +149,8 @@
                             <td>{{ optional($r->request)->member->Name_Member ?? '' }}</td>
                             <td>{{ $r->member->Name_Member ?? '' }}</td>
                             <td>{{ $r->Updated_At_Record ?? '' }}</td>
-                            <td>
-                                {{-- tombol delete --}}
+                            {{-- <td>
+                                tombol delete
                                 <form action="{{ route('user_report.destroy', $r->Id_Record) }}" method="POST" onsubmit="return confirm('Yakin mau hapus record ini?');">
                                     @csrf
                                     @method('DELETE')
@@ -158,7 +158,7 @@
                                         <i class="fas fa-fw fa-trash"></i>
                                     </button>
                                 </form>
-                            </td>
+                            </td> --}}
                         </tr>
                         <div class="modal fade" id="editModal{{ $r->Id_Record }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ $r->Id_Record }}" aria-hidden="true">
                             <div class="modal-dialog" role="document">

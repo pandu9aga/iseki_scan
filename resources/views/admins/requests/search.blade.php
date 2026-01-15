@@ -13,15 +13,15 @@
             <h6 class="m-0 font-weight-bold text-primary">Request Search</h6>
         </div>
         <div class="card-body">
-            <div class="table-container">
-                <table class="table table-bordered table-sm table-hover" id="dataTable" cellspacing="0">
+            <div class="table-responsive">
+                <table class="table table-fixed table-bordered table-sm table-hover" id="dataTable" cellspacing="0">
                     <thead>
                         <tr>
                             <th>No</th>
                             <th>Area</th>
                             <th>Member Request</th>
                             <th>Item</th>
-                            <th>Rack</th>
+                            <th>Rack <span class="text-white">-------</span></th>
                             <th>Time Request</th>
                             <th>Ready Stock</th>
                             <th>Time Record</th>
@@ -108,7 +108,7 @@ $(document).ready(function() {
             { data: 'Code_Item_Rack', name: 'Code_Item_Rack', searchable: true },
             { data: 'Code_Rack', name: 'Code_Rack', searchable: true, width: 'auto' },
             { data: 'Day_Request', name: 'Day_Request', searchable: false },
-            { data: 'Ready_Request', name: 'Ready_Request', searchable: false },
+            { data: 'ready_status_display', name: 'ready_status_display', searchable: false },
             { data: 'Time_Record', name: 'Time_Record', searchable: false },
             { data: 'Sum_Request', name: 'Sum_Request', searchable: false },
             { data: 'Urgent_Request', name: 'Urgent_Request', searchable: false },
@@ -125,6 +125,7 @@ $(document).ready(function() {
         },
         // Nonaktifkan fitur yang bentrok
         scrollY: '480px',
+        scrollY: true,
         scrollX: true,
         scrollCollapse: true,
         initComplete: function() {

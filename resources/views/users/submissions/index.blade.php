@@ -79,12 +79,13 @@
                             <th>Urgenity</th>
                             <th>Item</th>
                             <th>Name</th>
+                            <th>Ready Stock</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
                             <th>Member Record</th>
                             <th>Updated</th>
-                            <th>Action</th>
+                            {{-- <th>Action</th> --}}
                         </tr>
                     </thead>
                     <tfoot>
@@ -97,12 +98,13 @@
                             <th>Urgenity</th>
                             <th>Item</th>
                             <th>Name</th>
+                            <th>Ready Stock</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
                             <th>Member Record</th>
                             <th>Updated</th>
-                            <th>Action</th>
+                            {{-- <th>Action</th> --}}
                         </tr>
                     </tfoot>
                     <tbody>
@@ -127,13 +129,23 @@
                             <td class="text-center">{{ $s->Urgent_Request == 1 ? '✓' : '' }}</td>
                             <td>{{ $s->Code_Item_Rack }}</td>
                             <td>{{ $s->rack->Name_Item_Rack }}</td>
+                            <td>
+                                @php
+                                    $statuses = [];
+                                    if ($s->Ready_Request) $statuses[] = '<span class="badge badge-success">Ready</span>:' . $s->Ready_Request . '</span>';
+                                    if ($s->Shipping_Request) $statuses[] = '<span class="badge badge-info">Shipping</span>:' . $s->Shipping_Request;
+                                    if ($s->Production_Area_Request) $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
+                                    if ($s->Design_Changes_Request) $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
+                                    echo implode(' | ', $statuses);
+                                @endphp
+                            </td>
                             <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
                             <td>{{ optional($s->record)->Sum_Record ?? '' }}</td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
                             <td>{{ optional($s->record)->member->Name_Member ?? '' }}</td>
                             <td>{{ $s->Updated_At_Request ?? '' }}</td>
-                            <td>
-                                {{-- tombol delete --}}
+                            {{-- <td>
+                                tombol delete
                                 <form action="{{ route('submission.destroy', $s->Id_Request) }}" method="POST" onsubmit="return confirm('Yakin mau hapus request ini?');">
                                     @csrf
                                     @method('DELETE')
@@ -141,7 +153,7 @@
                                         <i class="fas fa-fw fa-trash"></i>
                                     </button>
                                 </form>
-                            </td>
+                            </td> --}}
                         </tr>
                         <div class="modal fade" id="editModal{{ $s->Id_Request }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ $s->Id_Request }}" aria-hidden="true">
                             <div class="modal-dialog" role="document">

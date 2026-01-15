@@ -18,14 +18,14 @@ class AdminRequestController extends Controller
     {
         $date = Carbon::today();
         $dateForInput = $date->format('Y-m-d');
-        $memberId = request('Id_User'); // ambil filter member kalau ada
+        $memberIds = request('Id_User', []); // ← sekarang array
 
         $query = RequestModel::whereDate('Day_Request', $date)
             ->with('member', 'record', 'rack')
             ->orderBy('Time_Request', 'desc');
 
-        if ($memberId) {
-            $query->where('Id_User', $memberId);
+        if (!empty($memberIds)) {
+            $query->whereIn('Id_User', $memberIds);
         }
 
         $requests = $query->get();
@@ -46,14 +46,14 @@ class AdminRequestController extends Controller
     {
         $date = $request->input('Day_Request');
         $dateForInput = Carbon::parse($date)->format('Y-m-d');
-        $memberId = $request->input('Id_User');
+        $memberIds = $request->input('Id_User', []); // ← array
 
         $query = RequestModel::whereDate('Day_Request', $date)
             ->with('member', 'record', 'rack')
             ->orderBy('Time_Request', 'desc');
 
-        if ($memberId) {
-            $query->where('Id_User', $memberId);
+        if (!empty($memberIds)) {
+            $query->whereIn('Id_User', $memberIds);
         }
 
         $requests = $query->get();
@@ -73,7 +73,7 @@ class AdminRequestController extends Controller
     public function export(Request $request)
     {
         $date = Carbon::parse($request->input('Day_Request_Hidden'))->format('Y-m-d');
-        $memberId = $request->input('Id_User');
+        $memberIds = $request->input('Id_User', []);
 
         $query = RequestModel::whereDate('Day_Request', $date)
             ->with('member', 'record', 'rack')
@@ -82,8 +82,8 @@ class AdminRequestController extends Controller
             ->orderBy('Area_Request')
             ->orderBy('Time_Request');
 
-        if ($memberId) {
-            $query->where('Id_User', $memberId);
+        if (!empty($memberIds)) {
+            $query->whereIn('Id_User', $memberIds);
         }
 
         $requests = $query->get();
@@ -93,7 +93,11 @@ class AdminRequestController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 'Ready Stock (1)', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = [
+            'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 
+            "1=Ready,2=Ship,\n3=Prod,4=Design", 'Time Record', 'Sum Record', 'Member Request', 
+            'Member Record', 'Updated'
+            ];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Style header (tebal & background abu-abu)
@@ -102,6 +106,7 @@ class AdminRequestController extends Controller
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
         $sheet->getStyle('A1:N1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:P1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -124,6 +129,24 @@ class AdminRequestController extends Controller
                 $no = 1; // reset nomor
             }
 
+            // Di dalam foreach ($requests as $request)
+            $readyDisplay = [];
+
+            if ($request->Ready_Request) {
+                $readyDisplay[] = 'Ready: ' . $request->Ready_Request;
+            }
+            if ($request->Shipping_Request) {
+                $readyDisplay[] = 'Shipping: ' . $request->Shipping_Request;
+            }
+            if ($request->Production_Area_Request) {
+                $readyDisplay[] = 'Production: ' . $request->Production_Area_Request;
+            }
+            if ($request->Design_Changes_Request) {
+                $readyDisplay[] = 'Design: ' . $request->Design_Changes_Request;
+            }
+
+            $readyStockDisplay = implode(' | ', $readyDisplay);
+
             $timeRequest = ($request->Day_Request ?? '') . " " . ($request->Time_Request ?? '');
             $timeRecord = ($request->record->Day_Record ?? '') . " " . ($request->record->Time_Record ?? '');
 
@@ -136,7 +159,7 @@ class AdminRequestController extends Controller
                 $request->Urgent_Request == 1 ? '✓' : '',
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
-                $request->Ready_Request ?? '',
+                $readyStockDisplay,
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',
@@ -196,12 +219,28 @@ class AdminRequestController extends Controller
                 ->editColumn('Updated_At_Request', function ($r) {
                     return $r->Updated_At_Request ?? '';
                 })
+                ->addColumn('ready_status_display', function ($r) {
+                    $statuses = [];
+                    if ($r->Ready_Request) {
+                        $statuses[] = '<span class="badge badge-success">Ready</span>: ' . $r->Ready_Request;
+                    }
+                    if ($r->Shipping_Request) {
+                        $statuses[] = '<span class="badge badge-info">Shipping</span>: ' . $r->Shipping_Request;
+                    }
+                    if ($r->Production_Area_Request) {
+                        $statuses[] = '<span class="badge badge-primary">Production</span>: ' . $r->Production_Area_Request;
+                    }
+                    if ($r->Design_Changes_Request) {
+                        $statuses[] = '<span class="badge badge-warning">Design Change</span>: ' . $r->Design_Changes_Request;
+                    }
+                    return implode(' | ', $statuses);
+                })
                 ->filterColumn('Id_User', function ($query, $keyword) {
                     if ($keyword !== '') {
                         $query->where('Id_User', $keyword); // ✅ exact match
                     }
                 })
-                ->rawColumns(['Urgent_Request'])
+                ->rawColumns(['Urgent_Request', 'ready_status_display'])
                 ->make(true);
         }
 

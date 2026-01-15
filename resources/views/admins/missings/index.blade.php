@@ -4,17 +4,17 @@
 <div class="container-fluid">
     <div class="marquee-container">
         <div class="marquee">
-            <span>Missing List</span>
-            <span>Missing List</span>
-            <span>Missing List</span>
-            <span>Missing List</span>
-            <span>Missing List</span>
+            <span>Missing List DST</span>
+            <span>Missing List DST</span>
+            <span>Missing List DST</span>
+            <span>Missing List DST</span>
+            <span>Missing List DST</span>
             <!-- duplikat lagi biar seamless -->
-            <span>Missing List</span>
-            <span>Missing List</span>
-            <span>Missing List</span>
-            <span>Missing List</span>
-            <span>Missing List</span>
+            <span>Missing List DST</span>
+            <span>Missing List DST</span>
+            <span>Missing List DST</span>
+            <span>Missing List DST</span>
+            <span>Missing List DST</span>
         </div>
     </div>
 
@@ -22,23 +22,15 @@
 
         <form action="{{ route('missing.export') }}" method="GET" target="_blank" class="mr-2">
             <input name="Day_Request_Hidden" type="hidden" value="{{ $date }}">
-            <button class="d-sm-inline-block btn btn-md btn-success shadow-sm" type="submit">
-                <i class="fas fa-download fa-sm text-white-50"></i> Download Request
+            <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
+                <i class="fas fa-download fa-sm text-white-50"></i> Download Missing DST
             </button>
         </form>
-
-        {{-- <form action="{{ route('admin_submission.reset') }}" method="POST" class="d-inline">
-            @csrf
-            <input type="hidden" name="Day_Request" value="{{ $date }}">
-            <button class="btn btn-danger btn-md shadow-sm" type="submit" onclick="return confirm('Are you sure want to reset this submission data?')">
-                <i class="fas fa-trash-alt"></i> Reset Request
-            </button>
-        </form> --}}
     </div>
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Missing List</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Missing List DST</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -51,20 +43,11 @@
                             <th>Name</th>
                             <th>Sum</th>
                             <th>Time Request</th>
+                            <th>Ready Stock</th>
                             <th>Overdue</th>
                             <th>PIC</th>
                         </tr>
                     </thead>
-                    {{-- <tfoot>
-                        <tr>
-                            <th>No</th>
-                            <th>Rack</th>
-                            <th>Name</th>
-                            <th>Time Request</th>
-                            <th>Overdue</th>
-                            <th>PIC</th>
-                        </tr>
-                    </tfoot> --}}
                     <tbody>
                         @foreach ($requests as $s)
                         <tr>
@@ -74,23 +57,54 @@
                             <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
                             <td>{{ $s->Sum_Request }}</td>
                             <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
-                            @php
-                                $now = \Carbon\Carbon::now();
-                                $requestDateTime = \Carbon\Carbon::parse($s->Day_Request . ' ' . $s->Time_Request);
-                                $interval = $requestDateTime->diff($now);
-                            @endphp
-
+                            <td>
+                                @php
+                                    $statuses = [];
+                                    if ($s->Ready_Request) $statuses[] = '<span class="badge badge-success">Ready</span>:' . $s->Ready_Request . '</span>';
+                                    if ($s->Shipping_Request) $statuses[] = '<span class="badge badge-info">Shipping</span>:' . $s->Shipping_Request;
+                                    if ($s->Production_Area_Request) $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
+                                    if ($s->Design_Changes_Request) $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
+                                    echo implode(' | ', $statuses);
+                                @endphp
+                            </td>
                             <td class="text-danger font-weight-bold overdue">
-                                {{ $interval->d ? $interval->d . ' day(s) ' : '' }}
-                                {{ $interval->h ? $interval->h . ' hour(s) ' : '' }}
-                                {{ $interval->i ? $interval->i . ' minute(s) ' : '' }}
+                                @php
+                                    $statusTimestamp = null;
+                                    if ($s->Design_Changes_Request) {
+                                        $statusTimestamp = $s->Design_Changes_Request;
+                                    } elseif ($s->Production_Area_Request) {
+                                        $statusTimestamp = $s->Production_Area_Request;
+                                    } elseif ($s->Shipping_Request) {
+                                        $statusTimestamp = $s->Shipping_Request;
+                                    } elseif ($s->Ready_Request) {
+                                        $statusTimestamp = $s->Ready_Request;
+                                    }
+
+                                    if ($statusTimestamp) {
+                                        $statusTime = \Carbon\Carbon::parse($statusTimestamp);
+                                        $now = \Carbon\Carbon::now();
+                                        $totalSeconds = $now->timestamp - $statusTime->timestamp;
+
+                                        if ($totalSeconds <= 0) {
+                                            echo 'On time';
+                                        } else {
+                                            $days = floor($totalSeconds / 86400);
+                                            $hours = floor(($totalSeconds % 86400) / 3600);
+                                            $minutes = floor(($totalSeconds % 3600) / 60);
+
+                                            $parts = [];
+                                            if ($days > 0) $parts[] = $days . ' day(s)';
+                                            if ($hours > 0) $parts[] = $hours . ' hour(s)';
+                                            if ($minutes > 0) $parts[] = $minutes . ' minute(s)';
+
+                                            echo implode(' ', $parts);
+                                        }
+                                    } else {
+                                        echo '-';
+                                    }
+                                @endphp
                             </td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
-                            {{-- <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
-                            <td>{{ $s->Code_Item_Rack }}</td>
-                            <td>{{ $s->Sum_Request }}</td>
-                            <td>{{  optional($s->record)->Sum_Record ?? '' }}</td>
-                            <td>{{ $s->Updated_At_Request ?? '' }}</td> --}}
                         </tr>
                         @endforeach
                     </tbody>
@@ -149,7 +163,7 @@
 
   /* Header biar besar full seukuran kolom */
   table th {
-      font-size: 3rem; /* gede sesuai kebutuhan */
+      font-size: 2rem;
       white-space: nowrap;
       text-align: center;
       padding-right: 0 !important;

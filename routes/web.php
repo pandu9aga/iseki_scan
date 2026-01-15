@@ -98,6 +98,8 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     
     Route::get('/missing', [MissingController::class, 'index'])->name('missing');
     Route::get('/missing/export', [MissingController::class, 'export'])->name('missing.export');
+    Route::get('/missing_mc', [MissingController::class, 'missing_mc'])->name('missing.mc');
+    Route::get('/missing_mc/export', [MissingController::class, 'missing_mc_export'])->name('missing.mc.export');
 });
 
 Route::middleware(AuthMiddleware::class)->group(function () {
@@ -142,6 +144,8 @@ Route::middleware(McMiddleware::class)->group(function () {
 
     Route::get('/mc_missing', [McMissingController::class, 'index'])->name('mc.missing');
     Route::get('/mc_missing/export', [McMissingController::class, 'export'])->name('mc.missing.export');
+    Route::get('/mc_missing_mc', [McMissingController::class, 'missing_mc'])->name('mc.missing.mc');
+    Route::get('/mc_missing_mc/export', [McMissingController::class, 'missing_mc_export'])->name('mc.missing.mc.export');
     Route::post('/mc_submission/upload-ready', [McRequestController::class, 'uploadReady'])->name('mc_submission.upload_ready');
 });
 
