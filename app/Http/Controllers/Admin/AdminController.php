@@ -55,19 +55,19 @@ class AdminController extends Controller
                 $query->where(function ($q) use ($workdaysAgo) {
                     $q->whereNotNull('Ready_Request')
                     ->where('Ready_Request', '<', $workdaysAgo);
-                })
-                ->orWhere(function ($q) use ($workdaysAgo) {
-                    $q->whereNotNull('Shipping_Request')
-                    ->where('Shipping_Request', '<', $workdaysAgo);
-                })
-                ->orWhere(function ($q) use ($workdaysAgo) {
-                    $q->whereNotNull('Production_Area_Request')
-                    ->where('Production_Area_Request', '<', $workdaysAgo);
-                })
-                ->orWhere(function ($q) use ($workdaysAgo) {
-                    $q->whereNotNull('Design_Changes_Request')
-                    ->where('Design_Changes_Request', '<', $workdaysAgo);
                 });
+                // ->orWhere(function ($q) use ($workdaysAgo) {
+                //     $q->whereNotNull('Shipping_Request')
+                //     ->where('Shipping_Request', '<', $workdaysAgo);
+                // })
+                // ->orWhere(function ($q) use ($workdaysAgo) {
+                //     $q->whereNotNull('Production_Area_Request')
+                //     ->where('Production_Area_Request', '<', $workdaysAgo);
+                // })
+                // ->orWhere(function ($q) use ($workdaysAgo) {
+                //     $q->whereNotNull('Design_Changes_Request')
+                //     ->where('Design_Changes_Request', '<', $workdaysAgo);
+                // });
             })
             ->orderBy('Day_Request', 'desc')
             ->get();
