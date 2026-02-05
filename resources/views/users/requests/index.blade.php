@@ -118,6 +118,21 @@
 </div>
 <!-- /.container-fluid -->
 
+<!-- Select2 & DataTables -->
+<script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
+<script src="{{ asset('js/select2.min.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        $('#dataTable').DataTable();
+        $('.select2').select2({
+            placeholder: "Select Member (Optional)",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+</script>
+
 <!-- QR Code Library -->
 <script src="{{ asset('js/html5-qrcode.min.js') }}"></script>
 <script src="{{ asset('js/jquery.min.js') }}"></script>
@@ -205,4 +220,6 @@
 
 @section('style')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
+<link href="{{ asset('css/select2.min.css') }}" rel="stylesheet">
 @endsection

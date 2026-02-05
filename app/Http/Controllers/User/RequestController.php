@@ -16,6 +16,8 @@ class RequestController extends Controller
         return view('users.requests.index', compact('area'));
     }
 
+
+
     public function create(Request $request)
     {
         $date = Carbon::today()->format('Y-m-d');

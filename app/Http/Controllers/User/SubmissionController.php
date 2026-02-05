@@ -11,52 +11,83 @@ use App\Models\Member;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use Yajra\DataTables\Facades\DataTables;
 
 class SubmissionController extends Controller
 {
     public function index()
     {
         $date = Carbon::today();
-        $dateForInput = $date->format('Y-m-d');  // Untuk input date di view
-        $submissions = RequestModel::whereDate('Day_Request', $date)->with('member', 'record', 'rack')->where('Id_User', session('Id_Member'))->orderBy('Time_Request', 'desc')->get();
+        $dateForInput = $date->format('Y-m-d');
+        $memberIds = request('Id_User', []); 
+        
+        $query = RequestModel::whereDate('Day_Request', $date)
+            ->with('member', 'record', 'rack')
+            ->orderBy('Time_Request', 'desc');
+
+        if (!empty($memberIds)) {
+            $query->whereIn('Id_User', $memberIds);
+        }
+
+        $submissions = $query->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
 
         $totalSubmissions = $submissions->count();
         $correct = $submissions->where('Correctness_Request', 1)->count();
         $incorrect = $totalSubmissions - $correct;
 
-        return view('users.submissions.index', compact('submissions', 'totalSubmissions', 'correct', 'incorrect', 'formattedDate', 'dateForInput'));
+        $members = Member::orderBy('Name_Member')->get();
+
+        return view('users.submissions.index', compact(
+            'submissions', 'totalSubmissions', 'correct', 'incorrect', 'formattedDate', 'dateForInput', 'members'
+        ));
     }
 
     public function submit(Request $request)
     {
         $date = $request->input('Day_Request');
         $dateForInput = Carbon::parse($date)->format('Y-m-d');
-        $submissions = RequestModel::whereDate('Day_Request', $date)->with('member', 'record', 'rack')->where('Id_User', session('Id_Member'))->orderBy('Time_Request', 'desc')->get();
+        $memberIds = $request->input('Id_User', []);
+
+        $query = RequestModel::whereDate('Day_Request', $date)
+            ->with('member', 'record', 'rack')
+            ->orderBy('Time_Request', 'desc');
+
+        if (!empty($memberIds)) {
+            $query->whereIn('Id_User', $memberIds);
+        }
+
+        $submissions = $query->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
 
         $totalSubmissions = $submissions->count();
         $correct = $submissions->where('Correctness_Request', 1)->count();
         $incorrect = $totalSubmissions - $correct;
 
+        $members = Member::orderBy('Name_Member')->get();
+
         return view('users.submissions.index', compact(
-            'submissions', 'totalSubmissions', 'correct', 'incorrect', 'formattedDate', 'dateForInput'
+            'submissions', 'totalSubmissions', 'correct', 'incorrect', 'formattedDate', 'dateForInput', 'members'
         ));
     }
 
     public function export(Request $request)
     {
-        $date = $request->input('Day_Request_Hidden');
-        $date = Carbon::parse($date)->format('Y-m-d');
-        $submissions = RequestModel::whereDate('Day_Request', $date)
-            ->where('Id_User', session('Id_Member'))
+        $date = Carbon::parse($request->input('Day_Request_Hidden'))->format('Y-m-d');
+        $memberIds = $request->input('Id_User', []);
+
+        $query = RequestModel::whereDate('Day_Request', $date)
             ->with('member', 'record', 'rack')
+            ->orderBy('Id_User')
             ->orderBy('Urgent_Request', 'desc')
             ->orderBy('Area_Request')
-            ->orderBy('Time_Request')
-            ->get();
+            ->orderBy('Time_Request');
 
-        $name = Member::where('Id_Member', session('Id_Member'))->value('Name_Member');
+        if (!empty($memberIds)) {
+            $query->whereIn('Id_User', $memberIds);
+        }
+
+        $submissions = $query->get();
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -73,30 +104,35 @@ class SubmissionController extends Controller
         $sheet->getStyle('A1:N1')->getAlignment()->setWrapText(true);
 
         $row = 2;
+        $lastUser = null;
+        $no = 1;
+
         foreach ($submissions as $index => $submission) {
+            
+            // Reset nomor & kasih spasi kalau ganti user
+            if ($lastUser !== null && $lastUser != $submission->Id_User) {
+                $sheet->fromArray(
+                    array_fill(0, 12, '-'), // 12 kolom sesuai header
+                    null,
+                    'A' . $row
+                );
+                $row++;
+                $no = 1; // reset nomor
+            }
+
             $timeRequest = ($submission->Day_Request ?? '') . " " . ($submission->Time_Request ?? '');
             $timeRecord = ($submission->record->Day_Record ?? '') . " " . ($submission->record->Time_Record ?? '');
 
-            // Di dalam foreach ($requests as $request)
+            // Ready Status
             $readyDisplay = [];
-
-            if ($request->Ready_Request) {
-                $readyDisplay[] = 'Ready: ' . $request->Ready_Request;
-            }
-            if ($request->Shipping_Request) {
-                $readyDisplay[] = 'Shipping: ' . $request->Shipping_Request;
-            }
-            if ($request->Production_Area_Request) {
-                $readyDisplay[] = 'Production: ' . $request->Production_Area_Request;
-            }
-            if ($request->Design_Changes_Request) {
-                $readyDisplay[] = 'Design: ' . $request->Design_Changes_Request;
-            }
-
+            if ($submission->Ready_Request) $readyDisplay[] = 'Ready: ' . $submission->Ready_Request;
+            if ($submission->Shipping_Request) $readyDisplay[] = 'Shipping: ' . $submission->Shipping_Request;
+            if ($submission->Production_Area_Request) $readyDisplay[] = 'Production: ' . $submission->Production_Area_Request;
+            if ($submission->Design_Changes_Request) $readyDisplay[] = 'Design: ' . $submission->Design_Changes_Request;
             $readyStockDisplay = implode(' | ', $readyDisplay);
             
             $sheet->fromArray([
-                $index + 1,
+                $no,
                 $timeRequest,
                 $submission->Area_Request ?? '',
                 $submission->Code_Rack,
@@ -104,7 +140,6 @@ class SubmissionController extends Controller
                 $submission->Urgent_Request == 1 ? '✓' : '',
                 $submission->Code_Item_Rack,
                 $submission->rack->Name_Item_Rack ?? '',
-                $submission->Ready_Request ?? '',
                 $readyStockDisplay,
                 $timeRecord,
                 optional($submission->record)->Sum_Record ?? '',
@@ -113,7 +148,9 @@ class SubmissionController extends Controller
                 $submission->Updated_At_Request,
             ], null, 'A' . $row);
 
+            $lastUser = $submission->Id_User;
             $row++;
+            $no++;
         }
 
         // 🔑 Auto size kolom
@@ -121,12 +158,74 @@ class SubmissionController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $fileName = "Request_" . $name . "_" . $date . ".xlsx";
+        $fileName = "Request_Report_" . $date . ".xlsx";
         $writer = new Xlsx($spreadsheet);
         $filePath = storage_path('app/public/' . $fileName);
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+    
+    public function search()
+    {
+        if (request()->ajax()) {
+            $query = RequestModel::with('member', 'record', 'rack');
+
+            return DataTables::eloquent($query)
+                ->editColumn('Day_Request', function ($r) {
+                    return $r->Day_Request . ' ' . $r->Time_Request;
+                })
+                ->addColumn('Urgent_Request', function ($r) {
+                    return $r->Urgent_Request == 1 ? '✓' : '';
+                })
+                ->addColumn('Name', function ($r) {
+                    return optional($r->rack)->Name_Item_Rack ?? '';
+                })
+                ->addColumn('Time_Record', function ($r) {
+                    $day = optional($r->record)->Day_Record ?? '';
+                    $time = optional($r->record)->Time_Record ?? '';
+                    return trim("$day $time");
+                })
+                ->addColumn('Sum_Record', function ($r) {
+                    return optional($r->record)->Sum_Record ?? '';
+                })
+                ->addColumn('Member_Request', function ($r) {
+                    return optional($r->member)->Name_Member ?? '';
+                })
+                ->addColumn('Member_Record', function ($r) {
+                    return optional($r->record)?->member?->Name_Member ?? '';
+                })
+                ->editColumn('Updated_At_Request', function ($r) {
+                    return $r->Updated_At_Request ?? '';
+                })
+                ->addColumn('ready_status_display', function ($r) {
+                    $statuses = [];
+                    if ($r->Ready_Request) {
+                        $statuses[] = '<span class="badge badge-success">Ready</span>: ' . $r->Ready_Request;
+                    }
+                    if ($r->Shipping_Request) {
+                        $statuses[] = '<span class="badge badge-info">Shipping</span>: ' . $r->Shipping_Request;
+                    }
+                    if ($r->Production_Area_Request) {
+                        $statuses[] = '<span class="badge badge-primary">Production</span>: ' . $r->Production_Area_Request;
+                    }
+                    if ($r->Design_Changes_Request) {
+                        $statuses[] = '<span class="badge badge-warning">Design Change</span>: ' . $r->Design_Changes_Request;
+                    }
+                    return implode(' | ', $statuses);
+                })
+                ->filterColumn('Id_User', function ($query, $keyword) {
+                    if ($keyword !== '') {
+                        $query->where('Id_User', $keyword); 
+                    }
+                })
+                ->rawColumns(['Urgent_Request', 'ready_status_display'])
+                ->make(true);
+        }
+
+        // Non-AJAX: kirim daftar member ke view
+        $members = Member::orderBy('Name_Member')->get(['Id_Member', 'Name_Member']);
+        return view('users.submissions.search', compact('members'));
     }
 
     public function reset(Request $request)
@@ -144,6 +243,10 @@ class SubmissionController extends Controller
     public function update(Request $request, $id)
     {
         $req = RequestModel::findOrFail($id);
+
+        if (session('Id_Member') != $req->Id_User) {
+            return redirect()->back()->with('error', 'You are not authorized to edit this request.');
+        }
 
         $request->validate([
             'Sum_Request' => 'required|integer|min:1',

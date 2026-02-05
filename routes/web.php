@@ -119,10 +119,11 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/request', [RequestController::class, 'index'])->name('request');
     Route::post('/request/create', [RequestController::class, 'create'])->name('request.create');
     Route::get('/request/check', [RequestController::class, 'check'])->name('request.check');
-
+    
     Route::get('/user_submission', [SubmissionController::class, 'index'])->name('submission');
     Route::get('/user_submission/submit', [SubmissionController::class, 'submit'])->name('user_submission.submit');
-    Route::get('/submission/export', [SubmissionController::class, 'export'])->name('submission.export');
+    Route::get('/user_submission/export', [SubmissionController::class, 'export'])->name('submission.export');
+    Route::get('/user_submission/search', [SubmissionController::class, 'search'])->name('submission.search');
     Route::put('/submission/update/{id}', [SubmissionController::class, 'update'])->name('submission.update');
     Route::post('/user_submission/reset', [SubmissionController::class, 'reset'])->name('submission.reset');
     Route::delete('user_submission/{id}', [SubmissionController::class, 'destroy'])->name('submission.destroy'); 
