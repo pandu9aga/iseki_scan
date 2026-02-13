@@ -100,7 +100,7 @@ class McMissingController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
-        $headers = ['No', 'Rack', 'Item', 'Name', 'Sum', 'Time Request', 'Ready Stock', 'Overdue', 'PIC'];
+        $headers = ['No', 'Rack', 'Item', 'Name', 'Sum', 'Time Request', 'Ready Stock', 'Day(s)', 'Hour(s) Minute(s)', 'PIC'];
         $sheet->fromArray([$headers], NULL, 'A1');
 
         // Style header (tebal & background abu-abu)
@@ -108,7 +108,7 @@ class McMissingController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:I1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -146,21 +146,25 @@ class McMissingController extends Controller
                 $totalSeconds = $now->timestamp - $statusTime->timestamp;
 
                 if ($totalSeconds <= 0) {
-                    $overdueDisplay = 'On time';
+                    $overdueDay = 0;
+                    $overdueHM = 'On time';
                 } else {
                     $days = floor($totalSeconds / 86400);
                     $hours = floor(($totalSeconds % 86400) / 3600);
                     $minutes = floor(($totalSeconds % 3600) / 60);
 
-                    $parts = [];
-                    if ($days > 0) $parts[] = $days . ' day(s)';
-                    if ($hours > 0) $parts[] = $hours . ' hour(s)';
-                    if ($minutes > 0) $parts[] = $minutes . ' minute(s)';
+                    $overdueDay = $days . ' day(s)';
 
-                    $overdueDisplay = implode(' ', $parts);
+                    $hmParts = [];
+                    if ($hours > 0) $hmParts[] = $hours . ' hour(s)';
+                    if ($minutes > 0) $hmParts[] = $minutes . ' minute(s)';
+                    
+                    $overdueHM = implode(' ', $hmParts);
+                    if (empty($overdueHM)) $overdueHM = '0 minute(s)';
                 }
             } else {
-                $overdueDisplay = '-';
+                $overdueDay = '-';
+                $overdueHM = '-';
             }
 
             // === 4. Tulis ke Excel ===
@@ -172,7 +176,8 @@ class McMissingController extends Controller
                 $request->Sum_Request,
                 $timeRequest,
                 $readyStockDisplay,      // ← Ready Stock
-                $overdueDisplay,         // ← Overdue
+                $overdueDay,             // ← Day(s)
+                $overdueHM,              // ← Hour(s) Minute(s)
                 $request->member->Name_Member ?? '-',
             ], null, 'A' . $row);
 
