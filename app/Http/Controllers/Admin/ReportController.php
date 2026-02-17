@@ -39,7 +39,7 @@ class ReportController extends Controller
         })->count();
         $incorrect = $records->count() - $correct;
 
-        $members = Member::orderBy('Name_Member')->get();
+        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get();
 
         return view('admins.reports.index', compact(
             'records','totalRecords', 'correct', 'incorrect','formattedDate','date', 'dateForInput', 'members'

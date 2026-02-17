@@ -31,7 +31,11 @@ class MainController extends Controller
             'Password_User' => 'required'
         ]);
 
-        $user = User::where('Username_User', $request->Username_User)->first();
+        $user = User::where('Username_User', $request->Username_User)
+            ->where(function($query) {
+                $query->where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active');
+            })
+            ->first();
 
         if (!$user) {
             return back()->withErrors(['loginError' => 'Invalid username or password']);
@@ -58,7 +62,11 @@ class MainController extends Controller
             'NIK_Member' => 'required'
         ]);
 
-        $member = Member::where('NIK_Member', $request->NIK_Member)->first();
+        $member = Member::where('NIK_Member', $request->NIK_Member)
+            ->where(function($query) {
+                $query->where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active');
+            })
+            ->first();
 
         if (!$member) {
             return back()->withErrors(['loginError' => 'Invalid NIK']);

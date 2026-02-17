@@ -13,5 +13,6 @@ class Member extends Model
     protected $fillable = [
         'NIK_Member',
         'Name_Member',
+        'Status_Non_Active'
     ];
 }

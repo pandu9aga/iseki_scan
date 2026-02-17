@@ -13,7 +13,7 @@ class MemberController extends Controller
     // Tampilkan daftar member
     public function index()
     {
-        $members = Member::all();
+        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->get();
         $type_user = Type_User::all(); // kalau pakai tipe user untuk member
         return view('admins.members.index', compact('members', 'type_user'));
     }
@@ -78,7 +78,7 @@ class MemberController extends Controller
     public function destroy($id)
     {
         $member = Member::findOrFail($id);
-        $member->delete();
+        $member->update(['Status_Non_Active' => 1]);
 
         return redirect()->route('member')->with('success', 'Data member berhasil dihapus');
     }

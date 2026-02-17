@@ -35,7 +35,7 @@ class AdminRequestController extends Controller
         $correct = $requests->where('Correctness_Request', 1)->count();
         $incorrect = $totalRequest - $correct;
 
-        $members = Member::orderBy('Name_Member')->get();
+        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get();
 
         return view('admins.requests.index', compact(
             'requests', 'totalRequest', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput', 'members'
@@ -245,7 +245,7 @@ class AdminRequestController extends Controller
         }
 
         // Non-AJAX: kirim daftar member ke view
-        $members = Member::orderBy('Name_Member')->get(['Id_Member', 'Name_Member']);
+        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get(['Id_Member', 'Name_Member']);
         return view('admins.requests.search', compact('members'));
     }
 }

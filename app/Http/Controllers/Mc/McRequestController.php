@@ -36,7 +36,7 @@ class McRequestController extends Controller
         $correct = $requests->where('Correctness_Request', 1)->count();
         $incorrect = $totalRequest - $correct;
 
-        $members = Member::orderBy('Name_Member')->get();
+        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get();
 
         return view('mcs.requests.index', compact(
             'requests', 'totalRequest', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput', 'members'

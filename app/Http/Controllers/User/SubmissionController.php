@@ -36,7 +36,7 @@ class SubmissionController extends Controller
         $correct = $submissions->where('Correctness_Request', 1)->count();
         $incorrect = $totalSubmissions - $correct;
 
-        $members = Member::orderBy('Name_Member')->get();
+        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get();
 
         return view('users.submissions.index', compact(
             'submissions', 'totalSubmissions', 'correct', 'incorrect', 'formattedDate', 'dateForInput', 'members'
@@ -64,7 +64,7 @@ class SubmissionController extends Controller
         $correct = $submissions->where('Correctness_Request', 1)->count();
         $incorrect = $totalSubmissions - $correct;
 
-        $members = Member::orderBy('Name_Member')->get();
+        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get();
 
         return view('users.submissions.index', compact(
             'submissions', 'totalSubmissions', 'correct', 'incorrect', 'formattedDate', 'dateForInput', 'members'
@@ -224,7 +224,7 @@ class SubmissionController extends Controller
         }
 
         // Non-AJAX: kirim daftar member ke view
-        $members = Member::orderBy('Name_Member')->get(['Id_Member', 'Name_Member']);
+        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get(['Id_Member', 'Name_Member']);
         return view('users.submissions.search', compact('members'));
     }
 

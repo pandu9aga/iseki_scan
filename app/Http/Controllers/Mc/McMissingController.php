@@ -20,7 +20,7 @@ class McMissingController extends Controller
         // Hitung waktu 2 hari kerja lalu (tanpa Sabtu dan Minggu)
         $workdaysAgo = $now->copy();
         $daysCounted = 0;
-        while ($daysCounted < 1) {
+        while ($daysCounted < 2) {
             $workdaysAgo->subDay();
             // Lewati Sabtu (6) dan Minggu (0)
             if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
@@ -64,7 +64,7 @@ class McMissingController extends Controller
         // Hitung waktu 2 hari kerja lalu (tanpa Sabtu dan Minggu)
         $workdaysAgo = $now->copy();
         $daysCounted = 0;
-        while ($daysCounted < 1) {
+        while ($daysCounted < 2) {
             $workdaysAgo->subDay();
             // Lewati Sabtu (6) dan Minggu (0)
             if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {

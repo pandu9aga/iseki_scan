@@ -11,7 +11,7 @@ use App\Models\Type_User;
 class UserController extends Controller
 {
     public function index(){
-        $user = User::all();
+        $user = User::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->get();
         $type_user = Type_User::all();
         return view('admins.users.index', compact('user','type_user'));
     }
@@ -86,7 +86,7 @@ class UserController extends Controller
 
     public function destroy(User $Id_User)
     {
-        $Id_User->delete();
+        $Id_User->update(['Status_Non_Active' => 1]);
         
         return redirect()->route('user')->with('success','Data berhasil di hapus' );
     }

@@ -20,7 +20,7 @@ class MissingController extends Controller
         // Hitung waktu 2 hari kerja lalu (tanpa Sabtu dan Minggu)
         $workdaysAgo = $now->copy();
         $daysCounted = 0;
-        while ($daysCounted < 1) {
+        while ($daysCounted < 2) {
             $workdaysAgo->subDay();
             // Lewati Sabtu (6) dan Minggu (0)
             if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
@@ -67,7 +67,7 @@ class MissingController extends Controller
         // Hitung waktu 2 hari kerja lalu (tanpa Sabtu dan Minggu)
         $workdaysAgo = $now->copy();
         $daysCounted = 0;
-        while ($daysCounted < 1) {
+        while ($daysCounted < 2) {
             $workdaysAgo->subDay();
             // Lewati Sabtu (6) dan Minggu (0)
             if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
@@ -143,23 +143,17 @@ class MissingController extends Controller
             }
 
             if ($statusTimestamp) {
-                $statusTime = \Carbon\Carbon::parse($statusTimestamp);
-                $now = \Carbon\Carbon::now();
-                $totalSeconds = $now->timestamp - $statusTime->timestamp;
+                $duration = $request->getWorkingDuration($statusTimestamp);
 
-                if ($totalSeconds <= 0) {
+                if ($duration['on_time']) {
                     $overdueDay = 0;
                     $overdueHM = 'On time';
                 } else {
-                    $days = floor($totalSeconds / 86400);
-                    $hours = floor(($totalSeconds % 86400) / 3600);
-                    $minutes = floor(($totalSeconds % 3600) / 60);
-
-                    $overdueDay = $days . ' day(s)';
+                    $overdueDay = $duration['days'] . ' day(s)';
 
                     $hmParts = [];
-                    if ($hours > 0) $hmParts[] = $hours . ' hour(s)';
-                    if ($minutes > 0) $hmParts[] = $minutes . ' minute(s)';
+                    if ($duration['hours'] > 0) $hmParts[] = $duration['hours'] . ' hour(s)';
+                    if ($duration['minutes'] > 0) $hmParts[] = $duration['minutes'] . ' minute(s)';
 
                     $overdueHM = implode(' ', $hmParts);
                     if (empty($overdueHM)) $overdueHM = '0 minute(s)';

@@ -1,188 +1,204 @@
 @extends('layouts.main')
 @section('content')
-<!-- Begin Page Content -->
-<div class="container-fluid">
-    <div class="marquee-container">
-        <div class="marquee">
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <!-- duplikat lagi biar seamless -->
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
-            <span>Missing List DST</span>
+    <!-- Begin Page Content -->
+    <div class="container-fluid">
+        <div class="marquee-container">
+            <div class="marquee">
+                <span>Missing List DST</span>
+                <span>Missing List DST</span>
+                <span>Missing List DST</span>
+                <span>Missing List DST</span>
+                <span>Missing List DST</span>
+                <!-- duplikat lagi biar seamless -->
+                <span>Missing List DST</span>
+                <span>Missing List DST</span>
+                <span>Missing List DST</span>
+                <span>Missing List DST</span>
+                <span>Missing List DST</span>
+            </div>
         </div>
-    </div>
 
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
 
-        <form action="{{ route('missing.export') }}" method="GET" target="_blank" class="mr-2">
-            <input name="Day_Request_Hidden" type="hidden" value="{{ $date }}">
-            <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
-                <i class="fas fa-download fa-sm text-white-50"></i> Download Missing DST
-            </button>
-        </form>
-    </div>
-
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Missing List DST</h6>
+            <form action="{{ route('missing.export') }}" method="GET" target="_blank" class="mr-2">
+                <input name="Day_Request_Hidden" type="hidden" value="{{ $date }}">
+                <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
+                    <i class="fas fa-download fa-sm text-white-50"></i> Download Missing DST
+                </button>
+            </form>
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                    <thead class="text-primary">
-                        <tr>
-                            <th>No</th>
-                            <th>Rack</th>
-                            <th>Item</th>
-                            <th>Name</th>
-                            <th>Sum</th>
-                            <th>Time Request</th>
-                            <th>Ready Stock</th>
-                            <th>Overdue</th>
-                            <th>PIC</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($requests as $s)
-                        <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $s->Code_Rack }}</td>
-                            <td>{{ $s->Code_Item_Rack }}</td>
-                            <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
-                            <td>{{ $s->Sum_Request }}</td>
-                            <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
-                            <td>
-                                @php
-                                    $statuses = [];
-                                    if ($s->Ready_Request) $statuses[] = '<span class="badge badge-success">Ready</span>:' . $s->Ready_Request . '</span>';
-                                    if ($s->Shipping_Request) $statuses[] = '<span class="badge badge-info">Shipping</span>:' . $s->Shipping_Request;
-                                    if ($s->Production_Area_Request) $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
-                                    if ($s->Design_Changes_Request) $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
-                                    echo implode(' | ', $statuses);
-                                @endphp
-                            </td>
-                            <td class="text-danger font-weight-bold overdue">
-                                @php
-                                    $statusTimestamp = null;
-                                    if ($s->Design_Changes_Request) {
-                                        $statusTimestamp = $s->Design_Changes_Request;
-                                    } elseif ($s->Production_Area_Request) {
-                                        $statusTimestamp = $s->Production_Area_Request;
-                                    } elseif ($s->Shipping_Request) {
-                                        $statusTimestamp = $s->Shipping_Request;
-                                    } elseif ($s->Ready_Request) {
-                                        $statusTimestamp = $s->Ready_Request;
-                                    }
 
-                                    if ($statusTimestamp) {
-                                        $statusTime = \Carbon\Carbon::parse($statusTimestamp);
-                                        $now = \Carbon\Carbon::now();
-                                        $totalSeconds = $now->timestamp - $statusTime->timestamp;
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Missing List DST</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead class="text-primary">
+                            <tr>
+                                <th>No</th>
+                                <th>Rack</th>
+                                <th>Item</th>
+                                <th>Name</th>
+                                <th>Sum</th>
+                                <th>Time Request</th>
+                                <th>Ready Stock</th>
+                                <th>Overdue</th>
+                                <th>PIC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($requests as $s)
+                                <tr>
+                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $s->Code_Rack }}</td>
+                                    <td>{{ $s->Code_Item_Rack }}</td>
+                                    <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
+                                    <td>{{ $s->Sum_Request }}</td>
+                                    <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
+                                    <td>
+                                        @php
+                                            $statuses = [];
+                                            if ($s->Ready_Request)
+                                                $statuses[] = '<span class="badge badge-success">Ready</span>:' . $s->Ready_Request . '</span>';
+                                            if ($s->Shipping_Request)
+                                                $statuses[] = '<span class="badge badge-info">Shipping</span>:' . $s->Shipping_Request;
+                                            if ($s->Production_Area_Request)
+                                                $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
+                                            if ($s->Design_Changes_Request)
+                                                $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
+                                            echo implode(' | ', $statuses);
+                                        @endphp
+                                    </td>
+                                    <td class="text-danger font-weight-bold overdue">
+                                        @php
+                                            $statusTimestamp = null;
+                                            if ($s->Design_Changes_Request) {
+                                                $statusTimestamp = $s->Design_Changes_Request;
+                                            } elseif ($s->Production_Area_Request) {
+                                                $statusTimestamp = $s->Production_Area_Request;
+                                            } elseif ($s->Shipping_Request) {
+                                                $statusTimestamp = $s->Shipping_Request;
+                                            } elseif ($s->Ready_Request) {
+                                                $statusTimestamp = $s->Ready_Request;
+                                            }
 
-                                        if ($totalSeconds <= 0) {
-                                            echo 'On time';
-                                        } else {
-                                            $days = floor($totalSeconds / 86400);
-                                            $hours = floor(($totalSeconds % 86400) / 3600);
-                                            $minutes = floor(($totalSeconds % 3600) / 60);
+                                            if ($statusTimestamp) {
+                                                $duration = $s->getWorkingDuration($statusTimestamp);
 
-                                            $parts = [];
-                                            if ($days > 0) $parts[] = $days . ' day(s)';
-                                            if ($hours > 0) $parts[] = $hours . ' hour(s)';
-                                            if ($minutes > 0) $parts[] = $minutes . ' minute(s)';
+                                                if ($duration['on_time']) {
+                                                    echo 'On time';
+                                                } else {
+                                                    $parts = [];
+                                                    if ($duration['days'] > 0)
+                                                        $parts[] = $duration['days'] . ' day(s)';
+                                                    if ($duration['hours'] > 0)
+                                                        $parts[] = $duration['hours'] . ' hour(s)';
+                                                    if ($duration['minutes'] > 0)
+                                                        $parts[] = $duration['minutes'] . ' minute(s)';
 
-                                            echo implode(' ', $parts);
-                                        }
-                                    } else {
-                                        echo '-';
-                                    }
-                                @endphp
-                            </td>
-                            <td>{{ $s->member->Name_Member ?? '' }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                                                    echo implode(' ', $parts);
+                                                }
+                                            } else {
+                                                echo '-';
+                                            }
+                                        @endphp
+                                    </td>
+                                    <td>{{ $s->member->Name_Member ?? '' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
 @endsection
 
 @section('style')
-<link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
-<style>
-  .marquee-container {
-    position: relative;
-    width: 100%;
-    overflow: hidden;
-    padding: 10px 0;
-  }
+    <link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
+    <style>
+        .marquee-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            padding: 10px 0;
+        }
 
-  .marquee {
-    display: flex;
-    width: max-content;
-    animation: marquee 30s linear infinite;
-  }
+        .marquee {
+            display: flex;
+            width: max-content;
+            animation: marquee 30s linear infinite;
+        }
 
-  .marquee span {
-    font-size: 5vw; /* gede, responsif */
-    font-weight: 900;
-    text-transform: uppercase;
-    background: linear-gradient(90deg, red, indigo, violet, red);
-    background-size: 300% auto; /* penting biar bisa bergerak */
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    padding: 0 2rem;
-    white-space: nowrap;
-    animation: colorChange 6s linear infinite;
-  }
+        .marquee span {
+            font-size: 5vw;
+            /* gede, responsif */
+            font-weight: 900;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, red, indigo, violet, red);
+            background-size: 300% auto;
+            /* penting biar bisa bergerak */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            padding: 0 2rem;
+            white-space: nowrap;
+            animation: colorChange 6s linear infinite;
+        }
 
-  @keyframes marquee {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
+        @keyframes marquee {
+            0% {
+                transform: translateX(0);
+            }
 
-  @keyframes colorChange {
-    0%   { background-position: 0% 50%; }
-    50%  { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
+            100% {
+                transform: translateX(-50%);
+            }
+        }
 
-  /* Hilangkan padding bawaan table */
-  table th,
-  table td {
-      vertical-align: middle;
-  }
+        @keyframes colorChange {
+            0% {
+                background-position: 0% 50%;
+            }
 
-  /* Header biar besar full seukuran kolom */
-  table th {
-      font-size: 2rem;
-      white-space: nowrap;
-      text-align: center;
-      padding-right: 0 !important;
-      padding-left: 0 !important;
-  }
+            50% {
+                background-position: 100% 50%;
+            }
 
-  /* Kolom overdue custom */
-  table td.overdue {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: red;
-      width:1%;
-      white-space: nowrap;
-  }
-</style>
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Hilangkan padding bawaan table */
+        table th,
+        table td {
+            vertical-align: middle;
+        }
+
+        /* Header biar besar full seukuran kolom */
+        table th {
+            font-size: 2rem;
+            white-space: nowrap;
+            text-align: center;
+            padding-right: 0 !important;
+            padding-left: 0 !important;
+        }
+
+        /* Kolom overdue custom */
+        table td.overdue {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: red;
+            width: 1%;
+            white-space: nowrap;
+        }
+    </style>
 @endsection
 
 @section('script')
-<script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
-<script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
-<script src="{{ asset('js/demo/datatables-demo.js') }}"></script>
+    <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
+    <script src="{{ asset('js/demo/datatables-demo.js') }}"></script>
 @endsection

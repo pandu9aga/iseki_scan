@@ -148,7 +148,7 @@ class McValidationController extends Controller
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalValidation = $validations->count();
 
-        $members = Member::orderBy('Name_Member')->get();
+        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get();
 
         return view('mcs.validations.index', compact(
             'validations', 'totalValidation', 'formattedDate', 'date', 'dateForInput', 'members'
