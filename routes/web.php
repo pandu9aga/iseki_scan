@@ -119,6 +119,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/request', [RequestController::class, 'index'])->name('request');
     Route::post('/request/create', [RequestController::class, 'create'])->name('request.create');
     Route::get('/request/check', [RequestController::class, 'check'])->name('request.check');
+    Route::post('/request/check-duplicate', [RequestController::class, 'checkDuplicate'])->name('request.checkDuplicate');
     
     Route::get('/user_submission', [SubmissionController::class, 'index'])->name('submission');
     Route::get('/user_submission/submit', [SubmissionController::class, 'submit'])->name('user_submission.submit');

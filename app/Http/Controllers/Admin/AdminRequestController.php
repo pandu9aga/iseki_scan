@@ -207,6 +207,17 @@ class AdminRequestController extends Controller
                     $time = optional($r->record)->Time_Record ?? '';
                     return trim("$day $time");
                 })
+                ->addColumn('Status_Request_Display', function ($r) {
+                    $status = $r->Status_Request ?? '';
+                    switch ($status) {
+                        case 'Waiting':
+                            return '<span class="badge badge-warning">Waiting</span>';
+                        case 'Done':
+                            return '<span class="badge badge-success">Done</span>';
+                        default:
+                            return '<span class="badge badge-secondary">' . e($status) . '</span>';
+                    }
+                })
                 ->addColumn('Sum_Record', function ($r) {
                     return optional($r->record)->Sum_Record ?? '';
                 })
@@ -240,7 +251,7 @@ class AdminRequestController extends Controller
                         $query->where('Id_User', $keyword); // ✅ exact match
                     }
                 })
-                ->rawColumns(['Urgent_Request', 'ready_status_display'])
+                ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display'])
                 ->make(true);
         }
 

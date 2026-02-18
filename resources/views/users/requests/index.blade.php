@@ -118,6 +118,38 @@
 </div>
 <!-- /.container-fluid -->
 
+<!-- Modal Duplicate Request Warning -->
+<div class="modal fade" id="duplicateRequestModal" tabindex="-1" role="dialog" aria-labelledby="duplicateRequestModalLabel" aria-hidden="true" style="display:none;">
+    <div class="modal-dialog" role="document" style="display:flex; align-items:center; justify-content:center; min-height:100vh;">
+        <div class="modal-content">
+            <div class="modal-header bg-danger">
+                <h5 class="modal-title text-white" id="duplicateRequestModalLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Peringatan Request Ganda
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="resetRequestForm()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="duplicateRequestBody">
+                <!-- Dynamic content -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="resetRequestForm()">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Reset form saat klik di luar modal (backdrop click)
+    document.addEventListener('click', function(e) {
+        var modal = document.getElementById('duplicateRequestModal');
+        if (e.target === modal) {
+            resetRequestForm();
+        }
+    });
+</script>
+
 <!-- Select2 & DataTables -->
 <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
@@ -158,6 +190,16 @@
     //     height: width
     // });
 
+    // === fungsi reset form ke state awal ===
+    function resetRequestForm() {
+        document.getElementById("Code_Rack").value = '';
+        document.getElementById("Code_Item").value = '';
+        document.getElementById("Sum_Request").value = 1;
+        document.getElementById("Urgent_Request").checked = false;
+        document.getElementById("Correctness").value = '';
+        document.getElementById("status_code").innerHTML = '';
+    }
+
     // === fungsi fetch code item ===
     function fetchCodeItemRack(codeRack) {
         if (!codeRack) return;
@@ -183,37 +225,56 @@
         });
     }
 
+    // === fungsi cek duplicate request ===
+    function checkDuplicateRequest(codeRack, onClear) {
+        if (!codeRack) return;
+
+        $.ajax({
+            url: '{{ route("request.checkDuplicate") }}',
+            method: 'POST',
+            data: {
+                Code_Rack: codeRack,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.exists) {
+                    // Tampilkan modal warning
+                    var msg = 'Part dengan kode Rack <strong>' + codeRack + '</strong> telah di request oleh <strong>' + response.name + '</strong> pada <strong>' + response.day + ' ' + response.time + '</strong> dan belum di Record.';
+                    document.getElementById('duplicateRequestBody').innerHTML = msg;
+                    $('#duplicateRequestModal').modal('show');
+                } else {
+                    // Tidak ada duplikat, lanjut fetch code item
+                    fetchCodeItemRack(codeRack);
+                }
+            },
+            error: function() {
+                // Jika error cek duplikat, tetap lanjut fetch code item
+                fetchCodeItemRack(codeRack);
+            }
+        });
+    }
+
+
+
     // === callback qr scanner ===
     function onScanSuccessRack(decodedText, decodedResult) {
         document.getElementById("Code_Rack").value = decodedText;
 
-        // panggil fetch
-        fetchCodeItemRack(decodedText);
+        // Cek duplikat dulu, baru fetch code item jika tidak ada duplikat
+        checkDuplicateRequest(decodedText);
 
         rackScanner.clear();
-        // makeCodeRack();
     }
 
     // === tombol scan ===
     document.getElementById("scanRack").addEventListener("click", function () {
-        // let imgElement = document.querySelector("#qrcode_rack img");
-        // if (imgElement) {
-        //     imgElement.src = "";
-        // }
         rackScanner.render(onScanSuccessRack);
     });
-
-    // === generate qr ===
-    // function makeCodeRack() {
-    //     var rackText = document.getElementById("Code_Rack");
-    //     qrcode_rack.makeCode(rackText.value);
-    // }
 
     // === saat blur ===
     $("#Code_Rack").on("blur", function () {
         let codeRack = $(this).val();
-        // makeCodeRack();
-        fetchCodeItemRack(codeRack); // panggil juga
+        checkDuplicateRequest(codeRack);
     });
 </script>
 @endsection

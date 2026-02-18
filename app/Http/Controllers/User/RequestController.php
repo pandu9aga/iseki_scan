@@ -90,4 +90,25 @@ class RequestController extends Controller
             'status' => $exists ? 'correct' : 'incorrect'
         ]);
     }
+
+    public function checkDuplicate(Request $request)
+    {
+        $codeRack = $request->input('Code_Rack');
+
+        $existing = RequestModel::where('Code_Rack', $codeRack)
+            ->where('Status_Request', '!=', 'Done')
+            ->with('member')
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'exists' => true,
+                'name' => $existing->member->Name_Member ?? 'Unknown',
+                'day' => $existing->Day_Request,
+                'time' => $existing->Time_Request,
+            ]);
+        }
+
+        return response()->json(['exists' => false]);
+    }
 }
