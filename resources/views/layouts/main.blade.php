@@ -14,7 +14,8 @@
 
     <!-- Custom fonts for this template-->
     <link href="{{asset('vendor/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
-    {{-- <link
+    {{--
+    <link
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet"> --}}
 
@@ -66,7 +67,7 @@
                     <span>All</span></a>
             </li> --}}
 
-             <!-- Nav Item - Report -->
+            <!-- Nav Item - Report -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin_request') }}">
                     <i class="fas fa-fw fa-bullhorn"></i>
@@ -96,7 +97,8 @@
             </li>
 
             <!-- Divider -->
-            {{-- <hr class="sidebar-divider"> --}}
+            {{--
+            <hr class="sidebar-divider"> --}}
 
             <!-- Heading -->
             {{-- <div class="sidebar-heading">
@@ -109,6 +111,26 @@
                     <i class="fas fa-fw fa-file"></i>
                     <span>Validation</span></a>
             </li> --}}
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Evaluation
+            </div>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('achievement') }}">
+                    <i class="fas fa-fw fa-trophy"></i>
+                    <span>Achievement</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('mistake') }}">
+                    <i class="fas fa-fw fa-flag"></i>
+                    <span>Mistake</span></a>
+            </li>
 
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -209,7 +231,7 @@
 
                 </nav>
                 <!-- End of Topbar -->
-                
+
                 @yield('content')
 
             </div>
@@ -276,7 +298,7 @@
             } else {
                 table = $('#dataTable').DataTable({
                     pageLength: 100,
-                    lengthMenu: [[10,25,50,100,-1],[10,25,50,100,"All"]]
+                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
                 });
             }
         });

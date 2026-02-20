@@ -15,6 +15,8 @@ use App\Http\Controllers\Admin\MemberController;
 use App\Http\Controllers\Admin\AdminSubmissionController;
 use App\Http\Controllers\Admin\AdminRequestController;
 use App\Http\Controllers\Admin\MissingController;
+use App\Http\Controllers\Admin\AchievementController;
+use App\Http\Controllers\Admin\MistakeController;
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\UserReportController;
 use App\Http\Controllers\User\RecordController;
@@ -100,6 +102,17 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/missing/export', [MissingController::class, 'export'])->name('missing.export');
     Route::get('/missing_mc', [MissingController::class, 'missing_mc'])->name('missing.mc');
     Route::get('/missing_mc/export', [MissingController::class, 'missing_mc_export'])->name('missing.mc.export');
+
+    Route::get('/achievement', [AchievementController::class, 'index'])->name('achievement');
+    Route::get('/achievement/export', [AchievementController::class, 'export'])->name('achievement.export');
+    
+    // Mistake Routes
+    Route::get('/mistake', [MistakeController::class, 'index'])->name('mistake');
+    Route::get('/mistake/add', [MistakeController::class, 'add'])->name('mistake.add');
+    Route::post('/mistake/store', [MistakeController::class, 'store'])->name('mistake.store');
+    Route::get('/mistake/get-latest-request', [MistakeController::class, 'getLatestRequest'])->name('mistake.get_latest_request');
+    Route::get('/mistake/detail', [MistakeController::class, 'detail'])->name('mistake.detail');
+    Route::get('/mistake/export', [MistakeController::class, 'export'])->name('mistake.export');
 });
 
 Route::middleware(AuthMiddleware::class)->group(function () {
