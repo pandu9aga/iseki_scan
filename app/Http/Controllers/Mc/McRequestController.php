@@ -254,7 +254,8 @@ class McRequestController extends Controller
 
             switch ($readyStatus) {
                 case '1':
-                    $requestModel->Ready_Request = $now;
+                    // Disabled: Code 1 (Ready_Request) is no longer updated via Excel upload
+                    // $requestModel->Ready_Request = $now;
                     break;
                 case '2':
                     $requestModel->Shipping_Request = $now;

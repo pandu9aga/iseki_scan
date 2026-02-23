@@ -9,15 +9,11 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Iseki Scan - Supply Part</title>
+    <title>Iseki Scan - Transit</title>
     <link rel="icon" type="image/x-icon" href="{{asset('img/logo-iseki.png')}}">
 
     <!-- Custom fonts for this template-->
     <link href="{{asset('vendor/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
-    {{--
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet"> --}}
 
     <!-- Custom styles for this template-->
     <link href="{{ asset('css/sb-admin-2.min.css') }}?v=1" rel="stylesheet">
@@ -45,147 +41,11 @@
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
-            <!-- Nav Item - Dashboard -->
+            <!-- Nav Item - Scan -->
             <li class="nav-item">
-                <a class="nav-link" href="{{ route('dashboard') }}">
-                    <i class="fas fa-fw fa-tachometer-alt"></i>
-                    <span>Dashboard</span></a>
-            </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Request
-            </div>
-
-            <!-- Nav Item - Report -->
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('admin_submission') }}">
-                    <i class="fas fa-fw fa-bullhorn"></i>
-                    <span>All</span></a>
-            </li> --}}
-
-            <!-- Nav Item - Report -->
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('admin_request') }}">
-                    <i class="fas fa-fw fa-bullhorn"></i>
-                    <span>Request</span></a>
-            </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Record
-            </div>
-
-            <!-- Nav Item - Monthly -->
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('monthly') }}">
+                <a class="nav-link" href="{{ route('transit.scan') }}">
                     <i class="fas fa-fw fa-qrcode"></i>
-                    <span>All</span></a>
-            </li> --}}
-
-            <!-- Nav Item - Report -->
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('report') }}">
-                    <i class="fas fa-fw fa-qrcode"></i>
-                    <span>Record</span></a>
-            </li>
-
-            <!-- Divider -->
-            {{--
-            <hr class="sidebar-divider"> --}}
-
-            <!-- Heading -->
-            {{-- <div class="sidebar-heading">
-                Validation
-            </div> --}}
-
-            <!-- Nav Item - Validation -->
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('validation') }}">
-                    <i class="fas fa-fw fa-file"></i>
-                    <span>Validation</span></a>
-            </li> --}}
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Evaluation
-            </div>
-
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('achievement') }}">
-                    <i class="fas fa-fw fa-trophy"></i>
-                    <span>Achievement</span></a>
-            </li> --}}
-
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('mistake') }}">
-                    <i class="fas fa-fw fa-flag"></i>
-                    <span>Mistake</span></a>
-            </li>
-
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('forgot') }}">
-                    <i class="fas fa-fw fa-question-circle"></i>
-                    <span>Forgot</span></a>
-            </li> --}}
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Missing
-            </div>
-
-            <!-- Nav Item - Monthly -->
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('missing') }}">
-                    <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing DST</span></a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('missing.mc') }}">
-                    <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing MC</span></a>
-            </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Data
-            </div>
-
-            <!-- Nav Item - User -->
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('user') }}">
-                    <i class="fas fa-fw fa-user"></i>
-                    <span>User</span></a>
-            </li>
-
-            <!-- Nav Item - Member -->
-            <li class="nav-item">
-                <a class="nav-link" href="{{route('member')}}">
-                    <i class="fas fa-fw fa-user-circle"></i>
-                    <span>Member</span></a>
-            </li>
-
-            <!-- Nav Item - Report -->
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('rack') }}">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Rack</span></a>
+                    <span>Scan</span></a>
             </li>
 
             <!-- Divider -->
@@ -212,6 +72,8 @@
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
                         <i class="fa fa-bars"></i>
                     </button>
+
+                    <h1 class="h4 mb-0 text-gray-800 ml-3">Transit Access</h1>
 
                     <!-- Topbar Navbar -->
                     <ul class="navbar-nav ml-auto">
@@ -247,7 +109,7 @@
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; Iseki</span>
+                        <span>Copyright &copy; Iseki Transit</span>
                     </div>
                 </div>
             </footer>
@@ -296,22 +158,6 @@
     <script src="{{asset('js/sb-admin-2.min.js')}}"></script>
 
     @yield('script')
-
-    <script>
-        $(document).ready(function () {
-            var table;
-
-            if ($.fn.DataTable && $.fn.DataTable.isDataTable('#dataTable')) {
-                table = $('#dataTable').DataTable();
-                table.page.len(100).draw(); // ✅ paksa default 100
-            } else if ($.fn.DataTable) {
-                table = $('#dataTable').DataTable({
-                    pageLength: 100,
-                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
-                });
-            }
-        });
-    </script>
 
 </body>
 

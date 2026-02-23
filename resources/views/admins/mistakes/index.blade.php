@@ -28,10 +28,24 @@
         @endif
 
         <div class="row">
-            <div class="col-12">
+            <div class="col-lg-12">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3 bg-white">
-                        <h6 class="m-0 font-weight-bold text-primary">Monthly Mistake Trend -
+                        <h6 class="m-0 font-weight-bold text-danger">Daily Total Mistakes -
+                            {{ \Carbon\Carbon::parse($month)->format('F Y') }}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-area" style="height: 300px;">
+                            <canvas id="dailyTotalChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3 bg-white">
+                        <h6 class="m-0 font-weight-bold text-primary">Monthly Accumulation Trend -
                             {{ \Carbon\Carbon::parse($month)->format('F Y') }}
                         </h6>
                     </div>
@@ -117,6 +131,7 @@
 
 @section('script')
     <script src="{{ asset('vendor/chart.js/Chart.min.js') }}"></script>
+    <script src="{{ asset('js/chartjs-plugin-datalabels.js') }}"></script>
     <script>
         $(document).ready(function () {
             // Colors for members
@@ -134,7 +149,7 @@
                     labels: [@for($i = 1; $i <= $daysInMonth; $i++) "{{ $i }}", @endfor],
                     datasets: [
                         @foreach($chartData as $index => $dataset)
-                                    {
+                                                                                                                    {
                                 label: "{{ $dataset['label'] }}",
                                 borderColor: colors[{{ $index }} % colors.length],
                                 backgroundColor: colors[{{ $index }} % colors.length],
@@ -146,7 +161,7 @@
                                 pointBackgroundColor: colors[{{ $index }} % colors.length],
                             },
                         @endforeach
-                        ],
+                                                                ],
                 },
                 options: {
                     maintainAspectRatio: false,
@@ -204,6 +219,101 @@
                         intersect: false,
                         mode: 'index',
                         caretPadding: 10,
+                    },
+                    plugins: {
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#858796',
+                            font: {
+                                weight: 'bold'
+                            },
+                            formatter: function (value, context) {
+                                return value;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Daily Total Bar Chart Implementation
+            var ctx2 = document.getElementById("dailyTotalChart");
+            var dailyTotalChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: [@for($i = 1; $i <= $daysInMonth; $i++) "{{ $i }}", @endfor],
+                    datasets: [{
+                        label: "Total Daily Mistakes",
+                        backgroundColor: "#e74a3b",
+                        hoverBackgroundColor: "#e02d1b",
+                        borderColor: "#e74a3b",
+                        data: {!! json_encode(array_values($dailyTotalData)) !!},
+                    }],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 25,
+                            top: 25,
+                            bottom: 0
+                        }
+                    },
+                    scales: {
+                        xAxes: [{
+                            gridLines: {
+                                display: false,
+                                drawBorder: false
+                            },
+                        }],
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true,
+                                stepSize: 1,
+                                padding: 10,
+                            },
+                            gridLines: {
+                                color: "rgb(234, 236, 244)",
+                                zeroLineColor: "rgb(234, 236, 244)",
+                                drawBorder: false,
+                                borderDash: [2],
+                                zeroLineBorderDash: [2]
+                            }
+                        }],
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltips: {
+                        backgroundColor: "rgb(255,255,255)",
+                        bodyFontColor: "#858796",
+                        titleMarginBottom: 10,
+                        titleFontColor: '#6e707e',
+                        titleFontSize: 14,
+                        borderColor: '#dddfeb',
+                        borderWidth: 1,
+                        xPadding: 15,
+                        yPadding: 15,
+                        displayColors: false,
+                        intersect: false,
+                        mode: 'index',
+                        caretPadding: 10,
+                    },
+                    plugins: {
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#fff',
+                            backgroundColor: '#e74a3b',
+                            borderRadius: 4,
+                            font: {
+                                weight: 'bold'
+                            },
+                            formatter: function (value, context) {
+                                return value;
+                            }
+                        }
                     }
                 }
             });

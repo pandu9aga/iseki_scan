@@ -33,7 +33,7 @@ class MistakeController extends Controller
             $catData = [];
             foreach ($members as $member) {
                 $memberMistakes = $mistakes->filter(function ($m) use ($member, $cat) {
-                    return $m->Category_Mistake === $cat && $m->request && $m->request->Id_User == $member->Id_Member;
+                    return $m->Category_Mistake === $cat && $m->PIC === $member->Name_Member;
                 });
 
                 $days = array_fill(1, $daysInMonth, 0);
@@ -59,10 +59,13 @@ class MistakeController extends Controller
 
         // Prepare chart data (Mistakes per member per day - Cumulative)
         $chartData = [];
+        $isCurrentMonth = ($date->year == Carbon::now()->year && $date->month == Carbon::now()->month);
+        $currentDay = Carbon::now()->day;
+
         foreach ($members as $member) {
             $memberDays = array_fill(1, $daysInMonth, 0);
             $memberMistakes = $mistakes->filter(function ($m) use ($member) {
-                return $m->request && $m->request->Id_User == $member->Id_Member;
+                return $m->PIC === $member->Name_Member;
             });
 
             if ($memberMistakes->count() > 0) {
@@ -75,18 +78,29 @@ class MistakeController extends Controller
                 $cumulative = 0;
                 $accumulatedData = [];
                 for ($i = 1; $i <= $daysInMonth; $i++) {
-                    $cumulative += $memberDays[$i];
-                    $accumulatedData[] = $cumulative;
+                    if ($isCurrentMonth && $i > $currentDay) {
+                        $accumulatedData[] = null;
+                    } else {
+                        $cumulative += $memberDays[$i];
+                        $accumulatedData[] = $cumulative;
+                    }
                 }
 
                 $chartData[] = [
-                    'label' => $member->Name_Member,
+                    'label' => $member->Name_Member . " (" . $memberMistakes->count() . ")",
                     'data' => $accumulatedData
                 ];
             }
         }
 
-        return view('admins.mistakes.index', compact('reportData', 'month', 'categories', 'daysInMonth', 'chartData'));
+        // Prepare Daily Total chart data (Daily sums across all members)
+        $dailyTotalData = array_fill(1, $daysInMonth, 0);
+        foreach ($mistakes as $m) {
+            $day = (int) Carbon::parse($m->Day_Mistake)->format('d');
+            $dailyTotalData[$day]++;
+        }
+
+        return view('admins.mistakes.index', compact('reportData', 'month', 'categories', 'daysInMonth', 'chartData', 'dailyTotalData'));
     }
 
     public function detail(Request $request)
@@ -99,9 +113,7 @@ class MistakeController extends Controller
         $member = Member::findOrFail($memberId);
         
         $query = Mistake::with(['request.member', 'request.rack', 'request.record.member'])
-            ->whereHas('request', function($q) use ($memberId) {
-                $q->where('Id_User', $memberId);
-            })
+            ->where('PIC', $member->Name_Member)
             ->where('Category_Mistake', $category);
 
         if ($day) {
@@ -122,11 +134,9 @@ class MistakeController extends Controller
 
     public function add()
     {
-        try {
-            $pics = DB::connection('rifa')->table('employees')->select('nama')->orderBy('nama')->get();
-        } catch (\Exception $e) {
-            $pics = collect(); 
-        }
+        $pics = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')
+            ->orderBy('Name_Member')
+            ->get();
         
         $categories = ['telat request', 'telat supply', 'shipping', 'perubahan desain', 'lain-lain'];
         return view('admins.mistakes.add', compact('pics', 'categories'));
@@ -249,7 +259,7 @@ class MistakeController extends Controller
             $catData = [];
             foreach ($members as $member) {
                 $memberMistakes = $mistakes->filter(function ($m) use ($member, $cat) {
-                    return $m->Category_Mistake === $cat && $m->request && $m->request->Id_User == $member->Id_Member;
+                    return $m->Category_Mistake === $cat && $m->PIC === $member->Name_Member;
                 });
 
                 if ($memberMistakes->count() > 0) {

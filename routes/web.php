@@ -17,17 +17,27 @@ use App\Http\Controllers\Admin\AdminRequestController;
 use App\Http\Controllers\Admin\MissingController;
 use App\Http\Controllers\Admin\AchievementController;
 use App\Http\Controllers\Admin\MistakeController;
+use App\Http\Controllers\Admin\ForgotController;
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\UserReportController;
 use App\Http\Controllers\User\RecordController;
 use App\Http\Controllers\User\RequestController;
 use App\Http\Controllers\User\SubmissionController;
+use App\Http\Controllers\User\UserMistakeController;
+use App\Http\Controllers\User\UserAchievementController;
+use App\Http\Controllers\User\UserForgotController;
 use App\Http\Controllers\Mc\McRequestController;
 use App\Http\Controllers\Mc\McValidationController;
 use App\Http\Controllers\Mc\McMissingController;
+use App\Http\Controllers\Mc\McMistakeController;
+use App\Http\Controllers\Mc\McAchievementController;
+use App\Http\Controllers\Mc\McForgotController;
+use App\Http\Controllers\Transit\TransitScanController;
 
 use App\Models\Rack;
 use Illuminate\Http\Request;
+
+use App\Http\Middleware\TransitMiddleware;
 
 
 use Illuminate\Support\Facades\Route;
@@ -113,6 +123,14 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/mistake/get-latest-request', [MistakeController::class, 'getLatestRequest'])->name('mistake.get_latest_request');
     Route::get('/mistake/detail', [MistakeController::class, 'detail'])->name('mistake.detail');
     Route::get('/mistake/export', [MistakeController::class, 'export'])->name('mistake.export');
+
+    // Forgot Routes
+    Route::get('/forgot', [ForgotController::class, 'index'])->name('forgot');
+    Route::get('/forgot/add', [ForgotController::class, 'add'])->name('forgot.add');
+    Route::post('/forgot/store', [ForgotController::class, 'store'])->name('forgot.store');
+    Route::get('/forgot/get-latest-request', [ForgotController::class, 'getLatestRequest'])->name('forgot.get_latest_request');
+    Route::get('/forgot/detail', [ForgotController::class, 'detail'])->name('forgot.detail');
+    Route::get('/forgot/export', [ForgotController::class, 'export'])->name('forgot.export');
 });
 
 Route::middleware(AuthMiddleware::class)->group(function () {
@@ -141,6 +159,10 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::put('/submission/update/{id}', [SubmissionController::class, 'update'])->name('submission.update');
     Route::post('/user_submission/reset', [SubmissionController::class, 'reset'])->name('submission.reset');
     Route::delete('user_submission/{id}', [SubmissionController::class, 'destroy'])->name('submission.destroy'); 
+
+    Route::get('/user_mistake', [UserMistakeController::class, 'index'])->name('user_mistake');
+    Route::get('/user_achievement', [UserAchievementController::class, 'index'])->name('user_achievement');
+    Route::get('/user_forgot', [UserForgotController::class, 'index'])->name('user_forgot');
 });
 
 Route::middleware(McMiddleware::class)->group(function () {
@@ -162,6 +184,16 @@ Route::middleware(McMiddleware::class)->group(function () {
     Route::get('/mc_missing_mc', [McMissingController::class, 'missing_mc'])->name('mc.missing.mc');
     Route::get('/mc_missing_mc/export', [McMissingController::class, 'missing_mc_export'])->name('mc.missing.mc.export');
     Route::post('/mc_submission/upload-ready', [McRequestController::class, 'uploadReady'])->name('mc_submission.upload_ready');
+
+    Route::get('/mc_mistake', [McMistakeController::class, 'index'])->name('mc_mistake');
+    Route::get('/mc_achievement', [McAchievementController::class, 'index'])->name('mc_achievement');
+    Route::get('/mc_forgot', [McForgotController::class, 'index'])->name('mc_forgot');
+});
+
+Route::middleware(TransitMiddleware::class)->group(function () {
+    Route::get('/transit/scan', [TransitScanController::class, 'index'])->name('transit.scan');
+    Route::post('/transit/scan/process', [TransitScanController::class, 'process'])->name('transit.scan.process');
+    Route::get('/transit/scan/check', [TransitScanController::class, 'check'])->name('transit.scan.check');
 });
 
 Route::post('/api/get-code-item', function(Request $request) {

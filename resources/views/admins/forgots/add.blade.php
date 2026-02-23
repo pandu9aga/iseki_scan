@@ -23,8 +23,8 @@
 @section('content')
     <div class="container-fluid">
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Add Mistake</h1>
-            <a href="{{ route('mistake') }}" class="btn btn-secondary">
+            <h1 class="h3 mb-0 text-gray-800">Add Forgot</h1>
+            <a href="{{ route('forgot') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to List
             </a>
         </div>
@@ -33,10 +33,10 @@
             <div class="col-lg-12">
                 <div class="card shadow mb-4">
                     <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Record New Mistake</h6>
+                        <h6 class="m-0 font-weight-bold text-primary">Record New Forgot</h6>
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('mistake.store') }}" method="POST" id="mistakeForm">
+                        <form action="{{ route('forgot.store') }}" method="POST" id="forgotForm">
                             @csrf
                             <div class="form-group row">
                                 <label class="col-sm-2 col-form-label">Code Rack</label>
@@ -53,9 +53,9 @@
                                     <small class="form-text text-muted">Press search or enter to fetch latest
                                         request.</small>
                                 </div>
-                                <label class="col-sm-2 col-form-label text-right">Date of Mistake</label>
+                                <label class="col-sm-2 col-form-label text-right">Date Recorded</label>
                                 <div class="col-sm-4">
-                                    <input type="date" name="Day_Mistake" class="form-control" value="{{ date('Y-m-d') }}"
+                                    <input type="date" name="Day_Forgot" class="form-control" value="{{ date('Y-m-d') }}"
                                         required>
                                 </div>
                             </div>
@@ -117,27 +117,10 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <label class="col-sm-2 col-form-label font-weight-bold">Category</label>
-                                    <div class="col-sm-4">
-                                        <select name="Category_Mistake" id="Category_Mistake" class="form-control" required>
-                                            <option value="">-- Select Category --</option>
-                                            @foreach($categories as $cat)
-                                                <option value="{{ $cat }}">{{ ucfirst($cat) }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
                                 </div>
 
-                                <div class="form-group row" id="manualDetailRow" style="display: none;">
-                                    <label class="col-sm-2 col-form-label font-weight-bold">Manual Detail</label>
-                                    <div class="col-sm-10">
-                                        <textarea name="Manual_Category_Detail" class="form-control" rows="2"
-                                            placeholder="Specify other mistake details..."></textarea>
-                                    </div>
-                                </div>
-
-                                <div class="text-right">
-                                    <button type="submit" class="btn btn-success px-5">Save Mistake</button>
+                                <div class="text-right mt-3">
+                                    <button type="submit" class="btn btn-success px-5">Save Forgot</button>
                                 </div>
                             </div>
 
@@ -170,7 +153,7 @@
                 $('#requestDetails').fadeOut();
                 $('#noDataAlert').fadeOut();
 
-                $.get("{{ route('mistake.get_latest_request') }}", { code_rack: code }, function (res) {
+                $.get("{{ route('forgot.get_latest_request') }}", { code_rack: code }, function (res) {
                     if (res.success) {
                         var d = res.data;
                         $('#Id_Request').val(d.Id_Request);
@@ -195,14 +178,6 @@
                 if (e.which == 13) {
                     e.preventDefault();
                     fetchRequest();
-                }
-            });
-
-            $('#Category_Mistake').change(function () {
-                if ($(this).val() == 'lain-lain') {
-                    $('#manualDetailRow').slideDown();
-                } else {
-                    $('#manualDetailRow').slideUp();
                 }
             });
         });

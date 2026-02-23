@@ -14,7 +14,8 @@
 
     <!-- Custom fonts for this template-->
     <link href="{{asset('vendor/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
-    {{-- <link
+    {{--
+    <link
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet"> --}}
 
@@ -53,13 +54,13 @@
                     <i class="fas fa-fw fa-chart-area"></i>
                     <span>Request</span></a>
             </li>
-            
+
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.validate') }}">
                     <i class="fas fa-fw fa-qrcode"></i>
                     <span>Validate</span></a>
             </li>
-            
+
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc_validation') }}">
                     <i class="fas fa-fw fa-file"></i>
@@ -77,6 +78,32 @@
                     <i class="fas fa-fw fa-ban"></i>
                     <span>Missing MC</span></a>
             </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Evaluation
+            </div>
+
+            {{-- <li class="nav-item">
+                <a class="nav-link" href="{{ route('mc_achievement') }}">
+                    <i class="fas fa-fw fa-trophy"></i>
+                    <span>Achievement</span></a>
+            </li> --}}
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('mc_mistake') }}">
+                    <i class="fas fa-fw fa-flag"></i>
+                    <span>Mistake</span></a>
+            </li>
+
+            {{-- <li class="nav-item">
+                <a class="nav-link" href="{{ route('mc_forgot') }}">
+                    <i class="fas fa-fw fa-question-circle"></i>
+                    <span>Forgot</span></a>
+            </li> --}}
 
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
@@ -127,7 +154,7 @@
 
                 </nav>
                 <!-- End of Topbar -->
-                
+
                 @yield('content')
 
             </div>
@@ -194,7 +221,7 @@
             } else {
                 table = $('#dataTable').DataTable({
                     pageLength: 100,
-                    lengthMenu: [[10,25,50,100,-1],[10,25,50,100,"All"]]
+                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
                 });
             }
         });

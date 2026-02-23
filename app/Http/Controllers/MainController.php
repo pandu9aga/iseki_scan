@@ -18,6 +18,9 @@ class MainController extends Controller
             else if (session('Id_Type_User') == 1){
                 return redirect()->route('mc_submission');
             }
+            else if (session('Id_Type_User') == 3) {
+                return redirect()->route('transit.scan');
+            }
         } else if (session()->has('Id_Member')) {
             return redirect()->route('home');
         }
@@ -50,6 +53,9 @@ class MainController extends Controller
             }
             else if (session('Id_Type_User') == 1){
                 return redirect()->route('home');
+            }
+            else if (session('Id_Type_User') == 3){
+                return redirect()->route('transit.scan');
             }
         }
 
