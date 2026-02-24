@@ -19,7 +19,7 @@
                                     <div class="col-lg-4 col-md-6 mb-1">
                                         <input name="Day_Request" type="date" class="form-control" value="{{ $dateForInput }}" required>
                                     </div>
-                                    <div class="col-lg-4 col-md-6 mb-1">
+                                    <div class="col-lg-3 col-md-6 mb-1">
                                         <select name="Id_User[]" class="form-control" multiple>
                                             <option value="">All Members</option>
                                             @foreach($members as $m)
@@ -30,7 +30,16 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-lg-4 col-md-6">
+                                    <div class="col-lg-3 col-md-6 mb-1">
+                                        <select name="statusFilter" class="form-control">
+                                            <option value="">All Status</option>
+                                            <option value="ready" {{ request('statusFilter') == 'ready' ? 'selected' : '' }}>Ready</option>
+                                            <option value="shipping" {{ request('statusFilter') == 'shipping' ? 'selected' : '' }}>Shipping</option>
+                                            <option value="production" {{ request('statusFilter') == 'production' ? 'selected' : '' }}>Production</option>
+                                            <option value="design_change" {{ request('statusFilter') == 'design_change' ? 'selected' : '' }}>Design Change</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-2 col-md-6">
                                         <button class="d-sm-inline btn btn-md btn-primary shadow-sm" type="submit">
                                             Apply
                                         </button>
@@ -50,6 +59,7 @@
             @foreach(request('Id_User', []) as $id)
                 <input type="hidden" name="Id_User[]" value="{{ $id }}">
             @endforeach
+            <input type="hidden" name="statusFilter" value="{{ request('statusFilter') }}">
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
                 <i class="fas fa-download fa-sm text-white-50"></i> Download Report
             </button>

@@ -194,6 +194,10 @@ Route::middleware(TransitMiddleware::class)->group(function () {
     Route::get('/transit/scan', [TransitScanController::class, 'index'])->name('transit.scan');
     Route::post('/transit/scan/process', [TransitScanController::class, 'process'])->name('transit.scan.process');
     Route::get('/transit/scan/check', [TransitScanController::class, 'check'])->name('transit.scan.check');
+    Route::get('/transit/request', [\App\Http\Controllers\Transit\TransitRequestController::class, 'index'])->name('transit.request');
+    Route::get('/transit/request/submit', [\App\Http\Controllers\Transit\TransitRequestController::class, 'submit'])->name('transit.request.submit');
+    Route::get('/transit/request/export', [\App\Http\Controllers\Transit\TransitRequestController::class, 'export'])->name('transit.request.export');
+    Route::get('/transit/request/search', [\App\Http\Controllers\Transit\TransitRequestController::class, 'search'])->name('transit.request.search');
 });
 
 Route::post('/api/get-code-item', function(Request $request) {

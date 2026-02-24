@@ -98,6 +98,9 @@
                 ajax: {
                     url: "{{ route('request.search') }}",
                     type: 'GET',
+                    data: function (d) {
+                        d.statusFilter = $('.filter-row select').eq(1).val(); // eq(1) because eq(0) is member dropdown
+                    },
                     error: function (xhr) {
                         console.error('AJAX Error:', xhr.responseText);
                         alert('Failed to load data. See console for details.');
@@ -144,7 +147,7 @@
                     var filterRow = header.find('tr.filter-row');
                     filterRow.empty();
 
-                    const filterable = [1, 2, 3, 4];
+                    const filterable = [1, 2, 3, 4, 6];
 
                     api.columns().every(function (index) {
                         var column = this;
@@ -162,6 +165,20 @@
                             });
                             select.on('change', function () {
                                 column.search(this.value).draw();
+                            });
+                            filterRow.append($('<th>').append(select));
+                        } else if (index === 6) {
+                            // Kolom Ready Stock → status dropdown
+                            var select = $(`<select class="form-control form-control-sm">
+                                        <option value="">All Status</option>
+                                        <option value="ready">Ready</option>
+                                        <option value="shipping">Shipping</option>
+                                        <option value="production">Production</option>
+                                        <option value="design_change">Design Change</option>
+                                    </select>`);
+                            select.on('change', function () {
+                                // Kirim ke server via custom parameter
+                                table.ajax.reload();
                             });
                             filterRow.append($('<th>').append(select));
                         } else {

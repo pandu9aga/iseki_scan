@@ -1,11 +1,11 @@
-@extends('layouts.mc')
+@extends('layouts.transit')
 @section('content')
 <!-- Begin Page Content -->
 <div class="container-fluid">
     <h1 class="h3 mb-2 text-gray-800">Request</h1>
     <div class="d-sm-flex align-items-center justify-content-between mb-1">
-        <!-- Earnings (Monthly) Card Example -->
-        <div class="col-xl-4 col-md-6 mb-4">
+        <!-- Choose Day Card -->
+        <div class="col-xl-6 col-md-6 mb-4">
             <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -13,8 +13,7 @@
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                                 Choose Day
                             </div>
-                            <form class="user" action="{{ route('mc_submission.submit') }}" method="GET">
-                                @csrf
+                            <form class="user" action="{{ route('transit.request.submit') }}" method="GET">
                                 <div class="row d-flex align-items-center">
                                     <div class="col-lg-4 col-md-6 mb-1">
                                         <input name="Day_Request" type="date" class="form-control" value="{{ $dateForInput }}" required>
@@ -51,37 +50,21 @@
                 </div>
             </div>
         </div>
-        <form class="user" action="{{ route('mc_submission.export') }}" method="GET" target="_blank">
-            <input name="Day_Request_Hidden" type="hidden" value="{{ $dateForInput }}">
-            @foreach(request('Id_User', []) as $id)
-                <input type="hidden" name="Id_User[]" value="{{ $id }}">
-            @endforeach
-            <input type="hidden" name="statusFilter" value="{{ request('statusFilter') }}">
-            <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
-                <i class="fas fa-download fa-sm text-white-50"></i> Download Report
-            </button>
-        </form>
-    </div>
-
-    <div class="card mb-4 col-md-4 col-lg-3">
-        <div class="card-header">
-            <div class="font-weight-bold text-primary text-uppercase">
-                Update Ready Stock
-            </div>
-        </div>
-        <div class="card-body">
-            <div>
-                <form action="{{ route('mc_submission.upload_ready') }}" method="POST" enctype="multipart/form-data" class="d-inline">
-                    @csrf
-                    <div class="input-group">
-                        <input type="file" name="ready_excel" class="form-control" accept=".xlsx,.xls" required>
-                        <button class="btn btn-success ml-1" type="submit">Upload</button>
-                    </div>
-                    @if ($errors->has('ready_excel'))
-                        <div class="text-danger mt-1">{{ $errors->first('ready_excel') }}</div>
-                    @endif
-                </form>
-            </div>
+        <div class="col-xl-6 col-md-6 text-right mb-4">
+            <a class="d-sm-inline-block btn btn-md btn-info shadow-sm mb-2" href="{{ route('transit.request.search') }}">
+                <i class="fas fa-search fa-sm text-white-50"></i> Advanced Search
+            </a>
+            <br>
+            <form class="user d-inline-block" action="{{ route('transit.request.export') }}" method="GET" target="_blank">
+                <input name="Day_Request_Hidden" type="hidden" value="{{ $dateForInput }}">
+                @foreach(request('Id_User', []) as $id)
+                    <input type="hidden" name="Id_User[]" value="{{ $id }}">
+                @endforeach
+                <input type="hidden" name="statusFilter" value="{{ request('statusFilter') }}">
+                <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
+                    <i class="fas fa-download fa-sm text-white-50"></i> Download Report
+                </button>
+            </form>
         </div>
     </div>
 
@@ -142,7 +125,7 @@
                             <td>
                                 @php
                                     $statuses = [];
-                                    if ($s->Ready_Request) $statuses[] = '<span class="badge badge-success">Ready</span>:' . $s->Ready_Request . '</span>';
+                                    if ($s->Ready_Request) $statuses[] = '<span class="badge badge-success">Ready</span>:' . $s->Ready_Request;
                                     if ($s->Shipping_Request) $statuses[] = '<span class="badge badge-info">Shipping</span>:' . $s->Shipping_Request;
                                     if ($s->Production_Area_Request) $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
                                     if ($s->Design_Changes_Request) $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
@@ -162,6 +145,7 @@
         </div>
     </div>
 </div>
+<!-- /.container-fluid -->
 @endsection
 
 @section('style')

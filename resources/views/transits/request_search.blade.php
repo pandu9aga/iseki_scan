@@ -1,9 +1,9 @@
-@extends('layouts.user')
+@extends('layouts.transit')
 @section('content')
     <div class="container-fluid">
         <h1 class="h3 mb-2 text-gray-800">Request</h1>
         <div class="d-sm-flex align-items-center justify-content-between mb-1">
-            <a class="d-sm-inline-block btn btn-md btn-primary shadow-sm m-3" href="{{ route('submission') }}">
+            <a class="d-sm-inline-block btn btn-md btn-primary shadow-sm m-3" href="{{ route('transit.request') }}">
                 <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back
             </a>
         </div>
@@ -74,7 +74,7 @@
     <script>
         $(document).ready(function () {
             // Kirim daftar member ke JS
-            const members = @json($members); // ← ini penting!
+            const members = @json($members);
 
             if ($.fn.dataTable.isDataTable('#dataTable')) {
                 $('#dataTable').DataTable().destroy();
@@ -86,7 +86,7 @@
                 pageLength: 25,
                 autoWidth: false,
                 ajax: {
-                    url: "{{ route('submission.search') }}",
+                    url: "{{ route('transit.request.search') }}",
                     type: 'GET',
                     data: function (d) {
                         d.statusFilter = $('.filter-row select').eq(1).val();
@@ -99,7 +99,7 @@
                 columns: [
                     { data: null, name: 'No', orderable: false, searchable: false, width: '40px', className: 'text-center no-col' },
                     { data: 'Area_Request', name: 'Area_Request', searchable: true },
-                    { data: 'Member_Request', name: 'Id_User', searchable: true }, // ← penting!
+                    { data: 'Member_Request', name: 'Id_User', searchable: true },
                     { data: 'Code_Item_Rack', name: 'Code_Item_Rack', searchable: true },
                     { data: 'Code_Rack', name: 'Code_Rack', searchable: true, width: 'auto' },
                     { data: 'Day_Request', name: 'Day_Request', searchable: false },

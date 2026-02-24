@@ -42,11 +42,19 @@
             <hr class="sidebar-divider my-0">
 
             <!-- Nav Item - Scan -->
-            <li class="nav-item">
+            <li class="nav-item {{ request()->routeIs('transit.scan') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('transit.scan') }}">
                     <i class="fas fa-fw fa-qrcode"></i>
                     <span>Scan</span></a>
             </li>
+
+            <!-- Nav Item - Request -->
+            <li class="nav-item {{ request()->routeIs('transit.request') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('transit.request') }}">
+                    <i class="fas fa-fw fa-list"></i>
+                    <span>Request</span></a>
+            </li>
+
 
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">

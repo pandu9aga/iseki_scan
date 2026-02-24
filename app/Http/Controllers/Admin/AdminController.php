@@ -90,8 +90,8 @@ class AdminController extends Controller
                 $current->addHour();
             }
 
-            // Jika sudah lewat 36 jam kerja → missing
-            return $workingHours >= 36;
+            // Jika sudah lewat 24 jam kerja → missing
+            return $workingHours >= 24;
         })->count();
 
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');

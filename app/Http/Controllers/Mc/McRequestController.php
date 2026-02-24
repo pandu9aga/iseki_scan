@@ -29,6 +29,24 @@ class McRequestController extends Controller
             $query->whereIn('Id_User', $memberIds); // ← whereIn, bukan where
         }
 
+        $statusFilter = request('statusFilter');
+        if ($statusFilter) {
+            switch ($statusFilter) {
+                case 'ready':
+                    $query->whereNotNull('Ready_Request');
+                    break;
+                case 'shipping':
+                    $query->whereNotNull('Shipping_Request');
+                    break;
+                case 'production':
+                    $query->whereNotNull('Production_Area_Request');
+                    break;
+                case 'design_change':
+                    $query->whereNotNull('Design_Changes_Request');
+                    break;
+            }
+        }
+
         $requests = $query->get();
 
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
@@ -55,6 +73,24 @@ class McRequestController extends Controller
 
         if (!empty($memberIds)) {
             $query->whereIn('Id_User', $memberIds);
+        }
+
+        $statusFilter = $request->input('statusFilter');
+        if ($statusFilter) {
+            switch ($statusFilter) {
+                case 'ready':
+                    $query->whereNotNull('Ready_Request');
+                    break;
+                case 'shipping':
+                    $query->whereNotNull('Shipping_Request');
+                    break;
+                case 'production':
+                    $query->whereNotNull('Production_Area_Request');
+                    break;
+                case 'design_change':
+                    $query->whereNotNull('Design_Changes_Request');
+                    break;
+            }
         }
 
         $requests = $query->get();
@@ -85,6 +121,24 @@ class McRequestController extends Controller
 
         if (!empty($memberIds)) {
             $query->whereIn('Id_User', $memberIds);
+        }
+
+        $statusFilter = $request->input('statusFilter');
+        if ($statusFilter) {
+            switch ($statusFilter) {
+                case 'ready':
+                    $query->whereNotNull('Ready_Request');
+                    break;
+                case 'shipping':
+                    $query->whereNotNull('Shipping_Request');
+                    break;
+                case 'production':
+                    $query->whereNotNull('Production_Area_Request');
+                    break;
+                case 'design_change':
+                    $query->whereNotNull('Design_Changes_Request');
+                    break;
+            }
         }
 
         $requests = $query->get();
