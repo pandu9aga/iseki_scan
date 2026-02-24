@@ -91,7 +91,7 @@ class AdminController extends Controller
             }
 
             // Jika sudah lewat 24 jam kerja → missing
-            return $workingHours >= 24;
+            return $workingHours > 24;
         })->count();
 
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');

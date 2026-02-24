@@ -230,7 +230,7 @@ class MissingController extends Controller
             }
 
             // Jika sudah lewat 24 jam kerja → missing
-            return $workingHours >= 24;
+            return $workingHours > 24;
         })->values();
 
         $formattedDate = $now->locale('en')->isoFormat('dddd, D-MMM-YY');
@@ -273,7 +273,7 @@ class MissingController extends Controller
             }
 
             // Jika sudah lewat 24 jam kerja → missing
-            return $workingHours >= 24;
+            return $workingHours > 24;
         })->values();
 
         // Buat Spreadsheet
