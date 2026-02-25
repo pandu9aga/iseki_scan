@@ -109,6 +109,7 @@
 
 @section('script')
     <script src="{{ asset('vendor/chart.js/Chart.min.js') }}"></script>
+    <script src="{{ asset('js/chartjs-plugin-datalabels.js') }}"></script>
     <script>
         $(document).ready(function () {
             const colors = [
@@ -125,7 +126,7 @@
                         labels: [@for($i = 1; $i <= $daysInMonth; $i++) "{{ $i }}", @endfor],
                         datasets: [
                             @foreach($chartData as $index => $dataset)
-                                        {
+                                                {
                                     label: "{{ $dataset['label'] }}",
                                     borderColor: colors[{{ $index }} % colors.length],
                                     backgroundColor: colors[{{ $index }} % colors.length],
@@ -137,7 +138,7 @@
                                     pointBackgroundColor: colors[{{ $index }} % colors.length],
                                 },
                             @endforeach
-                            ],
+                                ],
                     },
                     options: {
                         maintainAspectRatio: false,
@@ -150,7 +151,20 @@
                                 gridLines: { color: "rgb(234, 236, 244)", drawBorder: false, borderDash: [2] }
                             }],
                         },
-                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, padding: 15 } }
+                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, padding: 15 } },
+                        plugins: {
+                            datalabels: {
+                                anchor: 'end',
+                                align: 'top',
+                                color: '#858796',
+                                font: {
+                                    weight: 'bold'
+                                },
+                                formatter: function (value, context) {
+                                    return value;
+                                }
+                            }
+                        }
                     }
                 });
             }
@@ -179,7 +193,22 @@
                                 gridLines: { color: "rgb(234, 236, 244)", drawBorder: false, borderDash: [2] }
                             }],
                         },
-                        legend: { display: false }
+                        legend: { display: false },
+                        plugins: {
+                            datalabels: {
+                                anchor: 'end',
+                                align: 'top',
+                                color: '#fff',
+                                backgroundColor: '#e74a3b',
+                                borderRadius: 4,
+                                font: {
+                                    weight: 'bold'
+                                },
+                                formatter: function (value, context) {
+                                    return value;
+                                }
+                            }
+                        }
                     }
                 });
             }

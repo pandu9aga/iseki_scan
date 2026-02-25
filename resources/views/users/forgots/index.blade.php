@@ -106,6 +106,7 @@
 
 @section('script')
     <script src="{{ asset('vendor/chart.js/Chart.min.js') }}"></script>
+    <script src="{{ asset('js/chartjs-plugin-datalabels.js') }}"></script>
     <script>
         $(document).ready(function () {
             const colors = [
@@ -147,7 +148,20 @@
                                 gridLines: { color: "rgb(234, 236, 244)", drawBorder: false, borderDash: [2] }
                             }],
                         },
-                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, padding: 15 } }
+                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, padding: 15 } },
+                        plugins: {
+                            datalabels: {
+                                anchor: 'end',
+                                align: 'top',
+                                color: '#858796',
+                                font: {
+                                    weight: 'bold'
+                                },
+                                formatter: function (value, context) {
+                                    return value;
+                                }
+                            }
+                        }
                     }
                 });
             }
@@ -176,7 +190,22 @@
                                 gridLines: { color: "rgb(234, 236, 244)", drawBorder: false, borderDash: [2] }
                             }],
                         },
-                        legend: { display: false }
+                        legend: { display: false },
+                        plugins: {
+                            datalabels: {
+                                anchor: 'end',
+                                align: 'top',
+                                color: '#000',
+                                backgroundColor: '#f6c23e',
+                                borderRadius: 4,
+                                font: {
+                                    weight: 'bold'
+                                },
+                                formatter: function (value, context) {
+                                    return value;
+                                }
+                            }
+                        }
                     }
                 });
             }
