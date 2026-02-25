@@ -26,6 +26,7 @@ use App\Http\Controllers\User\SubmissionController;
 use App\Http\Controllers\User\UserMistakeController;
 use App\Http\Controllers\User\UserAchievementController;
 use App\Http\Controllers\User\UserForgotController;
+use App\Http\Controllers\User\LabelControlller;
 use App\Http\Controllers\Mc\McRequestController;
 use App\Http\Controllers\Mc\McValidationController;
 use App\Http\Controllers\Mc\McMissingController;
@@ -151,6 +152,13 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::post('/request/create', [RequestController::class, 'create'])->name('request.create');
     Route::get('/request/check', [RequestController::class, 'check'])->name('request.check');
     Route::post('/request/check-duplicate', [RequestController::class, 'checkDuplicate'])->name('request.checkDuplicate');
+
+    Route::prefix('label')->group(function () {
+        Route::get('/', [LabelControlller::class, 'index'])->name('member.label.index');
+        Route::post('/store', [LabelControlller::class, 'store'])->name('member.label.store');
+        Route::get('/search-rack-part', [LabelControlller::class, 'searchRackPart'])->name('member.label.search');
+        Route::post('/print-now', [LabelControlller::class, 'printNow'])->name('member.label.printNow');
+    });
     
     Route::get('/user_submission', [SubmissionController::class, 'index'])->name('submission');
     Route::get('/user_submission/submit', [SubmissionController::class, 'submit'])->name('user_submission.submit');

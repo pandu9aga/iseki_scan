@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'label' => env('URL_ISEKI_LABEL', 'http://localhost:8001'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -27,10 +27,10 @@ class AdminController extends Controller
 
 
         $now = Carbon::now();
-        // Hitung waktu 2 hari kerja lalu (tanpa Sabtu dan Minggu)
+        // Hitung waktu 1 hari kerja lalu (tanpa Sabtu dan Minggu)
         $workdaysAgo = $now->copy();
         $daysCounted = 0;
-        while ($daysCounted < 2) {
+        while ($daysCounted < 1) {
             $workdaysAgo->subDay();
             // Lewati Sabtu (6) dan Minggu (0)
             if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {

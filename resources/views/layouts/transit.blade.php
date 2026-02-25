@@ -81,7 +81,7 @@
                         <i class="fa fa-bars"></i>
                     </button>
 
-                    <h1 class="h4 mb-0 text-gray-800 ml-3">Transit Access</h1>
+                    {{-- <h1 class="h4 mb-0 text-gray-800 ml-3">Transit Access</h1> --}}
 
                     <!-- Topbar Navbar -->
                     <ul class="navbar-nav ml-auto">

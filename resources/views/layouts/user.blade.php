@@ -196,6 +196,20 @@
             <!-- Divider -->
             <hr class="sidebar-divider">
 
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Label
+            </div>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('member.label.index') }}">
+                    <i class="fas fa-solid fa-tags"></i>
+                    <span>Label</span></a>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
             <!-- Sidebar Toggler (Sidebar) -->
             <div class="text-center d-none d-md-inline">
                 <button class="rounded-circle border-0" id="sidebarToggle"></button>
@@ -299,39 +313,18 @@
     <!-- Custom scripts for all pages-->
     <script src="{{asset('js/sb-admin-2.min.js')}}"></script>
 
+    @yield('script')
+
     <script>
         $(document).ready(function () {
-            var table;
-
-            if ($.fn.DataTable.isDataTable('#dataTable')) {
-                table = $('#dataTable').DataTable();
-                table.page.len(100).draw(); // ✅ paksa default 100
-            } else {
-                table = $('#dataTable').DataTable({
+            if (typeof $.fn.DataTable !== 'undefined' && !$.fn.DataTable.isDataTable('#dataTable')) {
+                $('#dataTable').DataTable({
                     pageLength: 100,
                     lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
                 });
             }
-
-            $(document).ready(function () {
-
-                var table;
-
-                if ($.fn.DataTable.isDataTable('#dataTable')) {
-                    table = $('#dataTable').DataTable();
-                    table.page.len(100).draw();
-                } else {
-                    table = $('#dataTable').DataTable({
-                        pageLength: 100,
-                        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
-                    });
-                }
-            });
-
         });
     </script>
-
-    @yield('script')
 
 </body>
 

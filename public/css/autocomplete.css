@@ -1,0 +1,197 @@
+/* Autocomplete Styles */
+.autocomplete-wrapper {
+    position: relative;
+    width: 100%;
+    display: block;
+}
+
+.autocomplete-wrapper .form-group {
+    margin-bottom: 0;
+}
+
+.autocomplete-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background: #fff;
+    border: 1px solid #d1d3e2;
+    border-top: none;
+    border-radius: 0 0 0.35rem 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    margin-top: 0;
+    width: 100%;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.autocomplete-results.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.autocomplete-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid #e3e6f0;
+    transition: all 0.2s ease;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.selected {
+    background-color: #4e73df;
+    color: #fff;
+}
+
+.autocomplete-item:hover .autocomplete-sub,
+.autocomplete-item.selected .autocomplete-sub {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.autocomplete-main {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.autocomplete-sub {
+    font-size: 0.8rem;
+    color: #858796;
+}
+
+.autocomplete-loading,
+.autocomplete-empty,
+.autocomplete-error {
+    padding: 1rem;
+    text-align: center;
+    color: #858796;
+    font-size: 0.9rem;
+}
+
+.autocomplete-error {
+    color: #e74a3b;
+}
+
+.autocomplete-loading::after {
+    content: '...';
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+}
+
+/* Make input fit properly with form-control */
+.autocomplete-wrapper {
+    display: block;
+    width: 100%;
+}
+
+.autocomplete-wrapper .form-control,
+.autocomplete-wrapper .form-control-user {
+    width: 100%;
+    display: block;
+    box-sizing: border-box;
+}
+
+/* Fix for form-control-user rounded style */
+.autocomplete-wrapper .form-control-user {
+    border-radius: 10rem;
+}
+
+.autocomplete-wrapper .form-control-user:focus {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.autocomplete-wrapper .form-control-user:focus + .autocomplete-results {
+    border-color: #bac8f3;
+}
+
+/* Fix positioning for form-control-user */
+.autocomplete-wrapper .form-control-user + .autocomplete-results {
+    border-radius: 0 0 10rem 10rem;
+    margin-top: 0;
+}
+
+/* When input doesn't have results, keep rounded corners */
+.autocomplete-wrapper .form-control-user:not(.has-results) {
+    border-radius: 10rem !important;
+}
+
+/* Scrollbar styling for results */
+.autocomplete-results::-webkit-scrollbar {
+    width: 8px;
+}
+
+.autocomplete-results::-webkit-scrollbar-track {
+    background: #f8f9fc;
+}
+
+.autocomplete-results::-webkit-scrollbar-thumb {
+    background: #d1d3e2;
+    border-radius: 4px;
+}
+
+.autocomplete-results::-webkit-scrollbar-thumb:hover {
+    background: #858796;
+}
+
+/* Ensure proper containment in columns */
+.col-lg-6 .autocomplete-wrapper,
+.col-md-6 .autocomplete-wrapper {
+    width: 100%;
+    max-width: 100%;
+}
+
+.form-group .autocomplete-wrapper {
+    width: 100%;
+}
+
+/* Fix z-index layering */
+.autocomplete-wrapper:focus-within {
+    z-index: 10;
+    position: relative;
+}
+
+/* Prevent overflow in parent containers */
+.card-body .autocomplete-wrapper {
+    overflow: visible;
+}
+
+/* Fix for row/column layout */
+.row .form-group {
+    position: relative;
+    overflow: visible;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .autocomplete-results {
+        max-height: 200px;
+    }
+
+    .autocomplete-item {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .autocomplete-main {
+        font-size: 0.875rem;
+    }
+
+    .autocomplete-sub {
+        font-size: 0.75rem;
+    }
+}

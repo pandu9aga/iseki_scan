@@ -17,10 +17,10 @@ class MissingController extends Controller
     public function index(){
         $date = Carbon::today()->format('Y-m-d');
         $now = Carbon::now();
-        // Hitung waktu 2 hari kerja lalu (tanpa Sabtu dan Minggu)
+        // Hitung waktu 1 hari kerja lalu (tanpa Sabtu dan Minggu)
         $workdaysAgo = $now->copy();
         $daysCounted = 0;
-        while ($daysCounted < 2) {
+        while ($daysCounted < 1) {
             $workdaysAgo->subDay();
             // Lewati Sabtu (6) dan Minggu (0)
             if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
@@ -64,10 +64,10 @@ class MissingController extends Controller
         $date = $request->input('Day_Request_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
         $now = Carbon::now();
-        // Hitung waktu 2 hari kerja lalu (tanpa Sabtu dan Minggu)
+        // Hitung waktu 1 hari kerja lalu (tanpa Sabtu dan Minggu)
         $workdaysAgo = $now->copy();
         $daysCounted = 0;
-        while ($daysCounted < 2) {
+        while ($daysCounted < 1) {
             $workdaysAgo->subDay();
             // Lewati Sabtu (6) dan Minggu (0)
             if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {

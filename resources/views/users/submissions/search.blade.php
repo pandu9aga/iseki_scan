@@ -83,7 +83,7 @@
             var table = $('#dataTable').DataTable({
                 processing: true,
                 serverSide: true,
-                pageLength: 25,
+                pageLength: 100,
                 autoWidth: false,
                 ajax: {
                     url: "{{ route('submission.search') }}",
