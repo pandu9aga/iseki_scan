@@ -120,11 +120,11 @@
                 Evaluation
             </div>
 
-            {{-- <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('achievement') }}">
                     <i class="fas fa-fw fa-trophy"></i>
                     <span>Achievement</span></a>
-            </li> --}}
+            </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mistake') }}">
