@@ -187,11 +187,11 @@
                     <span>Mistake</span></a>
             </li>
 
-            {{-- <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('user_forgot') }}">
                     <i class="fas fa-fw fa-question-circle"></i>
                     <span>Forgot</span></a>
-            </li> --}}
+            </li>
 
             <!-- Divider -->
             <hr class="sidebar-divider">
