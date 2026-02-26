@@ -69,7 +69,7 @@
                             <table class="table table-bordered table-sm daily-table" width="100%" cellspacing="0">
                                 <thead class="bg-light text-center">
                                     <tr>
-                                        <th rowspan="2" class="align-middle" style="min-width: 150px;">Member Name</th>
+                                        <th rowspan="2" class="align-middle sticky-col" style="min-width: 150px;">Member Name</th>
                                         <th rowspan="2" class="align-middle bg-dark text-white">Total</th>
                                         <th colspan="{{ $daysInMonth }}">Date
                                             ({{ \Carbon\Carbon::parse($month)->format('F Y') }})</th>
@@ -82,8 +82,8 @@
                                 </thead>
                                 <tbody>
                                     @foreach($reportData as $memberId => $data)
-                                        <tr>
-                                            <td class="font-weight-bold">
+                                        <tr class="hover-row">
+                                            <td class="font-weight-bold sticky-col">
                                                 <a href="{{ route('forgot.detail', ['member_id' => $memberId, 'month' => $month]) }}">
                                                     {{ $data['name'] }}
                                                 </a>
@@ -267,6 +267,30 @@
         
         .border-left-warning {
             border-left: .25rem solid #f6c23e!important;
+        }
+
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background-color: #f8f9fc !important;
+            z-index: 5;
+            border-right: 2px solid #e3e6f0 !important;
+        }
+
+        thead tr:nth-child(1) th.sticky-col {
+            z-index: 15;
+        }
+
+        thead tr:nth-child(2) th.sticky-col {
+            z-index: 14;
+        }
+
+        tbody tr:hover td {
+            background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.05) 100%);
+        }
+
+        tbody tr:hover td.sticky-col {
+            background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
         }
     </style>
 @endsection

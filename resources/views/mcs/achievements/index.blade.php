@@ -28,7 +28,8 @@
                         <table class="table table-bordered" id="achievementTable" width="100%" cellspacing="0">
                             <thead>
                                 <tr>
-                                    <th rowspan="2" class="align-middle text-center" style="background-color: #f8f9fc;">Date
+                                    <th rowspan="2" class="align-middle text-center sticky-col"
+                                        style="background-color: #f8f9fc;">Date
                                     </th>
                                     <th colspan="{{ count($requestsData) }}" class="text-center bg-primary text-white">REQUESTS
                                     </th>
@@ -49,7 +50,7 @@
                             <tbody>
                                 <!-- Total Row -->
                                 <tr class="sticky-total" style="background-color: #e3e6f0; font-weight: bold;">
-                                    <td class="text-center italic"><b>TOTAL</b></td>
+                                    <td class="text-center italic sticky-col"><b>TOTAL</b></td>
                                     @foreach($requestsData as $userId => $data)
                                         <td class="text-center">{{ $data['total'] }}</td>
                                     @endforeach
@@ -59,8 +60,8 @@
                                 </tr>
                                 <!-- Daily Rows -->
                                 @for($i = 1; $i <= $daysInMonth; $i++)
-                                    <tr>
-                                        <td class="text-center"><b>{{ $i }}</b></td>
+                                    <tr class="hover-row">
+                                        <td class="text-center sticky-col"><b>{{ $i }}</b></td>
                                         <!-- Days for Requests -->
                                         @foreach($requestsData as $userId => $data)
                                             <td class="text-center">{{ $data['days'][$i] }}</td>
@@ -114,6 +115,36 @@
             /* Height of Row 1 + Row 2. Adjusted to stay below header */
             z-index: 9;
             background-color: #e3e6f0 !important;
+        }
+
+        .sticky-total td.sticky-col {
+            z-index: 12 !important;
+            left: 0;
+            background-color: #e3e6f0 !important;
+        }
+
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background-color: #f8f9fc !important;
+            z-index: 5;
+            border-right: 2px solid #e3e6f0 !important;
+        }
+
+        thead tr:nth-child(1) th.sticky-col {
+            z-index: 15;
+        }
+
+        thead tr:nth-child(2) th.sticky-col {
+            z-index: 14;
+        }
+
+        tbody tr:not(.sticky-total):hover td {
+            background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.05) 100%);
+        }
+
+        tbody tr:not(.sticky-total):hover td.sticky-col {
+            background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
         }
     </style>
 @endsection
