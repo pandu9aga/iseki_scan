@@ -138,6 +138,12 @@
                     <span>Forgot</span></a>
             </li>
 
+            {{-- <li class="nav-item">
+                <a class="nav-link" href="{{ route('prediction.error') }}">
+                    <i class="fas fa-fw fa-brain"></i>
+                    <span>Prediction</span></a>
+            </li> --}}
+
             <!-- Divider -->
             <hr class="sidebar-divider">
 

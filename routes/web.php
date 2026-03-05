@@ -132,6 +132,9 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/forgot/get-latest-request', [ForgotController::class, 'getLatestRequest'])->name('forgot.get_latest_request');
     Route::get('/forgot/detail', [ForgotController::class, 'detail'])->name('forgot.detail');
     Route::get('/forgot/export', [ForgotController::class, 'export'])->name('forgot.export');
+
+    // Prediction Route
+    Route::get('/prediction/error', [\App\Http\Controllers\Admin\PredictionController::class, 'index'])->name('prediction.error');
 });
 
 Route::middleware(AuthMiddleware::class)->group(function () {
