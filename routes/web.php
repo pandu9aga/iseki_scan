@@ -133,8 +133,9 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/forgot/detail', [ForgotController::class, 'detail'])->name('forgot.detail');
     Route::get('/forgot/export', [ForgotController::class, 'export'])->name('forgot.export');
 
-    // Prediction Route
+    // Prediction Routes
     Route::get('/prediction/error', [\App\Http\Controllers\Admin\PredictionController::class, 'index'])->name('prediction.error');
+    Route::get('/prediction/emptiness', [\App\Http\Controllers\Admin\PredictionController::class, 'emptiness'])->name('prediction.emptiness');
 });
 
 Route::middleware(AuthMiddleware::class)->group(function () {

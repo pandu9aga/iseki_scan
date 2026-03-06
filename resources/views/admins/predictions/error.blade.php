@@ -105,7 +105,7 @@
         async function loadModel() {
             try {
                 // Fix for Keras 3 model.json compatibility handled by backend repair
-                model = await tf.loadLayersModel('{{ asset("tfjs_model/model.json") }}');
+                model = await tf.loadLayersModel('{{ asset("tfjs_model/error/model.json") }}');
                 console.log('Model loaded successfully');
                 startPrediction();
             } catch (error) {

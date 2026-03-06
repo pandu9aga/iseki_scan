@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Request as RequestModel;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class PredictionController extends Controller
 {
@@ -51,5 +51,49 @@ class PredictionController extends Controller
         });
 
         return view('admins.predictions.error', compact('date', 'requests', 'dataset', 'areas'));
+    }
+    public function emptiness()
+    {
+        // 1. Get recent fill stats (records)
+        $fillStats = DB::table('records')
+            ->select('Code_Rack', DB::raw('COUNT(*) as fill_count_7d'))
+            ->where('Day_Record', '>=', now()->subDays(7))
+            ->groupBy('Code_Rack');
+
+        // 2. Get recent request stats (requests by rack)
+        $reqRackStats = DB::table('requests')
+            ->select('Code_Rack', 
+                DB::raw('COUNT(*) as request_count_7d'),
+                DB::raw('MAX(STR_TO_DATE(CONCAT(Day_Request, " ", Time_Request), "%Y-%m-%d %H:%i:%s")) as last_req_time')
+            )
+            ->where('Day_Request', '>=', now()->subDays(7))
+            ->groupBy('Code_Rack');
+
+        // 3. Get habit stats (requests by item)
+        $habitStats = DB::table('requests')
+            ->select('Code_Item_Rack',
+                DB::raw('COUNT(*) as total_req_lifetime'),
+                DB::raw('MIN(STR_TO_DATE(CONCAT(Day_Request, " ", Time_Request), "%Y-%m-%d %H:%i:%s")) as first_req_time'),
+                DB::raw('MAX(STR_TO_DATE(CONCAT(Day_Request, " ", Time_Request), "%Y-%m-%d %H:%i:%s")) as max_req_time')
+            )
+            ->groupBy('Code_Item_Rack');
+
+        // 4. Combine everything
+        $racks = DB::table('racks as r')
+            ->leftJoinSub($fillStats, 'f', 'r.Code_Rack', '=', 'f.Code_Rack')
+            ->leftJoinSub($reqRackStats, 'rr', 'r.Code_Rack', '=', 'rr.Code_Rack')
+            ->leftJoinSub($habitStats, 'h', 'r.Code_Item_Rack', '=', 'h.Code_Item_Rack')
+            ->select([
+                'r.Code_Rack',
+                'r.Code_Item_Rack',
+                DB::raw('COALESCE(f.fill_count_7d, 0) as fill_count_7d'),
+                DB::raw('COALESCE(rr.request_count_7d, 0) as request_count_7d'),
+                DB::raw('COALESCE(h.total_req_lifetime, 0) as total_req_lifetime'),
+                DB::raw('TIMESTAMPDIFF(HOUR, rr.last_req_time, NOW()) as hours_since_last_req'),
+                DB::raw('TIMESTAMPDIFF(HOUR, h.first_req_time, h.max_req_time) / NULLIF(h.total_req_lifetime - 1, 0) as avg_request_interval_h')
+            ])
+            ->get();
+
+        return view('admins.predictions.emptiness', compact('racks'));
     }
 }

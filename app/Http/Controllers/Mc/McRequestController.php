@@ -315,7 +315,8 @@ class McRequestController extends Controller
                     $requestModel->Shipping_Request = $now;
                     break;
                 case '3':
-                    $requestModel->Production_Area_Request = $now;
+                    $requestModel->Shipping_Request = $now;
+                    // $requestModel->Production_Area_Request = $now;
                     break;
                 case '4':
                     $requestModel->Design_Changes_Request = $now;

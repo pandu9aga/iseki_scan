@@ -75,6 +75,7 @@ class LabelControlller extends Controller
 
             // Get all pending labels
             $pendingLabels = QueueLabelPrint::where('printed', 'pending')
+                ->where('requested_by', $userName)
                 ->orWhereNull('printed')
                 ->get();
 
