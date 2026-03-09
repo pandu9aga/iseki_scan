@@ -21,7 +21,8 @@
                                 <th>Area</th>
                                 <th>Member Request</th>
                                 <th>Item</th>
-                                <th>Rack <span class="text-white">-------</span></th>
+                                <th>Rack</th>
+                                <th>Type Tractor</th>
                                 <th>Time Request</th>
                                 <th>Ready Stock</th>
                                 <th>Time Record</th>
@@ -102,6 +103,7 @@
                     { data: 'Member_Request', name: 'Id_User', searchable: true }, // ← penting!
                     { data: 'Code_Item_Rack', name: 'Code_Item_Rack', searchable: true },
                     { data: 'Code_Rack', name: 'Code_Rack', searchable: true, width: 'auto' },
+                    { data: 'Type_Tractor_Rack', name: 'Type_Tractor_Rack', searchable: false },
                     { data: 'Day_Request', name: 'Day_Request', searchable: false },
                     { data: 'ready_status_display', name: 'ready_status_display', searchable: false },
                     { data: 'Time_Record', name: 'Time_Record', searchable: false },
@@ -137,7 +139,7 @@
                     var filterRow = header.find('tr.filter-row');
                     filterRow.empty();
 
-                    const filterable = [1, 2, 3, 4, 6];
+                    const filterable = [1, 2, 3, 4, 5, 7];
 
                     api.columns().every(function (index) {
                         var column = this;
@@ -157,15 +159,15 @@
                                 column.search(this.value).draw();
                             });
                             filterRow.append($('<th>').append(select));
-                        } else if (index === 6) {
+                        } else if (index === 7) {
                             // Kolom Ready Stock → status dropdown
                             var select = $(`<select class="form-control form-control-sm">
-                                    <option value="">All Status</option>
-                                    <option value="ready">Ready</option>
-                                    <option value="shipping">Shipping</option>
-                                    <option value="production">Production</option>
-                                    <option value="design_change">Design Change</option>
-                                </select>`);
+                                        <option value="">All Status</option>
+                                        <option value="ready">Ready</option>
+                                        <option value="shipping">Shipping</option>
+                                        <option value="production">Production</option>
+                                        <option value="design_change">Design Change</option>
+                                    </select>`);
                             select.on('change', function () {
                                 table.ajax.reload();
                             });

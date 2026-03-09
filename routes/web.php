@@ -70,6 +70,12 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/rack/upload', [RackController::class, 'upload'])->name('rack.upload');
     Route::post('/rack/import', [RackController::class, 'import'])->name('rack.import');
     Route::get('/rack/export', [RackController::class, 'export'])->name('rack.export');
+    Route::get('/rack/type', [RackController::class, 'type'])->name('rack.type');
+    Route::get('/rack/type/edit/{Id_Rack}', [RackController::class, 'typeEdit'])->name('rack.type.edit');
+    Route::put('/rack/type/update/{Id_Rack}', [RackController::class, 'typeUpdate'])->name('rack.type.update');
+    Route::get('/rack/type/upload', [RackController::class, 'typeUpload'])->name('rack.type.upload');
+    Route::post('/rack/type/import', [RackController::class, 'typeImport'])->name('rack.type.import');
+    Route::get('/rack/type/export', [RackController::class, 'typeExport'])->name('rack.type.export');
 
     Route::get('/user', [UserController::class, 'index'])->name('user');
     Route::get('/user/add', [UserController::class, 'add'])->name('user.add');

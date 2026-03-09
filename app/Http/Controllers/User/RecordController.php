@@ -83,6 +83,12 @@ class RecordController extends Controller
             ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
             ->exists();
 
+        if (!$exists) {
+            $exists = DB::connection('label')->table('rack_part_list')
+                ->where('item_code', 'LIKE', '%' . $codeItem . '%')
+                ->exists();
+        }
+
         return response()->json([
             'status' => $exists ? 'correct' : 'incorrect'
         ]);

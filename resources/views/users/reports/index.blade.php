@@ -1,211 +1,224 @@
 @extends('layouts.user')
 @section('content')
-<!-- Begin Page Content -->
-<div class="container-fluid">
+    <!-- Begin Page Content -->
+    <div class="container-fluid">
 
-    <h1 class="h3 mb-2 text-gray-800">Record</h1>
-    <!-- Page Heading -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <!-- Earnings (Monthly) Card Example -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col-xl-12">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Choose Day
-                            </div>
-                            <form class="user" action="{{ route('user_report.submit') }}" method="GET">
-                                @csrf
-                                <div class="row d-flex align-items-center">
-                                    <div class="col-lg-8 col-md-6 mb-1">
-                                        <input name="Day_Record" type="date" class="form-control" value="{{ $date }}">
-                                    </div>
-                                    <div class="col-lg-4 col-md-6">
-                                        <button class="d-sm-inline btn btn-md btn-primary shadow-sm" type="submit">
-                                            Apply
-                                        </button>
-                                    </div>
+        <h1 class="h3 mb-2 text-gray-800">Record</h1>
+        <!-- Page Heading -->
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <!-- Earnings (Monthly) Card Example -->
+            <div class="col-xl-4 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col-xl-12">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    Choose Day
                                 </div>
-                            </form>
+                                <form class="user" action="{{ route('user_report.submit') }}" method="GET">
+                                    @csrf
+                                    <div class="row d-flex align-items-center">
+                                        <div class="col-lg-8 col-md-6 mb-1">
+                                            <input name="Day_Record" type="date" class="form-control" value="{{ $date }}">
+                                        </div>
+                                        <div class="col-lg-4 col-md-6">
+                                            <button class="d-sm-inline btn btn-md btn-primary shadow-sm" type="submit">
+                                                Apply
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <form class="user" action="{{ route('user_report.export') }}" method="GET" target="_blank">
+                <input name="Day_Record_Hidden" type="hidden" class="form-control form-control-user" value="{{ $date }}">
+                <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
+                    <i class="fas fa-download fa-sm text-white-50"></i> Download Record
+                </button>
+            </form>
         </div>
-        <form class="user" action="{{ route('user_report.export') }}" method="GET" target="_blank">
-            <input name="Day_Record_Hidden" type="hidden" class="form-control form-control-user" value="{{ $date }}">
-            <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
-                <i class="fas fa-download fa-sm text-white-50"></i> Download Record
+
+        <a href="{{ route('record') }}">
+            <button class="btn btn-lg btn-primary shadow-sm ms-auto mb-4" type="button">
+                <i class="fas fa-qrcode fa-sm text-white-50"></i> Record
             </button>
-        </form>
-    </div>
+        </a>
 
-    <a href="{{ route('record') }}">
-        <button class="btn btn-lg btn-primary shadow-sm ms-auto mb-4" type="button">
-            <i class="fas fa-qrcode fa-sm text-white-50"></i> Record
-        </button>
-    </a>
-
-    <!-- DataTales Example -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <div class="row d-flex">
-                <h6 class="m-0 font-weight-bold text-primary col-md-8">Record: {{ $formattedDate }}</h6>
-                <h6 class="m-0 font-weight-bold text-success col-md-2">Correct: {{ $correct }}</h6>
-                <h6 class="m-0 font-weight-bold text-danger col-md-2">Incorrect: {{ $incorrect }}</h6>
+        <!-- DataTales Example -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <div class="row d-flex">
+                    <h6 class="m-0 font-weight-bold text-primary col-md-8">Record: {{ $formattedDate }}</h6>
+                    <h6 class="m-0 font-weight-bold text-success col-md-2">Correct: {{ $correct }}</h6>
+                    <h6 class="m-0 font-weight-bold text-danger col-md-2">Incorrect: {{ $incorrect }}</h6>
+                </div>
             </div>
-        </div>
-        <div class="card-body">
-            @if (session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <span class="badge bg-success">Success</span> {{ session('success') }}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-            @endif
+            <div class="card-body">
+                @if (session('success'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <span class="badge bg-success">Success</span> {{ session('success') }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                @endif
 
-            @if (session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <span class="badge bg-danger">Error</span> {{ session('error') }}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-            @endif
-            <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>Time Record</th>
-                            <th>Area</th>
-                            <th>Rack</th>
-                            <th>Sum Record</th>
-                            <th>Item</th>
-                            <th>Name</th>
-                            <th>Correctness</th>
-                            <th>Time Request</th>
-                            <th>Sum Request</th>
-                            <th>Member Request</th>
-                            <th>Member Record</th>
-                            <th>Updated</th>
-                            {{-- <th>Action</th> --}}
-                        </tr>
-                    </thead>
-                    <tfoot>
-                        <tr>
-                            <th>No</th>
-                            <th>Time Record</th>
-                            <th>Area</th>
-                            <th>Rack</th>
-                            <th>Sum Record</th>
-                            <th>Item</th>
-                            <th>Name</th>
-                            <th>Correctness</th>
-                            <th>Time Request</th>
-                            <th>Sum Request</th>
-                            <th>Member Request</th>
-                            <th>Member Record</th>
-                            <th>Updated</th>
-                            {{-- <th>Action</th> --}}
-                        </tr>
-                    </tfoot>
-                    <tbody>
-                        @foreach ( $records as $r )
-                        <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $r->Day_Record }} {{ $r->Time_Record }}</td>
-                            <td>{{ $r->request->Area_Request ?? '' }}</td>
-                            <td>{{ $r->Code_Rack }}</td>
-                            <td>
-                                <div class="row">
-                                    <div class="col-6">
-                                        {{ $r->Sum_Record }}
-                                    </div>
-                                    <div class="col-6">
-                                        <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#editModal{{ $r->Id_Record }}">
-                                            <i class="fas fa-fw fa-pen"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ $r->Code_Item_Rack }}</td>
-                            <td>{{ $r->rack->Name_Item_Rack ?? '' }}</td>
-                            <td>
-                                @if ($r->Correctness_Record == 1)
-                                    <span class="text-white px-1 py-1 bg-gradient-success">
-                                        Correct
-                                    </span>
-                                @else
-                                    <span class="text-white px-1 py-1 bg-gradient-danger">
-                                        Incorrect
-                                    </span>
-                                @endif
-                            </td>
-                            <td>{{ optional($r->request)->Day_Request ?? '' }} {{ optional($r->request)->Time_Request ?? '' }}</td>
-                            <td>{{ optional($r->request)->Sum_Request ?? '' }}</td>
-                            <td>{{ optional($r->request)->member->Name_Member ?? '' }}</td>
-                            <td>{{ $r->member->Name_Member ?? '' }}</td>
-                            <td>{{ $r->Updated_At_Record ?? '' }}</td>
-                            {{-- <td>
-                                tombol delete
-                                <form action="{{ route('user_report.destroy', $r->Id_Record) }}" method="POST" onsubmit="return confirm('Yakin mau hapus record ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-fw fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td> --}}
-                        </tr>
-                        <div class="modal fade" id="editModal{{ $r->Id_Record }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ $r->Id_Record }}" aria-hidden="true">
-                            <div class="modal-dialog" role="document">
-                                <form method="POST" action="{{ route('user_report.update', $r->Id_Record) }}">
-                                    @csrf
-                                    @method('PUT')
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-primary text-white">
-                                            <h5 class="modal-title" id="editModalLabel{{ $r->Id_Record }}">Edit Record</h5>
-                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="form-group">
-                                                <label>Jumlah Record</label>
-                                                <input type="number" name="Sum_Record" class="form-control" value="{{ $r->Sum_Record }}" required min="1">
+                @if (session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <span class="badge bg-danger">Error</span> {{ session('error') }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                @endif
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Time Record</th>
+                                <th>Area</th>
+                                <th>Rack</th>
+                                <th>Type Tractor</th>
+                                <th>Sum Record</th>
+                                <th>Item</th>
+                                <th>Name</th>
+                                <th>Correctness</th>
+                                <th>Time Request</th>
+                                <th>Sum Request</th>
+                                <th>Member Request</th>
+                                <th>Member Record</th>
+                                <th>Updated</th>
+                                {{-- <th>Action</th> --}}
+                            </tr>
+                        </thead>
+                        <tfoot>
+                            <tr>
+                                <th>No</th>
+                                <th>Time Record</th>
+                                <th>Area</th>
+                                <th>Rack</th>
+                                <th>Type Tractor</th>
+                                <th>Sum Record</th>
+                                <th>Item</th>
+                                <th>Name</th>
+                                <th>Correctness</th>
+                                <th>Time Request</th>
+                                <th>Sum Request</th>
+                                <th>Member Request</th>
+                                <th>Member Record</th>
+                                <th>Updated</th>
+                                {{-- <th>Action</th> --}}
+                            </tr>
+                        </tfoot>
+                        <tbody>
+                            @foreach ($records as $r)
+                                <tr>
+                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $r->Day_Record }} {{ $r->Time_Record }}</td>
+                                    <td>{{ $r->request->Area_Request ?? '' }}</td>
+                                    <td>{{ $r->Code_Rack }}</td>
+                                    <td title="{{ $r->rack->Type_Tractor_Rack ?? '-' }}">
+                                        {{ \Illuminate\Support\Str::limit($r->rack->Type_Tractor_Rack ?? '-', 20) }}
+                                    </td>
+                                    <td>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                {{ $r->Sum_Record }}
+                                            </div>
+                                            <div class="col-6">
+                                                <button class="btn btn-sm btn-primary" data-toggle="modal"
+                                                    data-target="#editModal{{ $r->Id_Record }}">
+                                                    <i class="fas fa-fw fa-pen"></i>
+                                                </button>
                                             </div>
                                         </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                                            <button type="submit" class="btn btn-primary">Simpan</button>
-                                        </div>
+                                    </td>
+                                    <td>{{ $r->Code_Item_Rack }}</td>
+                                    <td>{{ $r->rack->Name_Item_Rack ?? '' }}</td>
+                                    <td>
+                                        @if ($r->Correctness_Record == 1)
+                                            <span class="text-white px-1 py-1 bg-gradient-success">
+                                                Correct
+                                            </span>
+                                        @else
+                                            <span class="text-white px-1 py-1 bg-gradient-danger">
+                                                Incorrect
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td>{{ optional($r->request)->Day_Request ?? '' }}
+                                        {{ optional($r->request)->Time_Request ?? '' }}</td>
+                                    <td>{{ optional($r->request)->Sum_Request ?? '' }}</td>
+                                    <td>{{ optional($r->request)->member->Name_Member ?? '' }}</td>
+                                    <td>{{ $r->member->Name_Member ?? '' }}</td>
+                                    <td>{{ $r->Updated_At_Record ?? '' }}</td>
+                                    {{-- <td>
+                                        tombol delete
+                                        <form action="{{ route('user_report.destroy', $r->Id_Record) }}" method="POST"
+                                            onsubmit="return confirm('Yakin mau hapus record ini?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-fw fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td> --}}
+                                </tr>
+                                <div class="modal fade" id="editModal{{ $r->Id_Record }}" tabindex="-1" role="dialog"
+                                    aria-labelledby="editModalLabel{{ $r->Id_Record }}" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <form method="POST" action="{{ route('user_report.update', $r->Id_Record) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-primary text-white">
+                                                    <h5 class="modal-title" id="editModalLabel{{ $r->Id_Record }}">Edit Record
+                                                    </h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="form-group">
+                                                        <label>Jumlah Record</label>
+                                                        <input type="number" name="Sum_Record" class="form-control"
+                                                            value="{{ $r->Sum_Record }}" required min="1">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary"
+                                                        data-dismiss="modal">Batal</button>
+                                                    <button type="submit" class="btn btn-primary">Simpan</button>
+                                                </div>
+                                            </div>
+                                        </form>
                                     </div>
-                                </form>
-                            </div>
-                        </div>
-                        @endforeach
-                    </tbody>
-                </table>
+                                </div>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<!-- /.container-fluid -->
+    <!-- /.container-fluid -->
 @endsection
 
 @section('style')
-<!-- Custom styles for this page -->
-<link href="{{asset('vendor/datatables/dataTables.bootstrap4.min.css')}}" rel="stylesheet">
+    <!-- Custom styles for this page -->
+    <link href="{{asset('vendor/datatables/dataTables.bootstrap4.min.css')}}" rel="stylesheet">
 @endsection
 
 @section('script')
-<!-- Page level plugins -->
-<script src="{{asset('vendor/datatables/jquery.dataTables.min.js')}}"></script>
-<script src="{{asset('vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>
+    <!-- Page level plugins -->
+    <script src="{{asset('vendor/datatables/jquery.dataTables.min.js')}}"></script>
+    <script src="{{asset('vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>
 
-<!-- Page level custom scripts -->
-{{-- <script src="{{asset('js/demo/datatables-demo.js')}}"></script> --}}
+    <!-- Page level custom scripts -->
+    {{--
+    <script src="{{asset('js/demo/datatables-demo.js')}}"></script> --}}
 @endsection

@@ -64,6 +64,7 @@
                             <th>Time Validation</th>
                             <th>Area</th>
                             <th>Rack</th>
+                            <th>Type Tractor</th>
                             <th>Item</th>
                             <th>Name</th>
                             <th>Time Request</th>
@@ -78,6 +79,7 @@
                             <th>Time Validation</th>
                             <th>Area</th>
                             <th>Rack</th>
+                            <th>Type Tractor</th>
                             <th>Item</th>
                             <th>Name</th>
                             <th>Time Request</th>
@@ -93,6 +95,9 @@
                             <td>{{ $s->Day_Validation }} {{ $s->Time_Validation }}</td>
                             <td>{{ optional($s->request)->Area_Request ?? '' }}</td>
                             <td>{{ $s->Code_Rack }}</td>
+                            <td title="{{ $s->rack->Type_Tractor_Rack ?? '-' }}">
+                                {{ \Illuminate\Support\Str::limit($s->rack->Type_Tractor_Rack ?? '-', 20) }}
+                            </td>
                             <td>{{ $s->Code_Item_Rack }}</td>
                             <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
                             <td>{{ optional($s->request)->Day_Request ?? '' }} {{ optional($s->request)->Time_Request ?? '' }}</td>

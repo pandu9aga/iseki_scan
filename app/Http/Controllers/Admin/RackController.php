@@ -181,4 +181,111 @@ class RackController extends Controller
 
         return response()->download($temp_file, $fileName)->deleteFileAfterSend(true);
     }
+
+    public function type(){
+        $rack = Rack::select('Id_Rack', 'Code_Rack', 'Type_Tractor_Rack')->get();
+        return view('admins.racks.type', compact('rack'));
+    }
+
+    public function typeEdit($Id_Rack)
+    {
+        $rack = Rack::where('Id_Rack', $Id_Rack)->first();
+        return view('admins.racks.type_edit', compact('rack'));
+    }
+
+    public function typeUpdate(Request $request, $Id_Rack)
+    {
+        $request->validate([
+            'Type_Tractor_Rack' => 'required'
+        ], [
+            'Type_Tractor_Rack.required' => 'Type Tractor wajib diisi'
+        ]);
+
+        DB::table('racks')->where('Id_Rack', $Id_Rack)->update([
+            'Type_Tractor_Rack' => $request->input('Type_Tractor_Rack'),
+            'Update_Rack' => Carbon::now()->format('Y-m-d H:i:s')
+        ]);
+
+        return redirect()->route('rack.type')->with('success', 'Type Tractor berhasil diperbarui');
+    }
+
+    public function typeUpload()
+    {
+        return view('admins.racks.type_upload');
+    }
+
+    public function typeImport(Request $request)
+    {
+        $request->validate([
+            'excel' => 'required|file|mimes:xlsx,xls'
+        ]);
+
+        ini_set('max_execution_time', 600);
+        ini_set('memory_limit', '512M');
+
+        $file = $request->file('excel');
+        $spreadsheet = IOFactory::load($file->getPathname());
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        $updated = 0;
+
+        foreach (array_slice($rows, 1) as $row) {
+            if (count($row) >= 2) {
+                $codeRack = trim($row[0]);
+                $typeTractor = trim($row[1]);
+
+                if (!empty($codeRack)) {
+                    $exists = DB::table('racks')
+                        ->where('Code_Rack', $codeRack)
+                        ->first();
+
+                    if ($exists) {
+                        DB::table('racks')
+                            ->where('Code_Rack', $codeRack)
+                            ->update([
+                                'Type_Tractor_Rack' => $typeTractor,
+                                'Update_Rack' => Carbon::now()->format('Y-m-d H:i:s'),
+                            ]);
+                        $updated++;
+                    }
+                }
+            }
+        }
+
+        return redirect()->route('rack.type')->with(
+            'success',
+            "Import selesai: $updated data Type Tractor diperbarui."
+        );
+    }
+
+    public function typeExport()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Header
+        $sheet->setCellValue('A1', 'Rack Code');
+        $sheet->setCellValue('B1', 'Type Tractor');
+
+        // Data dari database
+        $racks = DB::table('racks')
+            ->select('Code_Rack', 'Type_Tractor_Rack')
+            ->orderBy('Code_Rack')
+            ->get();
+
+        $rowIndex = 2;
+        foreach ($racks as $rack) {
+            $sheet->setCellValue("A{$rowIndex}", $rack->Code_Rack);
+            $sheet->setCellValue("B{$rowIndex}", $rack->Type_Tractor_Rack);
+            $rowIndex++;
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $fileName = 'rack_types_export_' . now()->format('Ymd_His') . '.xlsx';
+        $temp_file = tempnam(sys_get_temp_dir(), $fileName);
+        $writer->save($temp_file);
+
+        return response()->download($temp_file, $fileName)->deleteFileAfterSend(true);
+    }
 }

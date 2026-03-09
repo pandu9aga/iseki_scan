@@ -252,6 +252,14 @@ class SubmissionController extends Controller
                 ->addColumn('Name', function ($r) {
                     return optional($r->rack)->Name_Item_Rack ?? '';
                 })
+                ->addColumn('Type_Tractor_Rack', function ($r) {
+                    $type = optional($r->rack)->Type_Tractor_Rack ?? '-';
+                    if ($type === '-') {
+                        return '-';
+                    }
+                    $short = \Illuminate\Support\Str::limit($type, 20);
+                    return '<span title="'.e($type).'">'.e($short).'</span>';
+                })
                 ->addColumn('Time_Record', function ($r) {
                     $day = optional($r->record)->Day_Record ?? '';
                     $time = optional($r->record)->Time_Record ?? '';
@@ -301,7 +309,7 @@ class SubmissionController extends Controller
                         $query->where('Id_User', $keyword); 
                     }
                 })
-                ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display'])
+                ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display', 'Type_Tractor_Rack'])
                 ->make(true);
         }
 

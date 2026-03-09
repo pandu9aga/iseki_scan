@@ -97,6 +97,7 @@
                             <th>Time Record</th>
                             <th>Area</th>
                             <th>Rack</th>
+                            <th>Type Tractor</th>
                             <th>Sum Record</th>
                             <th>Item</th>
                             <th>Name</th>
@@ -114,6 +115,7 @@
                             <th>Time Record</th>
                             <th>Area</th>
                             <th>Rack</th>
+                            <th>Type Tractor</th>
                             <th>Sum Record</th>
                             <th>Item</th>
                             <th>Name</th>
@@ -132,6 +134,9 @@
                             <td>{{ $r->Day_Record }} {{ $r->Time_Record }}</td>
                             <td>{{ optional($r->request)->Area_Request ?? '' }}</td>
                             <td>{{ $r->Code_Rack }}</td>
+                            <td title="{{ $r->rack->Type_Tractor_Rack ?? '-' }}">
+                                {{ \Illuminate\Support\Str::limit($r->rack->Type_Tractor_Rack ?? '-', 20) }}
+                            </td>
                             <td>{{ $r->Sum_Record }}</td>
                             <td>{{ $r->Code_Item_Rack }}</td>
                             <td>{{ $r->rack->Name_Item_Rack ?? '' }}</td>

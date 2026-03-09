@@ -272,7 +272,15 @@ class AdminRequestController extends Controller
                 ->addColumn('Name', function ($r) {
                     return optional($r->rack)->Name_Item_Rack ?? '';
                 })
-                ->addColumn('Time_Record', function ($r) {
+                ->addColumn('Type_Tractor_Rack', function ($r) {
+                $type = optional($r->rack)->Type_Tractor_Rack ?? '-';
+                if ($type === '-') {
+                    return '-';
+                }
+                $short = \Illuminate\Support\Str::limit($type, 20);
+                return '<span title="'.e($type).'">'.e($short).'</span>';
+            })
+            ->addColumn('Time_Record', function ($r) {
                     $day = optional($r->record)->Day_Record ?? '';
                     $time = optional($r->record)->Time_Record ?? '';
                     return trim("$day $time");
@@ -321,7 +329,7 @@ class AdminRequestController extends Controller
                         $query->where('Id_User', $keyword); // ✅ exact match
                     }
                 })
-                ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display'])
+                ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display', 'Type_Tractor_Rack'])
                 ->make(true);
         }
 
