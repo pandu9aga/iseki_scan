@@ -21,7 +21,7 @@
                                 <th>Area</th>
                                 <th>Member Request</th>
                                 <th>Item</th>
-                                <th>Rack</th>
+                                <th>Rack <span class="text-white">-------</span></th>
                                 <th>Type Tractor</th>
                                 <th>Time Request</th>
                                 <th>Ready Stock</th>
@@ -94,7 +94,6 @@
             var table = $('#dataTable').DataTable({
                 processing: true,
                 serverSide: true,
-                pageLength: 25,
                 autoWidth: false,
                 ajax: {
                     url: "{{ route('request.search') }}",
@@ -125,7 +124,7 @@
                     { data: 'Member_Record', name: 'Member_Record', searchable: false },
                     { data: 'Updated_At_Request', name: 'Updated_At_Request', searchable: false }
                 ],
-                order: [[5, 'desc']], // urutkan berdasarkan Time Request
+                order: [[6, 'desc']], // urutkan berdasarkan Time Request
                 drawCallback: function () {
                     this.api().column(0, { search: 'applied', order: 'applied' }).nodes().each(function (cell, i) {
                         cell.innerHTML = i + 1;
@@ -149,7 +148,7 @@
                     var filterRow = header.find('tr.filter-row');
                     filterRow.empty();
 
-                    const filterable = [1, 2, 3, 4, 5, 7];
+                    const filterable = [1, 2, 3, 4, 7];
 
                     api.columns().every(function (index) {
                         var column = this;
@@ -172,12 +171,12 @@
                         } else if (index === 7) {
                             // Kolom Ready Stock → status dropdown
                             var select = $(`<select class="form-control form-control-sm">
-                                            <option value="">All Status</option>
-                                            <option value="ready">Ready</option>
-                                            <option value="shipping">Shipping</option>
-                                            <option value="production">Production</option>
-                                            <option value="design_change">Design Change</option>
-                                        </select>`);
+                                                                        <option value="">All Status</option>
+                                                                        <option value="ready">Ready</option>
+                                                                        <option value="shipping">Shipping</option>
+                                                                        <option value="production">Production</option>
+                                                                        <option value="design_change">Design Change</option>
+                                                                    </select>`);
                             select.on('change', function () {
                                 // Kirim ke server via custom parameter
                                 table.ajax.reload();
