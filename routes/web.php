@@ -223,9 +223,15 @@ Route::post('/api/get-code-item', function(Request $request) {
     $rack = Rack::where('Code_Rack', $codeRack)->first();
 
     if ($rack) {
-        return response()->json(['code_item' => $rack->Code_Item_Rack]);
+        return response()->json([
+            'code_item' => $rack->Code_Item_Rack,
+            'type_tractor' => $rack->Type_Tractor_Rack
+        ]);
     } else {
-        return response()->json(['code_item' => null]);
+        return response()->json([
+            'code_item' => null,
+            'type_tractor' => null
+        ]);
     }
 });
 

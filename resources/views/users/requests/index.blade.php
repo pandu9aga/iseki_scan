@@ -47,10 +47,11 @@
                                             </a>
                                         </div>
                                         <span style="font-size: small;">Rack Code</span>
-                                        <input type="text" onkeyup="this.value = this.value.toUpperCase();" name="Code_Rack" id="Code_Rack" class="form-control form-control-user @error('Code_Rack') is-invalid @enderror" value="{{ old('Code_Rack') }}" required>
-                                        <br>
+                                        <input type="text" onkeyup="this.value = this.value.toUpperCase();" name="Code_Rack" id="Code_Rack" class="form-control form-control-user mb-2 @error('Code_Rack') is-invalid @enderror" value="{{ old('Code_Rack') }}" required>
                                         <span style="font-size: small;">Item Code</span>
                                         <input type="text" name="Code_Item" id="Code_Item" class="form-control form-control-user @error('Code_Item') is-invalid @enderror" value="{{ old('Code_Item') }}" readonly required>
+                                        <span style="font-size: small;">Tractor Type</span>
+                                        <input type="text" name="Type_Tractor" id="Type_Tractor" class="form-control form-control-user" readonly>
                                         @error('Code_Rack')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
@@ -61,7 +62,7 @@
                             <!-- Tambahan input Sum_Request -->
                             <div class="row">
                                 <div class="col-8 text-center">
-                                    <div class="form-group mb-3">
+                                    <div class="form-group mb-1">
                                         <label for="Sum_Request" style="font-size: small;">Sum Request</label>
                                         <input type="number" name="Sum_Request" id="Sum_Request" class="form-control form-control-user @error('Sum_Request') is-invalid @enderror" value="{{ old('Sum_Request', 1) }}" min="1" step="1" required>
                                         @error('Sum_Request')
@@ -70,7 +71,7 @@
                                     </div>
                                 </div>
                                 <div class="col-4 text-center">
-                                    <div class="form-group mb-3">
+                                    <div class="form-group mb-1">
                                         <label class="form-check-label ms-2" for="Urgent_Request" style="font-size: small;">
                                                 Urgent Request
                                             </label>
@@ -85,7 +86,7 @@
                                     </div>
                                 </div>
                                 <div class="col-lg-12 text-center">
-                                    <div class="form-group mb-3">
+                                    <div class="form-group mb-2">
                                         <label for="Area_Request" style="font-size: small;">Area Request</label>
                                         <input type="text" name="Area_Request" id="Area_Request" class="form-control form-control-user @error('Area_Request') is-invalid @enderror" value="{{ old('Area_Request', $area) }}" readonly>
                                         @error('Area_Request')
@@ -194,6 +195,7 @@
     function resetRequestForm() {
         document.getElementById("Code_Rack").value = '';
         document.getElementById("Code_Item").value = '';
+        document.getElementById("Type_Tractor").value = '';
         document.getElementById("Sum_Request").value = 1;
         document.getElementById("Urgent_Request").checked = false;
         document.getElementById("Correctness").value = '';
@@ -214,8 +216,10 @@
             success: function(response) {
                 if(response.code_item) {
                     document.getElementById("Code_Item").value = response.code_item;
+                    document.getElementById("Type_Tractor").value = response.type_tractor ?? '';
                 } else {
                     document.getElementById("Code_Item").value = '';
+                    document.getElementById("Type_Tractor").value = '';
                     alert('Code Item not found for this Code Rack');
                 }
             },
