@@ -305,6 +305,12 @@ class TransitRequestController extends Controller
                         $query->where('Id_User', $keyword); 
                     }
                 })
+                ->orderColumn('Day_Request', function ($query, $order) {
+                    $query->orderBy('Day_Request', $order)->orderBy('Time_Request', $order);
+                })
+                ->orderColumn('ready_status_display', function ($query, $order) {
+                    $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01")) ' . $order);
+                })
                 ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display'])
                 ->make(true);
         }

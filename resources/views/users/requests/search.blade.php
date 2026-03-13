@@ -19,7 +19,7 @@
                             <tr>
                                 <th>No</th>
                                 <th>Area</th>
-                                <th>Member Request</th>
+                                <th>Name</th>
                                 <th>Item</th>
                                 <th>Rack <span class="text-white">-------</span></th>
                                 <th>Time Request</th>
@@ -28,7 +28,7 @@
                                 <th>Status Request</th>
                                 <th>Sum Request</th>
                                 <th>Urgenity</th>
-                                <th>Name</th>
+                                <th>Member Request</th>
                                 <th>Sum Record</th>
                                 <th>Member Record</th>
                                 <th>Updated</th>
@@ -88,6 +88,9 @@
                 ajax: {
                     url: "{{ route('request.search') }}",
                     type: 'GET',
+                    data: function (d) {
+                        d.statusFilter = $('.status-filter').val();
+                    },
                     error: function (xhr) {
                         console.error('AJAX Error:', xhr.responseText);
                         alert('Failed to load data. See console for details.');
@@ -96,7 +99,7 @@
                 columns: [
                     { data: null, name: 'No', orderable: false, searchable: false, width: '40px', className: 'text-center no-col' },
                     { data: 'Area_Request', name: 'Area_Request', searchable: true },
-                    { data: 'Member_Request', name: 'Id_User', searchable: true }, // ← penting!
+                    { data: 'Name', name: 'Name', searchable: false },
                     { data: 'Code_Item_Rack', name: 'Code_Item_Rack', searchable: true },
                     { data: 'Code_Rack', name: 'Code_Rack', searchable: true, width: 'auto' },
                     { data: 'Day_Request', name: 'Day_Request', searchable: false },
@@ -105,7 +108,7 @@
                     { data: 'Status_Request_Display', name: 'Status_Request_Display', searchable: false },
                     { data: 'Sum_Request', name: 'Sum_Request', searchable: false },
                     { data: 'Urgent_Request', name: 'Urgent_Request', searchable: false },
-                    { data: 'Name', name: 'Name', searchable: false },
+                    { data: 'Member_Request', name: 'Id_User', searchable: true }, // ← penting!
                     { data: 'Sum_Record', name: 'Sum_Record', searchable: false },
                     { data: 'Member_Record', name: 'Member_Record', searchable: false },
                     { data: 'Updated_At_Request', name: 'Updated_At_Request', searchable: false }
@@ -134,7 +137,7 @@
                     var filterRow = header.find('tr.filter-row');
                     filterRow.empty();
 
-                    const filterable = [1, 2, 3, 4];
+                    const filterable = [1, 3, 4, 6, 11];
 
                     api.columns().every(function (index) {
                         var column = this;
@@ -144,14 +147,27 @@
                             return;
                         }
 
-                        if (index === 2) {
+                        if (index === 11) {
                             // Kolom Member Request → dropdown
-                            var select = $(`<select class="form-control form-control-sm"><option value="">All</option></select>`);
+                            var select = $(`<select class="form-control form-control-sm member-filter"><option value="">All</option></select>`);
                             members.forEach(member => {
                                 select.append(`<option value="${member.Id_Member}">${member.Name_Member}</option>`);
                             });
                             select.on('change', function () {
                                 column.search(this.value).draw();
+                            });
+                            filterRow.append($('<th>').append(select));
+                        } else if (index === 6) {
+                            // Kolom Ready Stock → status dropdown
+                            var select = $(`<select class="form-control form-control-sm status-filter">
+                                                                        <option value="">All Status</option>
+                                                                        <option value="ready">Ready</option>
+                                                                        <option value="shipping">Shipping</option>
+                                                                        <option value="production">Production</option>
+                                                                        <option value="design_change">Design Change</option>
+                                                                    </select>`);
+                            select.on('change', function () {
+                                table.ajax.reload();
                             });
                             filterRow.append($('<th>').append(select));
                         } else {
