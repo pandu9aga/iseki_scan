@@ -136,6 +136,25 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- Modal Error -->
+                            <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-hidden="true">
+                                <div class="modal-dialog" role="document">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title">Kode Part Salah</h5>
+                                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            <p>Tidak ada request dengan kode part tersebut</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -320,11 +339,12 @@
 
             $.post("{{ route('record.checkMultiple') }}", {
                 _token: "{{ csrf_token() }}",
-                Code_Item: codeItem
+                Code_Item: codeItem,
+                Code_Rack: codeRack
             }, function (response) {
                 if (response.count === 0) {
-                    // tidak ada request matching -> langsung submit
-                    form.submit();
+                    // tidak ada request matching -> tampilkan modal error
+                    $("#errorModal").modal("show");
                 } else if (response.count === 1) {
                     // hanya 1 -> langsung submit
                     form.append(`<input type="hidden" name="Id_Request" value="${response.requests[0].id}">`);
