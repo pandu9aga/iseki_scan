@@ -146,7 +146,7 @@
                                                 <span aria-hidden="true">&times;</span>
                                             </button>
                                         </div>
-                                        <div class="modal-body text-center">
+                                        <div class="modal-body">
                                             <p>Tidak ada request dengan kode part tersebut</p>
                                         </div>
                                         <div class="modal-footer">

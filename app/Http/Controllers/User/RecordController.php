@@ -87,7 +87,7 @@ class RecordController extends Controller
             ->exists();
 
         if (! $exists) {
-            $exists = DB::connection('label')->table('rack_part_list')
+            $exists = DB::connection('label')->table('rack_part_lists')
                 ->where('item_code', 'LIKE', '%'.$codeItem.'%')
                 ->exists();
         }
@@ -126,7 +126,7 @@ class RecordController extends Controller
             'requests' => $requests->map(function ($r) {
                 return [
                     'id' => $r->Id_Request,
-                    'area' => $r->Area_Request ?: 'Normal',
+                    'area' => $r->Area_Request ?: '',
                 ];
             }),
         ]);
