@@ -19,8 +19,8 @@ class SubmissionController extends Controller
     {
         $date = Carbon::today();
         $dateForInput = $date->format('Y-m-d');
-        $memberIds = request('Id_User', []); 
-        
+        $memberIds = request('Id_User', []);
+
         $query = RequestModel::whereDate('Day_Request', $date)
             ->with('member', 'record', 'rack')
             ->orderBy('Time_Request', 'desc');
@@ -57,7 +57,13 @@ class SubmissionController extends Controller
         $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get();
 
         return view('users.submissions.index', compact(
-            'submissions', 'totalSubmissions', 'correct', 'incorrect', 'formattedDate', 'dateForInput', 'members'
+            'submissions',
+            'totalSubmissions',
+            'correct',
+            'incorrect',
+            'formattedDate',
+            'dateForInput',
+            'members'
         ));
     }
 
@@ -103,7 +109,13 @@ class SubmissionController extends Controller
         $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get();
 
         return view('users.submissions.index', compact(
-            'submissions', 'totalSubmissions', 'correct', 'incorrect', 'formattedDate', 'dateForInput', 'members'
+            'submissions',
+            'totalSubmissions',
+            'correct',
+            'incorrect',
+            'formattedDate',
+            'dateForInput',
+            'members'
         ));
     }
 
@@ -147,26 +159,26 @@ class SubmissionController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Header style
-        $sheet->getStyle('A1:N1')->applyFromArray([
+        $sheet->getStyle('A1:O1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ]);
-        $sheet->getStyle('A1:N1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:O1')->getAlignment()->setWrapText(true);
 
         $row = 2;
         $lastUser = null;
         $no = 1;
 
         foreach ($submissions as $index => $submission) {
-            
+
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $submission->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 12, '-'), // 12 kolom sesuai header
+                    array_fill(0, 15, '-'), // 15 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -184,7 +196,7 @@ class SubmissionController extends Controller
             if ($submission->Production_Area_Request) $readyDisplay[] = 'Production: ' . $submission->Production_Area_Request;
             if ($submission->Design_Changes_Request) $readyDisplay[] = 'Design: ' . $submission->Design_Changes_Request;
             $readyStockDisplay = implode(' | ', $readyDisplay);
-            
+
             $sheet->fromArray([
                 $no,
                 $timeRequest,
@@ -195,6 +207,7 @@ class SubmissionController extends Controller
                 $submission->Code_Item_Rack,
                 $submission->rack->Name_Item_Rack ?? '',
                 $readyStockDisplay,
+                $submission->Sum_Stock ?? '',
                 $timeRecord,
                 optional($submission->record)->Sum_Record ?? '',
                 $submission->member->Name_Member ?? '',
@@ -219,7 +232,7 @@ class SubmissionController extends Controller
 
         return response()->download($filePath)->deleteFileAfterSend(true);
     }
-    
+
     public function search()
     {
         if (request()->ajax()) {
@@ -258,7 +271,7 @@ class SubmissionController extends Controller
                         return '-';
                     }
                     $short = \Illuminate\Support\Str::limit($type, 20);
-                    return '<span title="'.e($type).'">'.e($short).'</span>';
+                    return '<span title="' . e($type) . '">' . e($short) . '</span>';
                 })
                 ->addColumn('Time_Record', function ($r) {
                     $day = optional($r->record)->Day_Record ?? '';
@@ -306,7 +319,7 @@ class SubmissionController extends Controller
                 })
                 ->filterColumn('Id_User', function ($query, $keyword) {
                     if ($keyword !== '') {
-                        $query->where('Id_User', $keyword); 
+                        $query->where('Id_User', $keyword);
                     }
                 })
                 ->orderColumn('Day_Request', function ($query, $order) {

@@ -149,7 +149,7 @@ class AdminRequestController extends Controller
         // Header kolom
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 
-            "1=Ready,2=Ship,\n3=Prod,4=Design", 'Time Record', 'Sum Record', 'Member Request', 
+            "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Time Record', 'Sum Record', 'Member Request', 
             'Member Record', 'Updated'
             ];
         $sheet->fromArray([$headers], null, 'A1');
@@ -159,7 +159,7 @@ class AdminRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:N1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:O1')->applyFromArray($headerStyle);
         $sheet->getStyle('A1:P1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter(
@@ -175,7 +175,7 @@ class AdminRequestController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $request->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 12, '-'), // 12 kolom sesuai header
+                    array_fill(0, 15, '-'), // 15 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -214,6 +214,7 @@ class AdminRequestController extends Controller
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
                 $readyStockDisplay,
+                $request->Sum_Stock ?? '',
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',

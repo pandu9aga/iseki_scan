@@ -86,6 +86,7 @@ class UserReportController extends Controller
             'Correctness',
             'Time Request',
             'Sum Request',
+            'Sum Stock',
             'Member Request',
             'Member Record',
             'Updated'
@@ -97,7 +98,7 @@ class UserReportController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:M1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:N1')->applyFromArray($headerStyle);
 
         // Isi data
         $row = 2;
@@ -117,6 +118,7 @@ class UserReportController extends Controller
                 $correctness,
                 $timeRequest,
                 optional($record->request)->Sum_Request ?? '',
+                optional($record->request)->Sum_Stock ?? '',
                 optional($record->request)->member->Name_Member ?? '',
                 $record->member->Name_Member ?? '',
                 $record->Updated_At_Record ?? '',
@@ -138,7 +140,7 @@ class UserReportController extends Controller
         }
 
         // Auto-size kolom sesuai konten
-        foreach (range('A', 'M') as $col) {
+        foreach (range('A', 'N') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

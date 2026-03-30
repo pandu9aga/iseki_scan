@@ -25,6 +25,7 @@
                                 <th>Type Tractor</th>
                                 <th>Time Request</th>
                                 <th>Ready Stock</th>
+                                <th>Sum Stock</th>
                                 <th>Time Record</th>
                                 <th>Status Request</th>
                                 <th>Sum Request</th>
@@ -106,6 +107,7 @@
                     { data: 'Type_Tractor_Rack', name: 'Type_Tractor_Rack', searchable: false, orderable: false },
                     { data: 'Day_Request', name: 'Day_Request', searchable: false, orderable: true },
                     { data: 'ready_status_display', name: 'ready_status_display', searchable: false, orderable: true },
+                    { data: 'Sum_Stock', name: 'Sum_Stock', searchable: false },
                     { data: 'Time_Record', name: 'Time_Record', searchable: false },
                     { data: 'Status_Request_Display', name: 'Status_Request_Display', searchable: false },
                     { data: 'Sum_Request', name: 'Sum_Request', searchable: false },
@@ -139,7 +141,7 @@
                     var filterRow = header.find('tr.filter-row');
                     filterRow.empty();
 
-                    const filterable = [1, 3, 4, 7, 12];
+                    const filterable = [1, 3, 4, 7, 13];
 
                     api.columns().every(function (index) {
                         var column = this;
@@ -149,7 +151,7 @@
                             return;
                         }
 
-                        if (index === 12) {
+                        if (index === 13) {
                             // Kolom Member Request → dropdown
                             var select = $(`<select class="form-control form-control-sm member-filter"><option value="">All</option></select>`);
                             members.forEach(member => {

@@ -89,6 +89,7 @@
                                 <th>Correctness</th>
                                 <th>Time Request</th>
                                 <th>Sum Request</th>
+                                <th>Sum Stock</th>
                                 <th>Member Request</th>
                                 <th>Member Record</th>
                                 <th>Updated</th>
@@ -108,6 +109,7 @@
                                 <th>Correctness</th>
                                 <th>Time Request</th>
                                 <th>Sum Request</th>
+                                <th>Sum Stock</th>
                                 <th>Member Request</th>
                                 <th>Member Record</th>
                                 <th>Updated</th>
@@ -153,6 +155,7 @@
                                     <td>{{ optional($r->request)->Day_Request ?? '' }}
                                         {{ optional($r->request)->Time_Request ?? '' }}</td>
                                     <td>{{ optional($r->request)->Sum_Request ?? '' }}</td>
+                                    <td>{{ optional($r->request)->Sum_Stock ?? '' }}</td>
                                     <td>{{ optional($r->request)->member->Name_Member ?? '' }}</td>
                                     <td>{{ $r->member->Name_Member ?? '' }}</td>
                                     <td>{{ $r->Updated_At_Record ?? '' }}</td>

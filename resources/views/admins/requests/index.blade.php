@@ -93,6 +93,7 @@
                             <th>Item</th>
                             <th>Name</th>
                             <th>Ready Stock</th>
+                            <th>Sum Stock</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -112,6 +113,7 @@
                             <th>Item</th>
                             <th>Name</th>
                             <th>Ready Stock</th>
+                            <th>Sum Stock</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -143,6 +145,7 @@
                                     echo implode(' | ', $statuses);
                                 @endphp
                             </td>
+                            <td>{{ $s->Sum_Stock }}</td>
                             <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
                             <td>{{ optional($s->record)->Sum_Record ?? '' }}</td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
