@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Area;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request as HttpRequest;
-use App\Models\Request as RequestModel;
-use App\Models\Record;
-use App\Models\Urgent;
-use App\Models\Mistake;
 use App\Models\Member;
+use App\Models\Mistake;
 use App\Models\Rack;
+use App\Models\Record;
+use App\Models\Request as RequestModel;
+use App\Models\Urgent;
 use Carbon\Carbon;
+use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\DB;
 
 class AreaScanController extends Controller
@@ -25,9 +25,9 @@ class AreaScanController extends Controller
         $codeRack = $request->input('Code_Rack');
         $idUserLogged = session('Id_User'); // ID_User of type 4 logged in
         $nowDate = Carbon::now()->format('Y-m-d');
-        $nowTime = Carbon::now()->format('H:i:s');
+        $nowTime = Carbon::now()->format('Y-m-d H:i:s');
 
-        if (!$codeRack) {
+        if (! $codeRack) {
             return redirect()->back()->with('error', 'Code Rack tidak boleh kosong');
         }
 
@@ -39,19 +39,19 @@ class AreaScanController extends Controller
         if ($waitingRequest) {
             // "Kalau Code_Rack dan status waiting ada, maka dapatkan Id_Request nya insert ke urgents"
             $idRequest = $waitingRequest->Id_Request;
-            
+
             if ($waitingRequest->Ready_Request !== null) {
                 // "jika Ready_Request not null, maka cari Id_Member rata-rata di records untuk Code_Rack yang sama"
-                $avgMemberRecord = Record::select('Id_Member', DB::raw('COUNT(Id_Member) as count'))
+                $avgMemberRecord = Record::select('Id_User', DB::raw('COUNT(Id_User) as count'))
                     ->where('Code_Rack', $codeRack)
-                    ->groupBy('Id_Member')
+                    ->groupBy('Id_User')
                     ->orderBy('count', 'desc')
                     ->first();
-                
+
                 $idMemberTarget = null;
                 $nameMemberTarget = null;
                 if ($avgMemberRecord) {
-                    $idMemberTarget = $avgMemberRecord->Id_Member;
+                    $idMemberTarget = $avgMemberRecord->Id_User;
                     $member = Member::find($idMemberTarget);
                     $nameMemberTarget = $member ? $member->Name_Member : null;
                 } else {
@@ -66,7 +66,7 @@ class AreaScanController extends Controller
                     'Code_Rack' => $codeRack,
                     'Id_Request' => $idRequest,
                     'Id_Member' => $idMemberTarget,
-                    'Time_Urgent' => $nowTime
+                    'Time_Urgent' => $nowTime,
                 ]);
 
                 // "insert di mistakes category telat supply dengan Id_Member tersebut"
@@ -74,7 +74,7 @@ class AreaScanController extends Controller
                     'Id_Request' => $idRequest,
                     'PIC' => $nameMemberTarget,
                     'Category_Mistake' => 'telat supply',
-                    'Day_Mistake' => $nowDate
+                    'Day_Mistake' => $nowDate,
                 ]);
 
             } else {
@@ -82,7 +82,7 @@ class AreaScanController extends Controller
                 $bossMcMember = Member::where('Name_Member', 'Boss MC')->first();
                 $idBossMc = $bossMcMember ? $bossMcMember->Id_Member : 32;
                 $nameBossMc = 'Boss MC';
-                
+
                 // "category mistakes nya kalau ready, shipping, design, dan production null semua maka telat supply mc"
                 // "kalau shipping nya ada maka category nya shipping"
                 // "kalau design ada maka category nya design"
@@ -90,41 +90,41 @@ class AreaScanController extends Controller
                 $category = 'telat supply mc';
                 if ($waitingRequest->Production_Area_Request !== null) {
                     $category = 'production';
-                } else if ($waitingRequest->Design_Changes_Request !== null) {
+                } elseif ($waitingRequest->Design_Changes_Request !== null) {
                     $category = 'design';
-                } else if ($waitingRequest->Shipping_Request !== null) {
+                } elseif ($waitingRequest->Shipping_Request !== null) {
                     $category = 'shipping';
                 }
-                
+
                 Urgent::create([
                     'Id_User' => $idUserLogged,
                     'Code_Rack' => $codeRack,
                     'Id_Request' => $idRequest,
                     'Id_Member' => $idBossMc,
-                    'Time_Urgent' => $nowTime
+                    'Time_Urgent' => $nowTime,
                 ]);
 
                 Mistake::create([
                     'Id_Request' => $idRequest,
                     'PIC' => $nameBossMc,
                     'Category_Mistake' => $category,
-                    'Day_Mistake' => $nowDate
+                    'Day_Mistake' => $nowDate,
                 ]);
             }
-            
+
         } else {
             // "kalau tidak ada maka cari Id_Member rata-rata yang melakukan request code tersebut"
             $avgMemberReq = RequestModel::select('Id_User', DB::raw('COUNT(Id_User) as count'))
-                    ->where('Code_Rack', $codeRack)
-                    ->groupBy('Id_User')
-                    ->orderBy('count', 'desc')
-                    ->first();
-            
+                ->where('Code_Rack', $codeRack)
+                ->groupBy('Id_User')
+                ->orderBy('count', 'desc')
+                ->first();
+
             $idMemberTarget = null;
             $nameMemberTarget = null;
             if ($avgMemberReq) {
                 // Id_User in Request table is actually Id_Member mapped from Member table
-                $idMemberTarget = $avgMemberReq->Id_User; 
+                $idMemberTarget = $avgMemberReq->Id_User;
                 $member = Member::find($idMemberTarget);
                 $nameMemberTarget = $member ? $member->Name_Member : null;
             } else {
@@ -147,7 +147,7 @@ class AreaScanController extends Controller
 
             // "lalu insert ke tabel urgents, requests dan mistakes, PIC = Name_Member, Category telat request"
             // request first to get Id_Request
-            $newReq = new RequestModel();
+            $newReq = new RequestModel;
             $newReq->Day_Request = $nowDate;
             $newReq->Time_Request = $nowTime;
             $newReq->Code_Item_Rack = $codeItemRack;
@@ -165,17 +165,17 @@ class AreaScanController extends Controller
                 'Code_Rack' => $codeRack,
                 'Id_Request' => $idRequestNew,
                 'Id_Member' => $idMemberTarget,
-                'Time_Urgent' => $nowTime
+                'Time_Urgent' => $nowTime,
             ]);
 
             Mistake::create([
                 'Id_Request' => $idRequestNew,
                 'PIC' => $nameMemberTarget,
                 'Category_Mistake' => 'telat request',
-                'Day_Mistake' => $nowDate
+                'Day_Mistake' => $nowDate,
             ]);
         }
 
-        return redirect()->back()->with('success', 'Scan Code Rack ' . $codeRack . ' berhasil diproses.');
+        return redirect()->back()->with('success', 'Scan Code Rack '.$codeRack.' berhasil diproses.');
     }
 }

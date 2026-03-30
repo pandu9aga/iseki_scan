@@ -33,12 +33,19 @@
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">Scan Code Rack</h6>
                 </div>
-                <div class="card-body">
-                    <form action="{{ route('area.scan.process') }}" method="POST">
+                <div class="card-body text-center">
+                    <div id="reader_rack" class="mx-auto" style="max-width: 300px;"></div>
+                    <br>
+                    <button type="button" id="scanRack" class="btn btn-warning btn-sm mb-3">
+                        Scan
+                    </button>
+
+                    <form action="{{ route('area.scan.process') }}" method="POST" id="scanForm">
                         @csrf
-                        <div class="form-group">
+                        <div class="form-group text-left">
                             <label for="Code_Rack">Scan Rack Code (Barcode/QR)</label>
-                            <input type="text" class="form-control form-control-user" id="Code_Rack" name="Code_Rack" placeholder="Scan here..." autofocus required>
+                            <!-- Make it readonly so no manual input allowed -->
+                            <input type="text" class="form-control form-control-user" id="Code_Rack" name="Code_Rack" placeholder="Result..." readonly required>
                         </div>
                         <button type="submit" class="btn btn-primary btn-user btn-block">
                             Proses Scan
@@ -53,10 +60,37 @@
 @endsection
 
 @section('script')
+<!-- QR Code Library -->
+<script src="{{ asset('js/html5-qrcode.min.js') }}"></script>
+<script src="{{ asset('js/jquery.min.js') }}"></script>
+<script src="{{ asset('js/qrcode.min.js') }}"></script>
+
 <script>
-    // Autofocus on load and rescan after process
-    $(document).ready(function() {
-        $('#Code_Rack').focus();
+    var width = 250;
+
+    let rackScanner = new Html5QrcodeScanner(
+        "reader_rack", {
+            fps: 10,
+            qrbox: {
+                width: width,
+                height: width,
+            },
+        }
+    );
+
+    // callback qr scanner
+    function onScanSuccessRack(decodedText, decodedResult) {
+        document.getElementById("Code_Rack").value = decodedText;
+        rackScanner.clear();
+        
+        // Auto process form when scan success
+        document.getElementById("scanForm").submit();
+    }
+
+    // button scan
+    document.getElementById("scanRack").addEventListener("click", function () {
+        rackScanner.render(onScanSuccessRack);
     });
+
 </script>
 @endsection
