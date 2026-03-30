@@ -57,7 +57,14 @@ class McRequestController extends Controller
         $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get();
 
         return view('mcs.requests.index', compact(
-            'requests', 'totalRequest', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput', 'members'
+            'requests',
+            'totalRequest',
+            'correct',
+            'incorrect',
+            'formattedDate',
+            'date',
+            'dateForInput',
+            'members'
         ));
     }
 
@@ -103,7 +110,14 @@ class McRequestController extends Controller
         $members = Member::orderBy('Name_Member')->get();
 
         return view('mcs.requests.index', compact(
-            'requests', 'totalRequest', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput', 'members'
+            'requests',
+            'totalRequest',
+            'correct',
+            'incorrect',
+            'formattedDate',
+            'date',
+            'dateForInput',
+            'members'
         ));
     }
 
@@ -149,10 +163,23 @@ class McRequestController extends Controller
 
         // Header kolom
         $headers = [
-            'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
+            'No',
+            'Time Request',
+            'Area',
+            'Rack',
+            'Sum Request',
+            'Urgenity',
+            'Item',
+            'Name',
             "1=Ready,2=Ship,\n3=Prod,4=Design", // ← \n = line break
-            'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
-            'Member Record', 'Updated', 'Id'
+            'Ready Stock',
+            'Sum Stock',       // ← KOLOM BARU (kolom K)
+            'Time Record',
+            'Sum Record',
+            'Member Request',
+            'Member Record',
+            'Updated',
+            'Id'
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
@@ -161,8 +188,8 @@ class McRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:P1')->applyFromArray($headerStyle);
-        $sheet->getStyle('A1:P1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:Q1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -177,7 +204,7 @@ class McRequestController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $request->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 12, '-'), // 12 kolom sesuai header
+                    array_fill(0, 17, '-'), // 17 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -228,6 +255,7 @@ class McRequestController extends Controller
                 $request->rack->Name_Item_Rack ?? '',
                 $statusCode,
                 $readyStockDisplay,
+                $request->Sum_Stock ?? '',   // ← KOLOM BARU (kolom K)
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',
@@ -243,7 +271,7 @@ class McRequestController extends Controller
 
         $lastRow = $row - 1;
         if ($lastRow >= 2) {
-            $columnsToCenter = ['E', 'F', 'I', 'L'];
+            $columnsToCenter = ['E', 'F', 'I', 'K', 'M'];
             foreach ($columnsToCenter as $col) {
                 $range = $col . '2:' . $col . $lastRow;
                 $sheet->getStyle($range)->getAlignment()
@@ -271,64 +299,97 @@ class McRequestController extends Controller
 
         $file = $request->file('ready_excel');
         $spreadsheet = IOFactory::load($file->getRealPath());
-        $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray(null, true, true, true);
-        unset($rows[1]); // skip header
+        $sheet = $spreadsheet->getSheet(0);
+        $rows = $sheet->toArray(null, true, false, true);
 
-        $updatedCount = 0;
+        $headerRow = $rows[1] ?? [];
+        unset($rows[1]);
 
-        foreach ($rows as $row) {
-            $idColumn = array_key_last($row);
-            $idRequest = $row[$idColumn] ?? null;
+        // Deteksi kolom Sum Stock dan Status dari header
+        $colStock = null;
+        $colStatus = null;
 
-            if (!$idRequest || !is_numeric($idRequest)) {
-                continue;
-            }
-
-            $requestModel = RequestModel::find($idRequest);
-            if (!$requestModel) {
-                continue;
-            }
-
-            // 🔑 Cek: apakah SUDAH ADA salah satu status terisi?
-            $anyStatusFilled = 
-                $requestModel->Ready_Request !== null ||
-                $requestModel->Shipping_Request !== null ||
-                $requestModel->Production_Area_Request !== null ||
-                $requestModel->Design_Changes_Request !== null;
-
-            // ❌ Jika sudah ada yang terisi, LEWATI (jangan update apapun)
-            if ($anyStatusFilled) {
-                continue;
-            }
-
-            // 🟢 Hanya lanjut jika BELUM ADA SATU PUN yang terisi
-            $now = Carbon::now();
-            $readyStatus = trim($row['I'] ?? '');
-
-            switch ($readyStatus) {
-                case '1':
-                    // Disabled: Code 1 (Ready_Request) is no longer updated via Excel upload
-                    $requestModel->Ready_Request = $now;
-                    break;
-                case '2':
-                    $requestModel->Shipping_Request = $now;
-                    break;
-                case '3':
-                    $requestModel->Shipping_Request = $now;
-                    // $requestModel->Production_Area_Request = $now;
-                    break;
-                case '4':
-                    $requestModel->Design_Changes_Request = $now;
-                    break;
-                default:
-                    continue 2; // skip row ini jika status tidak valid
-            }
-
-            $requestModel->save();
-            $updatedCount++;
+        foreach ($headerRow as $colLetter => $headerName) {
+            if ($headerName === null) continue;
+            $cleaned = strtolower(trim(strval($headerName)));
+            if (str_contains($cleaned, 'sum stock')) $colStock = $colLetter;
+            if (str_contains($cleaned, '1=ready')) $colStatus = $colLetter;
         }
 
-        return redirect()->back()->with('success', "Berhasil memperbarui $updatedCount data Ready Status.");
+        $colStock = $colStock ?? 'K';
+        $colStatus = $colStatus ?? 'I';
+
+        $savedCount = 0;
+
+        foreach ($rows as $row) {
+            // Kolom terakhir = ID Request
+            $colId = array_key_last($row);
+            $rawId = $row[$colId] ?? null;
+
+            if ($rawId === null || $rawId === '' || $rawId === '-') continue;
+
+            $idValue = intval($rawId);
+            if ($idValue <= 0) continue;
+
+            // Ambil nilai Ready Stock (status) dan Sum Stock
+            $rawStatus = strval($row[$colStatus] ?? '');
+            $readyStatus = trim($rawStatus);
+            $rawStock = $row[$colStock] ?? null;
+            $hasStatus = in_array($readyStatus, ['1', '2', '3', '4']);
+            $hasStock = ($rawStock !== null && $rawStock !== '' && is_numeric($rawStock));
+
+            // VALIDASI: kedua kolom WAJIB terisi, jika salah satu kosong → skip
+            if (!$hasStatus || !$hasStock) continue;
+
+            $requestModel = RequestModel::find($idValue);
+            if (!$requestModel) continue;
+
+            $changed = false;
+
+            // Update Sum Stock jika terisi
+            if ($hasStock) {
+                $requestModel->Sum_Stock = intval($rawStock);
+                $changed = true;
+            }
+
+            // Update Status jika terisi DAN belum ada status sebelumnya
+            if ($hasStatus) {
+                $anyStatusFilled =
+                    $requestModel->Ready_Request !== null ||
+                    $requestModel->Shipping_Request !== null ||
+                    $requestModel->Production_Area_Request !== null ||
+                    $requestModel->Design_Changes_Request !== null;
+
+                if (!$anyStatusFilled) {
+                    $now = Carbon::now();
+                    switch ($readyStatus) {
+                        case '1':
+                            $requestModel->Ready_Request = $now;
+                            break;
+                        case '2':
+                            $requestModel->Shipping_Request = $now;
+                            break;
+                        case '3':
+                            $requestModel->Shipping_Request = $now;
+                            break;
+                        case '4':
+                            $requestModel->Design_Changes_Request = $now;
+                            break;
+                    }
+                    $changed = true;
+                }
+            }
+
+            if ($changed) {
+                $requestModel->save();
+                $savedCount++;
+            }
+        }
+
+        if ($savedCount === 0) {
+            return redirect()->back()->with('error', 'Tidak ada data yang tersimpan. Pastikan kolom Ready Stock dan Sum Stock terisi.');
+        }
+
+        return redirect()->back()->with('success', "Berhasil menyimpan {$savedCount} baris data.");
     }
 }

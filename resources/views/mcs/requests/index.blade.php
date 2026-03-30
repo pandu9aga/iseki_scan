@@ -3,9 +3,25 @@
 <!-- Begin Page Content -->
 <div class="container-fluid">
     <h1 class="h3 mb-2 text-gray-800">Request</h1>
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <span class="badge bg-success">Success</span> {{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span class="badge bg-danger">Error</span> {{ session('error') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
     <div class="d-sm-flex align-items-center justify-content-between mb-1">
         <!-- Earnings (Monthly) Card Example -->
-        <div class="col-xl-4 col-md-6 mb-4">
+        <div class="col-xl-8 col-md-6 mb-4">
             <div class="card border-left-primary shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -104,6 +120,7 @@
                             <th>Item</th>
                             <th>Name</th>
                             <th>Ready Stock</th>
+                            <th>Sum Stock</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -123,6 +140,7 @@
                             <th>Item</th>
                             <th>Name</th>
                             <th>Ready Stock</th>
+                            <th>Sum Stock</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -154,6 +172,7 @@
                                     echo implode(' | ', $statuses);
                                 @endphp
                             </td>
+                            <td>{{ $s->Sum_Stock ?? '' }}</td>
                             <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
                             <td>{{ optional($s->record)->Sum_Record ?? '' }}</td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
