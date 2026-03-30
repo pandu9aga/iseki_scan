@@ -138,6 +138,12 @@
                     <span>Forgot</span></a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.urgents') }}">
+                    <i class="fas fa-fw fa-exclamation-circle"></i>
+                    <span>Urgent</span></a>
+            </li>
+
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('prediction.error') }}">
                     <i class="fas fa-fw fa-brain"></i>

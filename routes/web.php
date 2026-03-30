@@ -1,48 +1,46 @@
 <?php
 
-use App\Http\Middleware\AuthMiddleware;
-use App\Http\Middleware\AdminMiddleware;
-use App\Http\Middleware\McMiddleware;
-use App\Http\Controllers\MainController;
-use App\Http\Controllers\Admin\AdminController;
-use App\Http\Controllers\Admin\ItemController;
-use App\Http\Controllers\Admin\RackController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\ReportController;
-use App\Http\Controllers\Admin\MonthlyController;
-use App\Http\Controllers\Admin\ValidationController;
-use App\Http\Controllers\Admin\MemberController;
-use App\Http\Controllers\Admin\AdminSubmissionController;
-use App\Http\Controllers\Admin\AdminRequestController;
-use App\Http\Controllers\Admin\MissingController;
 use App\Http\Controllers\Admin\AchievementController;
-use App\Http\Controllers\Admin\MistakeController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AdminRequestController;
+use App\Http\Controllers\Admin\AdminSubmissionController;
 use App\Http\Controllers\Admin\ForgotController;
+use App\Http\Controllers\Admin\ItemController;
+use App\Http\Controllers\Admin\MemberController;
+use App\Http\Controllers\Admin\MissingController;
+use App\Http\Controllers\Admin\MistakeController;
+use App\Http\Controllers\Admin\MonthlyController;
+use App\Http\Controllers\Admin\RackController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ValidationController;
+use App\Http\Controllers\Area\AreaScanController;
+use App\Http\Controllers\Helper\UrgentController;
+use App\Http\Controllers\MainController;
+use App\Http\Controllers\Mc\McAchievementController;
+use App\Http\Controllers\Mc\McForgotController;
+use App\Http\Controllers\Mc\McMissingController;
+use App\Http\Controllers\Mc\McMistakeController;
+use App\Http\Controllers\Mc\McRequestController;
+use App\Http\Controllers\Mc\McValidationController;
+use App\Http\Controllers\Transit\TransitScanController;
 use App\Http\Controllers\User\HomeController;
-use App\Http\Controllers\User\UserReportController;
+use App\Http\Controllers\User\LabelControlller;
 use App\Http\Controllers\User\RecordController;
 use App\Http\Controllers\User\RequestController;
 use App\Http\Controllers\User\SubmissionController;
-use App\Http\Controllers\User\UserMistakeController;
 use App\Http\Controllers\User\UserAchievementController;
 use App\Http\Controllers\User\UserForgotController;
-use App\Http\Controllers\User\LabelControlller;
-use App\Http\Controllers\Mc\McRequestController;
-use App\Http\Controllers\Mc\McValidationController;
-use App\Http\Controllers\Mc\McMissingController;
-use App\Http\Controllers\Mc\McMistakeController;
-use App\Http\Controllers\Mc\McAchievementController;
-use App\Http\Controllers\Mc\McForgotController;
-use App\Http\Controllers\Transit\TransitScanController;
-
+use App\Http\Controllers\User\UserMistakeController;
+use App\Http\Controllers\User\UserReportController;
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\AreaMiddleware;
+use App\Http\Middleware\AuthMiddleware;
+use App\Http\Middleware\McMiddleware;
+use App\Http\Middleware\TransitMiddleware;
 use App\Models\Rack;
 use Illuminate\Http\Request;
-
-use App\Http\Middleware\TransitMiddleware;
-
-
 use Illuminate\Support\Facades\Route;
-use Symfony\Component\Routing\RequestContext;
 
 Route::get('/', [MainController::class, 'index'])->name('/');
 Route::get('/login', [MainController::class, 'index'])->name('login');
@@ -108,13 +106,12 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::post('/admin_submission/reset', [AdminSubmissionController::class, 'reset'])->name('admin_submission.reset');
     Route::get('/admin_submission', [AdminSubmissionController::class, 'index'])->name('admin_submission');
 
-
     Route::get('/admin_request', [AdminRequestController::class, 'index'])->name('admin_request');
     Route::get('/admin_request/submit', [AdminRequestController::class, 'submit'])->name('request.submit');
     Route::get('/admin_request/export', [AdminRequestController::class, 'export'])->name('request.export');
     Route::get('/admin_request/search', [AdminRequestController::class, 'search'])->name('request.search');
     Route::post('/admin_request/reset', [AdminRequestController::class, 'reset'])->name('admin_request.reset');
-    
+
     Route::get('/missing', [MissingController::class, 'index'])->name('missing');
     Route::get('/missing/export', [MissingController::class, 'export'])->name('missing.export');
     Route::get('/missing_mc', [MissingController::class, 'missing_mc'])->name('missing.mc');
@@ -122,7 +119,7 @@ Route::middleware(AdminMiddleware::class)->group(function () {
 
     Route::get('/achievement', [AchievementController::class, 'index'])->name('achievement');
     Route::get('/achievement/export', [AchievementController::class, 'export'])->name('achievement.export');
-    
+
     // Mistake Routes
     Route::get('/mistake', [MistakeController::class, 'index'])->name('mistake');
     Route::get('/mistake/add', [MistakeController::class, 'add'])->name('mistake.add');
@@ -142,6 +139,8 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     // Prediction Routes
     Route::get('/prediction/error', [\App\Http\Controllers\Admin\PredictionController::class, 'index'])->name('prediction.error');
     Route::get('/prediction/emptiness', [\App\Http\Controllers\Admin\PredictionController::class, 'emptiness'])->name('prediction.emptiness');
+
+    Route::get('/admin_urgents', [UrgentController::class, 'index'])->name('admin.urgents');
 });
 
 Route::middleware(AuthMiddleware::class)->group(function () {
@@ -169,18 +168,20 @@ Route::middleware(AuthMiddleware::class)->group(function () {
         Route::get('/search-rack-part', [LabelControlller::class, 'searchRackPart'])->name('member.label.search');
         Route::post('/print-now', [LabelControlller::class, 'printNow'])->name('member.label.printNow');
     });
-    
+
     Route::get('/user_submission', [SubmissionController::class, 'index'])->name('submission');
     Route::get('/user_submission/submit', [SubmissionController::class, 'submit'])->name('user_submission.submit');
     Route::get('/user_submission/export', [SubmissionController::class, 'export'])->name('submission.export');
     Route::get('/user_submission/search', [SubmissionController::class, 'search'])->name('submission.search');
     Route::put('/submission/update/{id}', [SubmissionController::class, 'update'])->name('submission.update');
     Route::post('/user_submission/reset', [SubmissionController::class, 'reset'])->name('submission.reset');
-    Route::delete('user_submission/{id}', [SubmissionController::class, 'destroy'])->name('submission.destroy'); 
+    Route::delete('user_submission/{id}', [SubmissionController::class, 'destroy'])->name('submission.destroy');
 
     Route::get('/user_mistake', [UserMistakeController::class, 'index'])->name('user_mistake');
     Route::get('/user_achievement', [UserAchievementController::class, 'index'])->name('user_achievement');
     Route::get('/user_forgot', [UserForgotController::class, 'index'])->name('user_forgot');
+    
+    Route::get('/user_urgents', [UrgentController::class, 'index'])->name('user.urgents');
 });
 
 Route::middleware(McMiddleware::class)->group(function () {
@@ -206,6 +207,8 @@ Route::middleware(McMiddleware::class)->group(function () {
     Route::get('/mc_mistake', [McMistakeController::class, 'index'])->name('mc_mistake');
     Route::get('/mc_achievement', [McAchievementController::class, 'index'])->name('mc_achievement');
     Route::get('/mc_forgot', [McForgotController::class, 'index'])->name('mc_forgot');
+
+    Route::get('/mc_urgents', [UrgentController::class, 'index'])->name('mc.urgents');
 });
 
 Route::middleware(TransitMiddleware::class)->group(function () {
@@ -218,22 +221,30 @@ Route::middleware(TransitMiddleware::class)->group(function () {
     Route::get('/transit/request/search', [\App\Http\Controllers\Transit\TransitRequestController::class, 'search'])->name('transit.request.search');
 });
 
-Route::post('/api/get-code-item', function(Request $request) {
+Route::post('/api/get-code-item', function (Request $request) {
     $codeRack = $request->input('code_rack');
     $rack = Rack::where('Code_Rack', $codeRack)->first();
 
     if ($rack) {
         return response()->json([
             'code_item' => $rack->Code_Item_Rack,
-            'type_tractor' => $rack->Type_Tractor_Rack
+            'type_tractor' => $rack->Type_Tractor_Rack,
         ]);
     } else {
         return response()->json([
             'code_item' => null,
-            'type_tractor' => null
+            'type_tractor' => null,
         ]);
     }
 });
 
+Route::get('/api/urgents/data', [UrgentController::class, 'getData'])->name('urgents.data');
+
 Route::get('/admin', [MainController::class, 'admin'])->name('admin');
 Route::post('/admin/create', [MainController::class, 'create'])->name('admin.create');
+
+Route::middleware(AreaMiddleware::class)->group(function () {
+    Route::get('/area/scan', [AreaScanController::class, 'index'])->name('area.scan');
+    Route::post('/area/scan/process', [AreaScanController::class, 'process'])->name('area.scan.process');
+    Route::get('/area/urgents', [UrgentController::class, 'index'])->name('area.urgents');
+});

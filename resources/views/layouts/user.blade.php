@@ -193,6 +193,12 @@
                     <span>Forgot</span></a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('user.urgents') }}">
+                    <i class="fas fa-fw fa-exclamation-circle"></i>
+                    <span>Urgent</span></a>
+            </li>
+
             <!-- Divider -->
             <hr class="sidebar-divider">
 

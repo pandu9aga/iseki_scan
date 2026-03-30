@@ -9,15 +9,11 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Iseki</title>
+    <title>Iseki Scan - Area</title>
     <link rel="icon" type="image/x-icon" href="{{asset('img/logo-iseki.png')}}">
 
     <!-- Custom fonts for this template-->
     <link href="{{asset('vendor/fontawesome-free/css/all.min.css')}}" rel="stylesheet" type="text/css">
-    {{--
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-        rel="stylesheet"> --}}
 
     <!-- Custom styles for this template-->
     <link href="{{ asset('css/sb-admin-2.min.css') }}?v=1" rel="stylesheet">
@@ -32,81 +28,29 @@
     <div id="wrapper">
 
         <!-- Sidebar -->
-        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion toggled" id="accordionSidebar">
+        <ul class="navbar-nav bg-gradient-success sidebar sidebar-dark accordion toggled" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('/') }}">
                 <div class="sidebar-brand-icon rotate-n-15">
                     <i class="fas fa-globe"></i>
                 </div>
-                <div class="sidebar-brand-text mx-3">Iseki</div>
+                <div class="sidebar-brand-text mx-3">Iseki Scan</div>
             </a>
 
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Nav Item - Report -->
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('mc_submission') }}">
-                    <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Request</span></a>
-            </li>
-
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('mc.validate') }}">
+            <!-- Nav Item - Scan -->
+            <li class="nav-item {{ request()->routeIs('area.scan') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('area.scan') }}">
                     <i class="fas fa-fw fa-qrcode"></i>
-                    <span>Validate</span></a>
+                    <span>Scan</span></a>
             </li>
 
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('mc_validation') }}">
-                    <i class="fas fa-fw fa-file"></i>
-                    <span>Validation</span></a>
-            </li> --}}
-
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('mc.missing') }}">
-                    <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing DST</span></a>
-            </li> --}}
-
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('mc.missing.mc') }}">
-                    <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing MC</span></a>
-            </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Evaluation
-            </div>
-
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('mc_achievement') }}">
-                    <i class="fas fa-fw fa-trophy"></i>
-                    <span>Achievement</span></a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('mc_mistake') }}">
-                    <i class="fas fa-fw fa-flag"></i>
-                    <span>Mistake</span></a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('mc_forgot') }}">
-                    <i class="fas fa-fw fa-question-circle"></i>
-                    <span>Forgot</span></a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('mc.urgents') }}">
+            <!-- Nav Item - Urgent -->
+            <li class="nav-item {{ request()->routeIs('area.urgents') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('area.urgents') }}">
                     <i class="fas fa-fw fa-exclamation-circle"></i>
                     <span>Urgent</span></a>
             </li>
@@ -170,7 +114,7 @@
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; Iseki</span>
+                        <span>Copyright &copy; Iseki Area</span>
                     </div>
                 </div>
             </footer>
@@ -211,27 +155,12 @@
     <script src="{{asset('vendor/jquery/jquery.min.js')}}"></script>
     <script src="{{asset('vendor/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
 
+
     <!-- Core plugin JavaScript-->
     <script src="{{asset('vendor/jquery-easing/jquery.easing.min.js')}}"></script>
 
     <!-- Custom scripts for all pages-->
     <script src="{{asset('js/sb-admin-2.min.js')}}"></script>
-
-    <script>
-        $(document).ready(function () {
-            var table;
-
-            if ($.fn.DataTable.isDataTable('#dataTable')) {
-                table = $('#dataTable').DataTable();
-                table.page.len(100).draw(); // ✅ paksa default 100
-            } else {
-                table = $('#dataTable').DataTable({
-                    pageLength: 100,
-                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
-                });
-            }
-        });
-    </script>
 
     @yield('script')
 
