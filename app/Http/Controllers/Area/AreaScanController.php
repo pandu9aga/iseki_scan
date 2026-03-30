@@ -85,13 +85,15 @@ class AreaScanController extends Controller
 
                 // "category mistakes nya kalau ready, shipping, design, dan production null semua maka telat supply mc"
                 // "kalau shipping nya ada maka category nya shipping"
-                // "kalau design ada maka category nya design"
-                // "kalau production maka category nya production"
+                // "kalau design ada maka category nya perubahan desain"
+                // "kalau production maka category nya lain-lain dengan Manual_Category_Detail produksi"
                 $category = 'telat supply mc';
+                $manualDetail = null;
                 if ($waitingRequest->Production_Area_Request !== null) {
-                    $category = 'production';
+                    $category = 'lain-lain';
+                    $manualDetail = 'produksi';
                 } elseif ($waitingRequest->Design_Changes_Request !== null) {
-                    $category = 'design';
+                    $category = 'perubahan desain';
                 } elseif ($waitingRequest->Shipping_Request !== null) {
                     $category = 'shipping';
                 }
@@ -108,6 +110,7 @@ class AreaScanController extends Controller
                     'Id_Request' => $idRequest,
                     'PIC' => $nameBossMc,
                     'Category_Mistake' => $category,
+                    'Manual_Category_Detail' => $manualDetail,
                     'Day_Mistake' => $nowDate,
                 ]);
             }
