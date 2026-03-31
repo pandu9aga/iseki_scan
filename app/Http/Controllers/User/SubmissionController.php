@@ -159,15 +159,15 @@ class SubmissionController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Header style
-        $sheet->getStyle('A1:O1')->applyFromArray([
+        $sheet->getStyle('A1:P1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ]);
-        $sheet->getStyle('A1:O1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:P1')->getAlignment()->setWrapText(true);
 
         $row = 2;
         $lastUser = null;
@@ -178,7 +178,7 @@ class SubmissionController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $submission->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 15, '-'), // 15 kolom sesuai header
+                    array_fill(0, 16, '-'), // 16 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -197,6 +197,17 @@ class SubmissionController extends Controller
             if ($submission->Design_Changes_Request) $readyDisplay[] = 'Design: ' . $submission->Design_Changes_Request;
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
+            $statusCode = '';
+            if ($submission->Ready_Request !== null) {
+                $statusCode = '1';
+            } elseif ($submission->Shipping_Request !== null) {
+                $statusCode = '2';
+            } elseif ($submission->Production_Area_Request !== null) {
+                $statusCode = '3';
+            } elseif ($submission->Design_Changes_Request !== null) {
+                $statusCode = '4';
+            }
+
             $sheet->fromArray([
                 $no,
                 $timeRequest,
@@ -206,8 +217,9 @@ class SubmissionController extends Controller
                 $submission->Urgent_Request == 1 ? '✓' : '',
                 $submission->Code_Item_Rack,
                 $submission->rack->Name_Item_Rack ?? '',
-                $readyStockDisplay,
+                $statusCode,
                 $submission->Sum_Stock ?? '',
+                $readyStockDisplay,
                 $timeRecord,
                 optional($submission->record)->Sum_Record ?? '',
                 $submission->member->Name_Member ?? '',

@@ -147,7 +147,7 @@ class TransitRequestController extends Controller
 
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
-            "1=Ready,2=Ship,\n3=Prod,4=Design", 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
+            "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
             'Member Record', 'Updated', 'Id'
         ];
         $sheet->fromArray([$headers], null, 'A1');
@@ -156,8 +156,8 @@ class TransitRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:P1')->applyFromArray($headerStyle);
-        $sheet->getStyle('A1:P1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:Q1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
 
@@ -167,7 +167,7 @@ class TransitRequestController extends Controller
 
         foreach ($requests as $index => $requestItem) {
             if ($lastUser !== null && $lastUser != $requestItem->Id_User) {
-                $sheet->fromArray(array_fill(0, 16, '-'), null, 'A' . $row);
+                $sheet->fromArray(array_fill(0, 17, '-'), null, 'A' . $row);
                 $row++;
                 $no = 1;
             }
@@ -198,6 +198,7 @@ class TransitRequestController extends Controller
                 $requestItem->Code_Item_Rack,
                 $requestItem->rack->Name_Item_Rack ?? '',
                 $statusCode,
+                $requestItem->Sum_Stock ?? '',
                 $readyStockDisplay,
                 $timeRecord,
                 optional($requestItem->record)->Sum_Record ?? '',

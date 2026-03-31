@@ -172,8 +172,8 @@ class McRequestController extends Controller
             'Item',
             'Name',
             "1=Ready,2=Ship,\n3=Prod,4=Design", // ← \n = line break
-            'Ready Stock',
-            'Sum Stock',       // ← KOLOM BARU (kolom K)
+            'Sum Stock',       // ← kolom J (setelah status)
+            'Ready Stock',     // ← kolom K
             'Time Record',
             'Sum Record',
             'Member Request',
@@ -254,8 +254,8 @@ class McRequestController extends Controller
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
                 $statusCode,
-                $readyStockDisplay,
-                $request->Sum_Stock ?? '',   // ← KOLOM BARU (kolom K)
+                $request->Sum_Stock ?? '',   // ← kolom J (Sum Stock)
+                $readyStockDisplay,          // ← kolom K (Ready Stock)
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',
@@ -271,7 +271,7 @@ class McRequestController extends Controller
 
         $lastRow = $row - 1;
         if ($lastRow >= 2) {
-            $columnsToCenter = ['E', 'F', 'I', 'K', 'M'];
+            $columnsToCenter = ['E', 'F', 'I', 'J', 'M'];
             foreach ($columnsToCenter as $col) {
                 $range = $col . '2:' . $col . $lastRow;
                 $sheet->getStyle($range)->getAlignment()
@@ -316,7 +316,7 @@ class McRequestController extends Controller
             if (str_contains($cleaned, '1=ready')) $colStatus = $colLetter;
         }
 
-        $colStock = $colStock ?? 'K';
+        $colStock = $colStock ?? 'J';
         $colStatus = $colStatus ?? 'I';
 
         $savedCount = 0;
@@ -370,7 +370,7 @@ class McRequestController extends Controller
                             $requestModel->Shipping_Request = $now;
                             break;
                         case '3':
-                            $requestModel->Shipping_Request = $now;
+                            $requestModel->Production_Area_Request = $now;
                             break;
                         case '4':
                             $requestModel->Design_Changes_Request = $now;
@@ -390,6 +390,6 @@ class McRequestController extends Controller
             return redirect()->back()->with('error', 'Tidak ada data yang tersimpan. Pastikan kolom Ready Stock dan Sum Stock terisi.');
         }
 
-        return redirect()->back()->with('success', "Berhasil menyimpan {$savedCount} baris data.");
+        return redirect()->back()->with('success', "Berhasil menyimpan data.");
     }
 }

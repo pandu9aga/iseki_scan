@@ -4,20 +4,20 @@
 <div class="container-fluid">
     <h1 class="h3 mb-2 text-gray-800">Request</h1>
     @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <span class="badge bg-success">Success</span> {{ session('success') }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <span class="badge bg-success">Success</span> {{ session('success') }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
     @endif
     @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <span class="badge bg-danger">Error</span> {{ session('error') }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span class="badge bg-danger">Error</span> {{ session('error') }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
     @endif
     <div class="d-sm-flex align-items-center justify-content-between mb-1">
         <!-- Earnings (Monthly) Card Example -->
@@ -39,10 +39,10 @@
                                         <select name="Id_User[]" class="form-control" multiple>
                                             <option value="">All Members</option>
                                             @foreach($members as $m)
-                                                <option value="{{ $m->Id_Member }}" 
-                                                    {{ in_array($m->Id_Member, request('Id_User', [])) ? 'selected' : '' }}>
-                                                    {{ $m->Name_Member }}
-                                                </option>
+                                            <option value="{{ $m->Id_Member }}"
+                                                {{ in_array($m->Id_Member, request('Id_User', [])) ? 'selected' : '' }}>
+                                                {{ $m->Name_Member }}
+                                            </option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -70,7 +70,7 @@
         <form class="user" action="{{ route('mc_submission.export') }}" method="GET" target="_blank">
             <input name="Day_Request_Hidden" type="hidden" value="{{ $dateForInput }}">
             @foreach(request('Id_User', []) as $id)
-                <input type="hidden" name="Id_User[]" value="{{ $id }}">
+            <input type="hidden" name="Id_User[]" value="{{ $id }}">
             @endforeach
             <input type="hidden" name="statusFilter" value="{{ request('statusFilter') }}">
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
@@ -94,7 +94,7 @@
                         <button class="btn btn-success ml-1" type="submit">Upload</button>
                     </div>
                     @if ($errors->has('ready_excel'))
-                        <div class="text-danger mt-1">{{ $errors->first('ready_excel') }}</div>
+                    <div class="text-danger mt-1">{{ $errors->first('ready_excel') }}</div>
                     @endif
                 </form>
             </div>
@@ -164,12 +164,12 @@
                             <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
                             <td>
                                 @php
-                                    $statuses = [];
-                                    if ($s->Ready_Request) $statuses[] = '<span class="badge badge-success">Ready</span>:' . $s->Ready_Request . '</span>';
-                                    if ($s->Shipping_Request) $statuses[] = '<span class="badge badge-info">Shipping</span>:' . $s->Shipping_Request;
-                                    if ($s->Production_Area_Request) $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
-                                    if ($s->Design_Changes_Request) $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
-                                    echo implode(' | ', $statuses);
+                                $statuses = [];
+                                if ($s->Ready_Request) $statuses[] = '<span class="badge badge-success">Ready</span>:' . $s->Ready_Request . '</span>';
+                                if ($s->Shipping_Request) $statuses[] = '<span class="badge badge-info">Shipping</span>:' . $s->Shipping_Request;
+                                if ($s->Production_Area_Request) $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
+                                if ($s->Design_Changes_Request) $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
+                                echo implode(' | ', $statuses);
                                 @endphp
                             </td>
                             <td>{{ $s->Sum_Stock ?? '' }}</td>
@@ -199,11 +199,11 @@
 <script src="{{ asset('js/demo/datatables-demo.js') }}"></script>
 <script src="{{ asset('js/select2.min.js') }}"></script>
 <script>
-$(document).ready(function() {
-    $('select[multiple]').select2({
-        placeholder: "Pilih member...",
-        allowClear: false
+    $(document).ready(function() {
+        $('select[multiple]').select2({
+            placeholder: "Pilih member...",
+            allowClear: false
+        });
     });
-});
 </script>
 @endsection
