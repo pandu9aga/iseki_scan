@@ -188,6 +188,7 @@ Route::middleware(McMiddleware::class)->group(function () {
     Route::get('/mc_submission', [McRequestController::class, 'index'])->name('mc_submission');
     Route::get('/mc_submission/submit', [McRequestController::class, 'submit'])->name('mc_submission.submit');
     Route::get('/mc_submission/export', [McRequestController::class, 'export'])->name('mc_submission.export');
+    Route::get('/mc_submission/search', [McRequestController::class, 'search'])->name('mc_submission.search');
 
     Route::get('/mc_validation', [McValidationController::class, 'index'])->name('mc_validation');
     Route::get('/mc_validation/submit', [McValidationController::class, 'submit'])->name('mc_validation.submit');

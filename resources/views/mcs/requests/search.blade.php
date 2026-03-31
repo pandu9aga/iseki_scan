@@ -1,9 +1,9 @@
-@extends('layouts.main')
+@extends('layouts.mc')
 @section('content')
     <div class="container-fluid">
         <h1 class="h3 mb-2 text-gray-800">Request</h1>
         <div class="d-sm-flex align-items-center justify-content-between mb-1">
-            <a class="d-sm-inline-block btn btn-md btn-primary shadow-sm m-3" href="{{ route('admin_request') }}">
+            <a class="d-sm-inline-block btn btn-md btn-primary shadow-sm m-3" href="{{ route('mc_submission') }}">
                 <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back
             </a>
         </div>
@@ -45,43 +45,33 @@
 
 @section('style')
     <link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
-    {{--
-    <link href="{{asset('css/datatables.min.css')}}" rel="stylesheet">
-    <link href="{{asset('css/fixedColumns.dataTables.min.css')}}" rel="stylesheet"> --}}
-    @section('style')
-        <link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
-        <style>
-            /* Hanya atur font & padding */
-            table.dataTable th,
-            table.dataTable td {
-                white-space: nowrap;
-                padding: 0.3rem;
-                font-size: 14px;
-            }
+    <style>
+        /* Hanya atur font & padding */
+        table.dataTable th,
+        table.dataTable td {
+            white-space: nowrap;
+            padding: 0.3rem;
+            font-size: 14px;
+        }
 
-            /* Optional: pastikan card tidak terlalu tinggi */
-            .card-body {
-                padding: 1rem;
-            }
+        /* Optional: pastikan card tidak terlalu tinggi */
+        .card-body {
+            padding: 1rem;
+        }
 
-            #dataTable th.no-col,
-            #dataTable td.no-col {
-                width: 40px !important;
-                min-width: 40px !important;
-                max-width: 40px !important;
-                text-align: center;
-            }
-        </style>
-    @endsection
+        #dataTable th.no-col,
+        #dataTable td.no-col {
+            width: 40px !important;
+            min-width: 40px !important;
+            max-width: 40px !important;
+            text-align: center;
+        }
     </style>
 @endsection
 
 @section('script')
     <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
-    {{--
-    <script src="{{asset('js/datatables.min.js')}}"></script>
-    <script src="{{asset('js/dataTables.fixedColumns.min.js')}}"></script> --}}
 
     <script>
         $(document).ready(function () {
@@ -98,7 +88,7 @@
                 pageLength: 100,
                 autoWidth: false,
                 ajax: {
-                    url: "{{ route('request.search') }}",
+                    url: "{{ route('mc_submission.search') }}",
                     type: 'GET',
                     data: function (d) {
                         d.statusFilter = $('.status-filter').val();

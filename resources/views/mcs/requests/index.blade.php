@@ -67,7 +67,10 @@
                 </div>
             </div>
         </div>
-        <form class="user" action="{{ route('mc_submission.export') }}" method="GET" target="_blank">
+        <a class="d-sm-inline-block btn btn-md btn-info shadow-sm" href="{{ route('mc_submission.search') }}">
+            <i class="fas fa-search fa-sm text-white-50"></i> Advanced Search
+        </a>
+        <form class="user my-2" action="{{ route('mc_submission.export') }}" method="GET" target="_blank">
             <input name="Day_Request_Hidden" type="hidden" value="{{ $dateForInput }}">
             @foreach(request('Id_User', []) as $id)
                 <input type="hidden" name="Id_User[]" value="{{ $id }}">

@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\Validator;
+use Yajra\DataTables\Facades\DataTables;
 
 class McRequestController extends Controller
 {
@@ -391,5 +392,109 @@ class McRequestController extends Controller
         }
 
         return redirect()->back()->with('success', "Berhasil menyimpan {$savedCount} baris data.");
+    }
+
+    public function search()
+    {
+        if (request()->ajax()) {
+            $query = RequestModel::with('member', 'record', 'rack');
+
+            if ($statusFilter = request('statusFilter')) {
+                switch ($statusFilter) {
+                    case 'ready':
+                        $query->whereNotNull('Ready_Request');
+                        break;
+                    case 'shipping':
+                        $query->whereNotNull('Shipping_Request');
+                        break;
+                    case 'production':
+                        $query->whereNotNull('Production_Area_Request');
+                        break;
+                    case 'design_change':
+                        $query->whereNotNull('Design_Changes_Request');
+                        break;
+                }
+            }
+
+            return DataTables::eloquent($query)
+                ->editColumn('Day_Request', function ($r) {
+                    return $r->Day_Request . ' ' . $r->Time_Request;
+                })
+                ->addColumn('Urgent_Request', function ($r) {
+                    return $r->Urgent_Request == 1 ? '✓' : '';
+                })
+                ->addColumn('Name', function ($r) {
+                    return optional($r->rack)->Name_Item_Rack ?? '';
+                })
+                ->addColumn('Type_Tractor_Rack', function ($r) {
+                $type = optional($r->rack)->Type_Tractor_Rack ?? '-';
+                if ($type === '-') {
+                    return '-';
+                }
+                $short = \Illuminate\Support\Str::limit($type, 20);
+                return '<span title="'.e($type).'">'.e($short).'</span>';
+            })
+            ->addColumn('Time_Record', function ($r) {
+                    $day = optional($r->record)->Day_Record ?? '';
+                    $time = optional($r->record)->Time_Record ?? '';
+                    return trim("$day $time");
+                })
+                ->addColumn('Status_Request_Display', function ($r) {
+                    $status = $r->Status_Request ?? '';
+                    switch ($status) {
+                        case 'Waiting':
+                            return '<span class="badge badge-warning">Waiting</span>';
+                        case 'Done':
+                            return '<span class="badge badge-success">Done</span>';
+                        default:
+                            return '<span class="badge badge-secondary">' . e($status) . '</span>';
+                    }
+                })
+                ->addColumn('Sum_Record', function ($r) {
+                    return optional($r->record)->Sum_Record ?? '';
+                })
+                ->addColumn('Member_Request', function ($r) {
+                    return optional($r->member)->Name_Member ?? '';
+                })
+                ->addColumn('Member_Record', function ($r) {
+                    return optional($r->record)?->member?->Name_Member ?? '';
+                })
+                ->editColumn('Updated_At_Request', function ($r) {
+                    return $r->Updated_At_Request ?? '';
+                })
+                ->addColumn('ready_status_display', function ($r) {
+                    $statuses = [];
+                    if ($r->Ready_Request) {
+                        $statuses[] = '<span class="badge badge-success">Ready</span>: ' . $r->Ready_Request;
+                    }
+                    if ($r->Shipping_Request) {
+                        $statuses[] = '<span class="badge badge-info">Shipping</span>: ' . $r->Shipping_Request;
+                    }
+                    if ($r->Production_Area_Request) {
+                        $statuses[] = '<span class="badge badge-primary">Production</span>: ' . $r->Production_Area_Request;
+                    }
+                    if ($r->Design_Changes_Request) {
+                        $statuses[] = '<span class="badge badge-warning">Design Change</span>: ' . $r->Design_Changes_Request;
+                    }
+                    return implode(' | ', $statuses);
+                })
+                ->filterColumn('Id_User', function ($query, $keyword) {
+                    if ($keyword !== '') {
+                        $query->where('Id_User', $keyword); // ✅ exact match
+                    }
+                })
+                ->orderColumn('Day_Request', function ($query, $order) {
+                    $query->orderBy('Day_Request', $order)->orderBy('Time_Request', $order);
+                })
+                ->orderColumn('ready_status_display', function ($query, $order) {
+                    $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01")) ' . $order);
+                })
+                ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display', 'Type_Tractor_Rack'])
+                ->make(true);
+        }
+
+        // Non-AJAX: kirim daftar member ke view
+        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get(['Id_Member', 'Name_Member']);
+        return view('mcs.requests.search', compact('members'));
     }
 }
