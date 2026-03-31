@@ -56,7 +56,7 @@ class AreaScanController extends Controller
                     $nameMemberTarget = $member ? $member->Name_Member : null;
                 } else {
                     $systemMember = Member::where('Name_Member', 'system')->first();
-                    $idMemberTarget = $systemMember ? $systemMember->Id_Member : 34;
+                    $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
                     $nameMemberTarget = 'system';
                 }
 
@@ -133,7 +133,7 @@ class AreaScanController extends Controller
             } else {
                 // "kalau tidak ada maka Cari Id_Member dengan nama system"
                 $systemMember = Member::where('Name_Member', 'system')->first();
-                $idMemberTarget = $systemMember ? $systemMember->Id_Member : 34;
+                $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
                 $nameMemberTarget = 'system';
             }
 
