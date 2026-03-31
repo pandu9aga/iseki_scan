@@ -19,14 +19,28 @@
                 </div>
             @endif
 
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ session('error') }}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+            <!-- Modal Error -->
+            <div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content shadow">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title" id="errorModalLabel">
+                                <i class="fas fa-exclamation-triangle mr-2"></i> Error
+                            </h5>
+                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body text-center py-4">
+                            <h4 class="text-danger mb-3">Oops!</h4>
+                            <p class="lead" id="errorMessage">{{ session('error') }}</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                        </div>
+                    </div>
                 </div>
-            @endif
+            </div>
 
             <!-- Scan Form -->
             <div class="card shadow mb-4">
@@ -43,9 +57,16 @@
                     <form action="{{ route('area.scan.process') }}" method="POST" id="scanForm">
                         @csrf
                         <div class="form-group text-left">
-                            <label for="Code_Rack">Scan Rack Code (Barcode/QR)</label>
-                            <!-- Make it readonly so no manual input allowed -->
-                            <input type="text" class="form-control form-control-user" id="Code_Rack" name="Code_Rack" placeholder="Result..." readonly required>
+                            <label for="Code_Rack">Scan atau Ketik Kode Rak</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="Code_Rack" name="Code_Rack" placeholder="Ketik kode rak disini..." required autofocus>
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary" type="button" id="clearCode">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Gunakan scanner atau ketik langsung kode rak di atas.</small>
                         </div>
                         <button type="submit" class="btn btn-primary btn-user btn-block">
                             Proses Scan
@@ -62,7 +83,6 @@
 @section('script')
 <!-- QR Code Library -->
 <script src="{{ asset('js/html5-qrcode.min.js') }}"></script>
-<script src="{{ asset('js/jquery.min.js') }}"></script>
 <script src="{{ asset('js/qrcode.min.js') }}"></script>
 
 <script>
@@ -91,6 +111,27 @@
     document.getElementById("scanRack").addEventListener("click", function () {
         rackScanner.render(onScanSuccessRack);
     });
+
+    // Clear input button
+    document.getElementById("clearCode").addEventListener("click", function() {
+        document.getElementById("Code_Rack").value = "";
+        document.getElementById("Code_Rack").focus();
+    });
+
+    // Allow Enter key to submit (standard behavior, but being explicit)
+    document.getElementById("Code_Rack").addEventListener("keypress", function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById("scanForm").submit();
+        }
+    });
+
+    // Show error modal if session error exists
+    @if(session('error'))
+        $(document).ready(function() {
+            $('#errorModal').modal('show');
+        });
+    @endif
 
 </script>
 @endsection

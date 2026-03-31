@@ -148,6 +148,10 @@ class AreaScanController extends Controller
             $rack = Rack::where('Code_Rack', $codeRack)->first();
             $codeItemRack = $rack ? $rack->Code_Item_Rack : ($lastReq ? $lastReq->Code_Item_Rack : null);
 
+            if (! $codeItemRack) {
+                return redirect()->back()->with('error', 'Kode Rack "'.$codeRack.'" tidak ditemukan di Data Rack. Silakan cek kembali atau hubungi Admin.');
+            }
+
             // "lalu insert ke tabel urgents, requests dan mistakes, PIC = Name_Member, Category telat request"
             // request first to get Id_Request
             $newReq = new RequestModel;
