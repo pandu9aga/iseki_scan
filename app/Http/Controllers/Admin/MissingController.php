@@ -285,7 +285,7 @@ class MissingController extends Controller
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
             "1=Ready,2=Ship,\n3=Prod,4=Design", // ← \n = line break
-            'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
+            'Sum Stock', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
             'Member Record', 'Updated', 'Id'
         ];
         $sheet->fromArray([$headers], null, 'A1');
@@ -295,8 +295,8 @@ class MissingController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:P1')->applyFromArray($headerStyle);
-        $sheet->getStyle('A1:P1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:Q1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -311,7 +311,7 @@ class MissingController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $request->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 12, '-'), // 12 kolom sesuai header
+                    array_fill(0, 17, '-'), // 17 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -361,6 +361,7 @@ class MissingController extends Controller
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
                 $statusCode,
+                $request->Sum_Stock ?? '',
                 $readyStockDisplay,
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
@@ -377,7 +378,7 @@ class MissingController extends Controller
 
         $lastRow = $row - 1;
         if ($lastRow >= 2) {
-            $columnsToCenter = ['E', 'F', 'I', 'L'];
+            $columnsToCenter = ['E', 'F', 'I', 'J', 'M'];
             foreach ($columnsToCenter as $col) {
                 $range = $col . '2:' . $col . $lastRow;
                 $sheet->getStyle($range)->getAlignment()

@@ -41,7 +41,7 @@ class AdminSubmissionController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
         $sheet->fromArray([$headers], NULL, 'A1');
 
         // Style header
@@ -49,7 +49,7 @@ class AdminSubmissionController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:O1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:P1')->applyFromArray($headerStyle);
 
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
 
@@ -62,7 +62,7 @@ class AdminSubmissionController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $request->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 15, '-'), // 15 kolom sesuai header
+                    array_fill(0, 16, '-'), // 16 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -80,6 +80,17 @@ class AdminSubmissionController extends Controller
             if ($request->Design_Changes_Request) $readyDisplay[] = 'Design: ' . $request->Design_Changes_Request;
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
+            $statusCode = '';
+            if ($request->Ready_Request !== null) {
+                $statusCode = '1';
+            } elseif ($request->Shipping_Request !== null) {
+                $statusCode = '2';
+            } elseif ($request->Production_Area_Request !== null) {
+                $statusCode = '3';
+            } elseif ($request->Design_Changes_Request !== null) {
+                $statusCode = '4';
+            }
+
             $sheet->fromArray([
                 $no,
                 $timeRequest,
@@ -89,8 +100,9 @@ class AdminSubmissionController extends Controller
                 $request->Urgent_Request == 1 ? '✓' : '',
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
-                $readyStockDisplay,
+                $statusCode,
                 $request->Sum_Stock ?? '',
+                $readyStockDisplay,
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',
