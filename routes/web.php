@@ -189,7 +189,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/user_mistake', [UserMistakeController::class, 'index'])->name('user_mistake');
     Route::get('/user_achievement', [UserAchievementController::class, 'index'])->name('user_achievement');
     Route::get('/user_forgot', [UserForgotController::class, 'index'])->name('user_forgot');
-    
+
     Route::get('/user_urgents', [UrgentController::class, 'index'])->name('user.urgents');
 });
 
@@ -213,6 +213,10 @@ Route::middleware(McMiddleware::class)->group(function () {
     Route::get('/mc_missing_mc', [McMissingController::class, 'missing_mc'])->name('mc.missing.mc');
     Route::get('/mc_missing_mc/export', [McMissingController::class, 'missing_mc_export'])->name('mc.missing.mc.export');
     Route::post('/mc_submission/upload-ready', [McRequestController::class, 'uploadReady'])->name('mc_submission.upload_ready');
+    Route::post('/mc_submission/ok-stock/{id}', [McRequestController::class, 'okStock'])->name('mc_submission.ok_stock');
+
+    Route::get('/mc_missing_estimation', [McMissingController::class, 'missing_estimation'])->name('mc.missing.estimation');
+    Route::get('/mc_missing_estimation/export', [McMissingController::class, 'missing_estimation_export'])->name('mc.missing.estimation.export');
 
     Route::get('/mc_mistake', [McMistakeController::class, 'index'])->name('mc_mistake');
     Route::get('/mc_achievement', [McAchievementController::class, 'index'])->name('mc_achievement');
