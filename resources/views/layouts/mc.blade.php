@@ -57,8 +57,8 @@
 
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.validate') }}">
-                    <i class="fas fa-fw fa-qrcode"></i>
-                    <span>Validate</span></a>
+            <i class="fas fa-fw fa-qrcode"></i>
+            <span>Validate</span></a>
             </li>
 
             <li class="nav-item">
@@ -69,14 +69,20 @@
 
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.missing') }}">
-                    <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing DST</span></a>
+            <i class="fas fa-fw fa-ban"></i>
+            <span>Missing DST</span></a>
             </li> --}}
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.missing.mc') }}">
                     <i class="fas fa-fw fa-ban"></i>
                     <span>Missing MC</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('mc.missing.estimation') }}">
+                    <i class="fas fa-fw fa-clock"></i>
+                    <span>Missing Estimation</span></a>
             </li>
 
             <!-- Divider -->
@@ -107,8 +113,8 @@
 
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.urgents') }}">
-                    <i class="fas fa-fw fa-exclamation-circle"></i>
-                    <span>Urgent</span></a>
+            <i class="fas fa-fw fa-exclamation-circle"></i>
+            <span>Urgent</span></a>
             </li> --}}
 
             <!-- Divider -->
@@ -218,7 +224,7 @@
     <script src="{{asset('js/sb-admin-2.min.js')}}"></script>
 
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             var table;
 
             if ($.fn.DataTable.isDataTable('#dataTable')) {
@@ -227,7 +233,10 @@
             } else {
                 table = $('#dataTable').DataTable({
                     pageLength: 100,
-                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+                    lengthMenu: [
+                        [10, 25, 50, 100, -1],
+                        [10, 25, 50, 100, "All"]
+                    ]
                 });
             }
         });

@@ -159,15 +159,15 @@ class SubmissionController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Header style
-        $sheet->getStyle('A1:P1')->applyFromArray([
+        $sheet->getStyle('A1:Q1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ]);
-        $sheet->getStyle('A1:P1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:Q1')->getAlignment()->setWrapText(true);
 
         $row = 2;
         $lastUser = null;
@@ -178,7 +178,7 @@ class SubmissionController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $submission->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 16, '-'), // 16 kolom sesuai header
+                    array_fill(0, 17, '-'), // 17 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -208,6 +208,11 @@ class SubmissionController extends Controller
                 $statusCode = '4';
             }
 
+            $estimationDisplay = '';
+            if ($submission->Estimation_Stock) {
+                $estimationDisplay = \Carbon\Carbon::parse($submission->Estimation_Stock)->format('d/m/Y');
+            }
+
             $sheet->fromArray([
                 $no,
                 $timeRequest,
@@ -220,6 +225,7 @@ class SubmissionController extends Controller
                 $statusCode,
                 $submission->Sum_Stock ?? '',
                 $readyStockDisplay,
+                $estimationDisplay,
                 $timeRecord,
                 optional($submission->record)->Sum_Record ?? '',
                 $submission->member->Name_Member ?? '',

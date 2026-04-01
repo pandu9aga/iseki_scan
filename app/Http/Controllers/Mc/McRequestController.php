@@ -10,6 +10,7 @@ use App\Models\Member;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
@@ -172,9 +173,10 @@ class McRequestController extends Controller
             'Urgenity',
             'Item',
             'Name',
-            "1=Ready,2=Ship,\n3=Prod,4=Design", // ← \n = line break
-            'Sum Stock',       // ← kolom J (setelah status)
-            'Ready Stock',     // ← kolom K
+            "1=Ready,2=Ship,\n3=Prod,4=Design",
+            'Sum Stock',
+            'Ready Stock',
+            'Estimation Date',
             'Time Record',
             'Sum Record',
             'Member Request',
@@ -189,8 +191,8 @@ class McRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
-        $sheet->getStyle('A1:Q1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:R1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -205,7 +207,7 @@ class McRequestController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $request->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 17, '-'), // 17 kolom sesuai header
+                    array_fill(0, 18, '-'), // 18 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -245,6 +247,12 @@ class McRequestController extends Controller
                 $statusCode = '4';
             }
 
+            // Format Estimation Date
+            $estimationDisplay = '';
+            if ($request->Estimation_Stock) {
+                $estimationDisplay = Carbon::parse($request->Estimation_Stock)->format('d/m/Y');
+            }
+
             $sheet->fromArray([
                 $no,
                 $timeRequest,
@@ -255,8 +263,9 @@ class McRequestController extends Controller
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
                 $statusCode,
-                $request->Sum_Stock ?? '',   // ← kolom J (Sum Stock)
-                $readyStockDisplay,          // ← kolom K (Ready Stock)
+                $request->Sum_Stock ?? '',
+                $readyStockDisplay,
+                $estimationDisplay,
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',
@@ -265,6 +274,12 @@ class McRequestController extends Controller
                 $request->Id_Request,
             ], null, 'A' . $row);
 
+            // Format kolom Estimation Date sebagai tanggal
+            if ($estimationDisplay !== '') {
+                $sheet->getStyle('L' . $row)->getNumberFormat()
+                    ->setFormatCode('DD/MM/YYYY');
+            }
+
             $lastUser = $request->Id_User;
             $no++;
             $row++;
@@ -272,7 +287,7 @@ class McRequestController extends Controller
 
         $lastRow = $row - 1;
         if ($lastRow >= 2) {
-            $columnsToCenter = ['E', 'F', 'I', 'J', 'M'];
+            $columnsToCenter = ['E', 'F', 'I', 'J', 'L', 'N'];
             foreach ($columnsToCenter as $col) {
                 $range = $col . '2:' . $col . $lastRow;
                 $sheet->getStyle($range)->getAlignment()
@@ -306,21 +321,25 @@ class McRequestController extends Controller
         $headerRow = $rows[1] ?? [];
         unset($rows[1]);
 
-        // Deteksi kolom Sum Stock dan Status dari header
+        // Deteksi kolom dari header
         $colStock = null;
         $colStatus = null;
+        $colEstimation = null;
 
         foreach ($headerRow as $colLetter => $headerName) {
             if ($headerName === null) continue;
             $cleaned = strtolower(trim(strval($headerName)));
             if (str_contains($cleaned, 'sum stock')) $colStock = $colLetter;
             if (str_contains($cleaned, '1=ready')) $colStatus = $colLetter;
+            if (str_contains($cleaned, 'estimation')) $colEstimation = $colLetter;
         }
 
         $colStock = $colStock ?? 'J';
         $colStatus = $colStatus ?? 'I';
+        $colEstimation = $colEstimation ?? 'L';
 
         $savedCount = 0;
+        $skippedEstimation = 0;
 
         foreach ($rows as $row) {
             // Kolom terakhir = ID Request
@@ -332,53 +351,91 @@ class McRequestController extends Controller
             $idValue = intval($rawId);
             if ($idValue <= 0) continue;
 
-            // Ambil nilai Ready Stock (status) dan Sum Stock
+            // Ambil nilai Status, Sum Stock, dan Estimation Date
             $rawStatus = strval($row[$colStatus] ?? '');
             $readyStatus = trim($rawStatus);
             $rawStock = $row[$colStock] ?? null;
+            $rawEstimation = $row[$colEstimation] ?? null;
+
             $hasStatus = in_array($readyStatus, ['1', '2', '3', '4']);
             $hasStock = ($rawStock !== null && $rawStock !== '' && is_numeric($rawStock));
 
-            // VALIDASI: kedua kolom WAJIB terisi, jika salah satu kosong → skip
+            // VALIDASI: Status dan Sum Stock WAJIB terisi
             if (!$hasStatus || !$hasStock) continue;
+
+            // VALIDASI: Jika status 3 (Shipping) atau 4 (Design Change), Estimation Date WAJIB
+            $parsedEstimation = null;
+            if (in_array($readyStatus, ['3', '4'])) {
+                if ($rawEstimation === null || trim(strval($rawEstimation)) === '') {
+                    $skippedEstimation++;
+                    continue; // Skip: status 3/4 tapi tidak ada estimation date
+                }
+                // Parse estimation date (support format d/m/Y, d-m-Y, Y-m-d, Excel serial)
+                try {
+                    $estStr = trim(strval($rawEstimation));
+                    if (is_numeric($estStr)) {
+                        // Excel serial date number
+                        $parsedEstimation = Carbon::instance(\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject(intval($estStr)));
+                    } else {
+                        $parsedEstimation = Carbon::parse($estStr);
+                    }
+                } catch (\Exception $e) {
+                    $skippedEstimation++;
+                    continue; // Skip: format tanggal tidak valid
+                }
+            } elseif ($rawEstimation !== null && trim(strval($rawEstimation)) !== '') {
+                // Status 1/2 tapi ada estimation → simpan juga
+                try {
+                    $estStr = trim(strval($rawEstimation));
+                    if (is_numeric($estStr)) {
+                        $parsedEstimation = Carbon::instance(\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject(intval($estStr)));
+                    } else {
+                        $parsedEstimation = Carbon::parse($estStr);
+                    }
+                } catch (\Exception $e) {
+                    // Abaikan error parsing untuk status 1/2
+                }
+            }
 
             $requestModel = RequestModel::find($idValue);
             if (!$requestModel) continue;
 
             $changed = false;
 
-            // Update Sum Stock jika terisi
-            if ($hasStock) {
-                $requestModel->Sum_Stock = intval($rawStock);
+            // Update Sum Stock
+            $requestModel->Sum_Stock = intval($rawStock);
+            $changed = true;
+
+            // Update Estimation Date jika ada
+            if ($parsedEstimation) {
+                $requestModel->Estimation_Stock = $parsedEstimation;
                 $changed = true;
             }
 
             // Update Status jika terisi DAN belum ada status sebelumnya
-            if ($hasStatus) {
-                $anyStatusFilled =
-                    $requestModel->Ready_Request !== null ||
-                    $requestModel->Shipping_Request !== null ||
-                    $requestModel->Production_Area_Request !== null ||
-                    $requestModel->Design_Changes_Request !== null;
+            $anyStatusFilled =
+                $requestModel->Ready_Request !== null ||
+                $requestModel->Shipping_Request !== null ||
+                $requestModel->Production_Area_Request !== null ||
+                $requestModel->Design_Changes_Request !== null;
 
-                if (!$anyStatusFilled) {
-                    $now = Carbon::now();
-                    switch ($readyStatus) {
-                        case '1':
-                            $requestModel->Ready_Request = $now;
-                            break;
-                        case '2':
-                            $requestModel->Shipping_Request = $now;
-                            break;
-                        case '3':
-                            $requestModel->Production_Area_Request = $now;
-                            break;
-                        case '4':
-                            $requestModel->Design_Changes_Request = $now;
-                            break;
-                    }
-                    $changed = true;
+            if (!$anyStatusFilled) {
+                $now = Carbon::now();
+                switch ($readyStatus) {
+                    case '1':
+                        $requestModel->Ready_Request = $now;
+                        break;
+                    case '2':
+                        $requestModel->Shipping_Request = $now;
+                        break;
+                    case '3':
+                        $requestModel->Production_Area_Request = $now;
+                        break;
+                    case '4':
+                        $requestModel->Design_Changes_Request = $now;
+                        break;
                 }
+                $changed = true;
             }
 
             if ($changed) {
@@ -388,10 +445,28 @@ class McRequestController extends Controller
         }
 
         if ($savedCount === 0) {
-            return redirect()->back()->with('error', 'Tidak ada data yang tersimpan. Pastikan kolom Ready Stock dan Sum Stock terisi.');
+            $msg = 'Tidak ada data yang tersimpan. Pastikan kolom Status dan Sum Stock terisi.';
+            if ($skippedEstimation > 0) {
+                $msg .= " ({$skippedEstimation} baris dilewati karena Estimation Date kosong untuk status Shipping/Design Change.)";
+            }
+            return redirect()->back()->with('error', $msg);
         }
 
-        return redirect()->back()->with('success', "Berhasil menyimpan data.");
+        $successMsg = "Berhasil menyimpan {$savedCount} baris data.";
+        if ($skippedEstimation > 0) {
+            $successMsg .= " ({$skippedEstimation} baris dilewati karena Estimation Date kosong.)";
+        }
+        return redirect()->back()->with('success', $successMsg);
+    }
+
+    public function okStock($id)
+    {
+        $requestModel = RequestModel::findOrFail($id);
+        $requestModel->Ok_Stock = 1;
+        $requestModel->Time_Ok_Stock = Carbon::now();
+        $requestModel->save();
+
+        return redirect()->back()->with('success', 'OK Stock berhasil diupdate.');
     }
 
     public function search()

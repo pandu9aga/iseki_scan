@@ -149,7 +149,7 @@ class AdminRequestController extends Controller
         // Header kolom
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', 
-            "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
+            "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 
             'Member Record', 'Updated'
             ];
         $sheet->fromArray([$headers], null, 'A1');
@@ -159,8 +159,8 @@ class AdminRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:P1')->applyFromArray($headerStyle);
-        $sheet->getStyle('A1:P1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:Q1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -175,7 +175,7 @@ class AdminRequestController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $request->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 16, '-'), // 16 kolom sesuai header
+                    array_fill(0, 17, '-'), // 17 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -215,6 +215,11 @@ class AdminRequestController extends Controller
                 $statusCode = '4';
             }
 
+            $estimationDisplay = '';
+            if ($request->Estimation_Stock) {
+                $estimationDisplay = \Carbon\Carbon::parse($request->Estimation_Stock)->format('d/m/Y');
+            }
+
             $sheet->fromArray([
                 $no,
                 $timeRequest,
@@ -227,6 +232,7 @@ class AdminRequestController extends Controller
                 $statusCode,
                 $request->Sum_Stock ?? '',
                 $readyStockDisplay,
+                $estimationDisplay,
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',

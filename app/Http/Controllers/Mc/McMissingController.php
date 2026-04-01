@@ -403,4 +403,133 @@ class McMissingController extends Controller
 
         return response()->download($filePath)->deleteFileAfterSend(true);
     }
+
+    public function missing_estimation()
+    {
+        $date = Carbon::today()->format('Y-m-d');
+        $now = Carbon::now();
+
+        // Request yang punya status Shipping atau Design Change
+        // DAN Estimation_Stock sudah lewat >= 48 jam
+        // DAN Ok_Stock belum 1
+        $requests = RequestModel::with('member', 'record', 'rack')
+            ->where('Status_Request', '!=', 'Done')
+            ->where(function ($query) {
+                $query->whereNotNull('Shipping_Request')
+                      ->orWhereNotNull('Design_Changes_Request');
+            })
+            ->whereNotNull('Estimation_Stock')
+            ->where('Estimation_Stock', '<', $now->copy()->subHours(48))
+            ->where(function ($query) {
+                $query->whereNull('Ok_Stock')
+                      ->orWhere('Ok_Stock', '!=', 1);
+            })
+            ->orderBy('Estimation_Stock', 'asc')
+            ->get();
+
+        $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
+        $totalRequests = $requests->count();
+
+        return view('mcs.missings.estimation', compact('requests', 'totalRequests', 'formattedDate', 'date'));
+    }
+
+    public function missing_estimation_export(Request $request)
+    {
+        $date = $request->input('Day_Request_Hidden', Carbon::today()->format('Y-m-d'));
+        $date = Carbon::parse($date)->format('Y-m-d');
+        $now = Carbon::now();
+
+        $requests = RequestModel::with('member', 'record', 'rack')
+            ->where('Status_Request', '!=', 'Done')
+            ->where(function ($query) {
+                $query->whereNotNull('Shipping_Request')
+                      ->orWhereNotNull('Design_Changes_Request');
+            })
+            ->whereNotNull('Estimation_Stock')
+            ->where('Estimation_Stock', '<', $now->copy()->subHours(48))
+            ->where(function ($query) {
+                $query->whereNull('Ok_Stock')
+                      ->orWhere('Ok_Stock', '!=', 1);
+            })
+            ->orderBy('Estimation_Stock', 'asc')
+            ->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = [
+            'No', 'Rack', 'Item', 'Name', 'Sum', 'Status',
+            'Time Request', 'Estimation Date', 'Overdue Day(s)',
+            'Overdue Hour(s) Minute(s)', 'PIC'
+        ];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
+        ];
+        $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
+        $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
+
+        $row = 2;
+        foreach ($requests as $index => $req) {
+            // Determine status type
+            $statusLabel = '';
+            if ($req->Design_Changes_Request) {
+                $statusLabel = 'Design Change';
+            } elseif ($req->Shipping_Request) {
+                $statusLabel = 'Shipping';
+            }
+
+            $timeRequest = ($req->Day_Request ?? '') . " " . ($req->Time_Request ?? '');
+            $estimationDate = $req->Estimation_Stock ? Carbon::parse($req->Estimation_Stock)->format('d/m/Y') : '';
+
+            // Calculate overdue from Estimation_Stock
+            $overdueDay = '-';
+            $overdueHM = '-';
+            if ($req->Estimation_Stock) {
+                $estTime = Carbon::parse($req->Estimation_Stock);
+                $totalSeconds = $now->timestamp - $estTime->timestamp;
+
+                if ($totalSeconds > 0) {
+                    $days = floor($totalSeconds / 86400);
+                    $hours = floor(($totalSeconds % 86400) / 3600);
+                    $minutes = floor(($totalSeconds % 3600) / 60);
+
+                    $overdueDay = $days . ' day(s)';
+                    $hmParts = [];
+                    if ($hours > 0) $hmParts[] = $hours . ' hour(s)';
+                    if ($minutes > 0) $hmParts[] = $minutes . ' minute(s)';
+                    $overdueHM = implode(' ', $hmParts) ?: '0 minute(s)';
+                }
+            }
+
+            $sheet->fromArray([
+                $index + 1,
+                $req->Code_Rack,
+                $req->Code_Item_Rack,
+                $req->rack->Name_Item_Rack ?? '',
+                $req->Sum_Request,
+                $statusLabel,
+                $timeRequest,
+                $estimationDate,
+                $overdueDay,
+                $overdueHM,
+                $req->member->Name_Member ?? '-',
+            ], null, 'A' . $row);
+
+            $row++;
+        }
+
+        foreach (range('A', $sheet->getHighestColumn()) as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = "Missing_Estimation_" . $date . ".xlsx";
+        $writer = new Xlsx($spreadsheet);
+        $filePath = storage_path('app/public/' . $fileName);
+        $writer->save($filePath);
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
 }

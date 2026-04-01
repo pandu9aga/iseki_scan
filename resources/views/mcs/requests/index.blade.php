@@ -123,7 +123,9 @@
                             <th>Item</th>
                             <th>Name</th>
                             <th>Ready Stock</th>
+                            <th>Estimation Date</th>
                             <th>Sum Stock</th>
+                            <th>OK Stock</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -143,7 +145,9 @@
                             <th>Item</th>
                             <th>Name</th>
                             <th>Ready Stock</th>
+                            <th>Estimation Date</th>
                             <th>Sum Stock</th>
+                            <th>OK Stock</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -175,7 +179,26 @@
                                 echo implode(' | ', $statuses);
                                 @endphp
                             </td>
+                            <td class="text-center">
+                                @if($s->Estimation_Stock)
+                                    {{ \Carbon\Carbon::parse($s->Estimation_Stock)->format('d/m/Y') }}
+                                @endif
+                            </td>
                             <td>{{ $s->Sum_Stock ?? '' }}</td>
+                            <td class="text-center">
+                                @if($s->Shipping_Request || $s->Design_Changes_Request)
+                                    @if($s->Ok_Stock == 1)
+                                        <span class="badge badge-success">OK</span>
+                                    @else
+                                        <form action="{{ route('mc_submission.ok_stock', $s->Id_Request) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin OK Stock?')">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                                <i class="fas fa-check"></i> OK
+                                            </button>
+                                        </form>
+                                    @endif
+                                @endif
+                            </td>
                             <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
                             <td>{{ optional($s->record)->Sum_Record ?? '' }}</td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
