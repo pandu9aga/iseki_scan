@@ -9,6 +9,8 @@ use App\Models\Rack;
 use App\Models\Record;
 use App\Models\Request as RequestModel;
 use App\Models\Urgent;
+use App\Models\User;
+use App\Models\WaQueue;
 use Carbon\Carbon;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +63,7 @@ class AreaScanController extends Controller
                 }
 
                 // "insert di urgents Id_Member itu juga"
-                Urgent::create([
+                $urgent = Urgent::create([
                     'Id_User' => $idUserLogged,
                     'Code_Rack' => $codeRack,
                     'Id_Request' => $idRequest,
@@ -75,6 +77,17 @@ class AreaScanController extends Controller
                     'PIC' => $nameMemberTarget,
                     'Category_Mistake' => 'telat supply',
                     'Day_Mistake' => $nowDate,
+                ]);
+
+                // Queue WA notification
+                $reporter = User::find($idUserLogged);
+                $this->queueWaMessage([
+                    'time_urgent' => $nowTime,
+                    'code_rack' => $codeRack,
+                    'pic' => $nameMemberTarget,
+                    'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                    'code_item' => $waitingRequest->Code_Item_Rack,
+                    'sum_request' => $waitingRequest->Sum_Request,
                 ]);
 
             } else {
@@ -112,6 +125,17 @@ class AreaScanController extends Controller
                     'Category_Mistake' => $category,
                     'Manual_Category_Detail' => $manualDetail,
                     'Day_Mistake' => $nowDate,
+                ]);
+
+                // Queue WA notification
+                $reporter = User::find($idUserLogged);
+                $this->queueWaMessage([
+                    'time_urgent' => $nowTime,
+                    'code_rack' => $codeRack,
+                    'pic' => $nameBossMc,
+                    'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                    'code_item' => $waitingRequest->Code_Item_Rack,
+                    'sum_request' => $waitingRequest->Sum_Request,
                 ]);
             }
 
@@ -181,8 +205,40 @@ class AreaScanController extends Controller
                 'Category_Mistake' => 'telat request',
                 'Day_Mistake' => $nowDate,
             ]);
+
+            // Queue WA notification
+            $reporter = User::find($idUserLogged);
+            $this->queueWaMessage([
+                'time_urgent' => $nowTime,
+                'code_rack' => $codeRack,
+                'pic' => $nameMemberTarget,
+                'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                'code_item' => $codeItemRack,
+                'sum_request' => $sumRequest,
+            ]);
         }
 
         return redirect()->back()->with('success', 'Scan Code Rack '.$codeRack.' berhasil diproses.');
+    }
+
+    /**
+     * Format and save a WA notification message to the queue.
+     */
+    private function queueWaMessage(array $data): void
+    {
+        $message = "⚠️ *URGENT SCAN ALERT*\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= "🕐 *Time Urgent:* {$data['time_urgent']}\n";
+        $message .= "📦 *Code Rack:* {$data['code_rack']}\n";
+        $message .= "👤 *PIC:* {$data['pic']}\n";
+        $message .= "📡 *Reporter:* {$data['reporter']}\n";
+        $message .= "🔧 *Request Details:*\n";
+        $message .= "   Item: {$data['code_item']} - Sum: {$data['sum_request']}";
+
+        WaQueue::create([
+            'message' => $message,
+            'group_id' => 'true_120363417614072057@g.us_3EB060ECE12DE31EBADF26_187381403668615@lid',
+            'status' => 'pending',
+        ]);
     }
 }

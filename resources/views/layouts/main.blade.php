@@ -145,9 +145,9 @@
             </li> --}}
 
             {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('prediction.error') }}">
-                    <i class="fas fa-fw fa-brain"></i>
-                    <span>Prediction</span></a>
+                <a class="nav-link" href="{{ route('wa.queue') }}">
+                    <i class="fab fa-fw fa-whatsapp"></i>
+                    <span>WA Queue</span></a>
             </li> --}}
 
             <!-- Divider -->

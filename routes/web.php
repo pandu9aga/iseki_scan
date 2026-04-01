@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ValidationController;
 use App\Http\Controllers\Area\AreaScanController;
 use App\Http\Controllers\Helper\UrgentController;
+use App\Http\Controllers\Helper\WaQueueController;
 use App\Http\Controllers\MainController;
 use App\Http\Controllers\Mc\McAchievementController;
 use App\Http\Controllers\Mc\McForgotController;
@@ -141,7 +142,15 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/prediction/emptiness', [\App\Http\Controllers\Admin\PredictionController::class, 'emptiness'])->name('prediction.emptiness');
 
     Route::get('/admin_urgents', [UrgentController::class, 'index'])->name('admin.urgents');
+
+    // WA Queue Monitoring
+    Route::get('/wa-queue', [WaQueueController::class, 'index'])->name('wa.queue');
 });
+
+// WA Queue API (accessible without auth for cross-device JS calls)
+Route::get('/api/wa-queue/fetch', [WaQueueController::class, 'fetch'])->name('wa.queue.fetch');
+Route::delete('/api/wa-queue/{id}', [WaQueueController::class, 'destroy'])->name('wa.queue.destroy');
+Route::patch('/api/wa-queue/{id}/failed', [WaQueueController::class, 'markFailed'])->name('wa.queue.failed');
 
 Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home');
