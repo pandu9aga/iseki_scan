@@ -147,13 +147,13 @@ class AreaScanController extends Controller
 
             // Capture data for success modal
             $pic = ($waitingRequest->Ready_Request !== null) ? $nameMemberTarget : $nameBossMc;
-            
+
             $cat = strtolower($category ?? 'telat supply'); // category is set in the logic above
             $mDetail = strtolower($manualDetail ?? '');
-            
+
             $displayCategory = strtoupper($cat);
             $badgeClass = 'secondary';
-            
+
             if ($cat == 'perubahan desain') {
                 $displayCategory = 'DESIGN CHANGE';
                 $badgeClass = 'warning';
@@ -178,7 +178,7 @@ class AreaScanController extends Controller
 
             return redirect()->back()->with([
                 'success' => 'Scan Code Rack '.$codeRack.' berhasil diproses.',
-                'scan_success_data' => $scanSuccessData
+                'scan_success_data' => $scanSuccessData,
             ]);
 
         } else {
@@ -273,7 +273,7 @@ class AreaScanController extends Controller
 
             return redirect()->back()->with([
                 'success' => 'Scan Code Rack '.$codeRack.' berhasil diproses.',
-                'scan_success_data' => $scanSuccessData
+                'scan_success_data' => $scanSuccessData,
             ]);
         }
     }
@@ -294,7 +294,7 @@ class AreaScanController extends Controller
 
         WaQueue::create([
             'message' => $message,
-            'group_id' => 'true_120363417614072057@g.us_3EB060ECE12DE31EBADF26_187381403668615@lid',
+            'group_id' => '120363417614072057@g.us',
             'status' => 'pending',
         ]);
     }
