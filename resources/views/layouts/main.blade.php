@@ -165,11 +165,11 @@
                     <span>Forgot</span></a>
             </li>
 
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('wa.queue') }}">
                     <i class="fab fa-fw fa-whatsapp"></i>
                     <span>WA Queue</span></a>
-            </li>
+            </li> --}}
 
             <!-- Divider -->
             <hr class="sidebar-divider">

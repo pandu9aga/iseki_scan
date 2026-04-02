@@ -55,6 +55,12 @@
                     <span>Request</span></a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('mc.urgents') }}">
+                    <i class="fas fa-fw fa-exclamation-circle"></i>
+                    <span>Urgent</span></a>
+            </li>
+
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.validate') }}">
             <i class="fas fa-fw fa-qrcode"></i>
@@ -79,11 +85,11 @@
                     <span>Missing MC</span></a>
             </li>
 
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.missing.estimation') }}">
                     <i class="fas fa-fw fa-clock"></i>
                     <span>Missing Estimation</span></a>
-            </li>
+            </li> --}}
 
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -109,12 +115,6 @@
                 <a class="nav-link" href="{{ route('mc_forgot') }}">
                     <i class="fas fa-fw fa-question-circle"></i>
                     <span>Forgot</span></a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('mc.urgents') }}">
-            <i class="fas fa-fw fa-exclamation-circle"></i>
-            <span>Urgent</span></a>
             </li>
 
             <!-- Divider -->
