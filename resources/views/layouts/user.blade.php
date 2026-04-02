@@ -145,6 +145,22 @@
                     <span>Record</span></a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUrgent"
+                    aria-expanded="true" aria-controls="collapseUrgent">
+                    <i class="fas fa-fw fa-exclamation-triangle"></i>
+                    <span>Urgent</span>
+                </a>
+                <div id="collapseUrgent" class="collapse" aria-labelledby="headingUrgent"
+                    data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Urgent Menu:</h6>
+                        <a class="collapse-item" href="{{ route('user.urgents.scan') }}">Scan Urgent</a>
+                        <a class="collapse-item" href="{{ route('user.urgents') }}">List Urgent</a>
+                    </div>
+                </div>
+            </li>
+
             <!-- Divider -->
             <hr class="sidebar-divider">
 
@@ -172,6 +188,20 @@
 
             <!-- Heading -->
             <div class="sidebar-heading">
+                Label
+            </div>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('member.label.index') }}">
+                    <i class="fas fa-solid fa-tags"></i>
+                    <span>Label</span></a>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
                 Evaluation
             </div>
 
@@ -191,26 +221,6 @@
                 <a class="nav-link" href="{{ route('user_forgot') }}">
                     <i class="fas fa-fw fa-question-circle"></i>
                     <span>Forgot</span></a>
-            </li>
-
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('user.urgents') }}">
-                    <i class="fas fa-fw fa-exclamation-circle"></i>
-                    <span>Urgent</span></a>
-            </li> --}}
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Label
-            </div>
-
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('member.label.index') }}">
-                    <i class="fas fa-solid fa-tags"></i>
-                    <span>Label</span></a>
             </li>
 
             <!-- Divider -->

@@ -16,11 +16,13 @@ class Urgent extends Model
     public $timestamps = false; // Jika tabel tidak memiliki created_at dan updated_at
 
     protected $fillable = [
+        'Id_Type_User',
         'Id_User',
         'Code_Rack',
         'Id_Request',
         'Id_Member',
         'Time_Urgent',
+        'Id_Mistake',
     ];
 
     public function member()
@@ -37,5 +39,10 @@ class Urgent extends Model
     public function requestModel()
     {
         return $this->belongsTo(Request::class, 'Id_Request', 'Id_Request');
+    }
+
+    public function mistake()
+    {
+        return $this->belongsTo(Mistake::class, 'Id_Mistake', 'Id_Mistake');
     }
 }

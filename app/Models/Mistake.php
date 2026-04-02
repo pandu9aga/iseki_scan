@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Mistake extends Model
 {
     use HasFactory;
 
     protected $table = 'mistakes';
+
     protected $primaryKey = 'Id_Mistake';
+
     public $timestamps = false;
 
     protected $fillable = [
@@ -19,6 +21,7 @@ class Mistake extends Model
         'Category_Mistake',
         'Manual_Category_Detail',
         'Day_Mistake',
+        'Status_Mistake',
     ];
 
     public function request()

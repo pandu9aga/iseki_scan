@@ -19,6 +19,10 @@ class McMistakeController extends Controller
         $mistakes = Mistake::with(['request.member'])
             ->whereMonth('Day_Mistake', $date->month)
             ->whereYear('Day_Mistake', $date->year)
+            ->where(function ($q) {
+                $q->where('Status_Mistake', '!=', 1)
+                  ->orWhereNull('Status_Mistake');
+            })
             ->get();
 
         $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->get();

@@ -191,6 +191,8 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/user_forgot', [UserForgotController::class, 'index'])->name('user_forgot');
 
     Route::get('/user_urgents', [UrgentController::class, 'index'])->name('user.urgents');
+    Route::get('/user_urgents/scan', [UrgentController::class, 'scan'])->name('user.urgents.scan');
+    Route::post('/user_urgents/scan/process', [UrgentController::class, 'processScan'])->name('user.urgents.process');
 });
 
 Route::middleware(McMiddleware::class)->group(function () {

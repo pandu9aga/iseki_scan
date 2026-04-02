@@ -117,6 +117,33 @@
 
             <!-- Heading -->
             <div class="sidebar-heading">
+                Missing
+            </div>
+
+            <!-- Nav Item - Monthly -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('missing') }}">
+                    <i class="fas fa-fw fa-ban"></i>
+                    <span>Missing DST</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('missing.mc') }}">
+                    <i class="fas fa-fw fa-ban"></i>
+                    <span>Missing MC</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.urgents') }}">
+                    <i class="fas fa-fw fa-exclamation-circle"></i>
+                    <span>Urgent</span></a>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
                 Evaluation
             </div>
 
@@ -138,37 +165,10 @@
                     <span>Forgot</span></a>
             </li>
 
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('admin.urgents') }}">
-                    <i class="fas fa-fw fa-exclamation-circle"></i>
-                    <span>Urgent</span></a>
-            </li> --}}
-
-            {{-- <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('wa.queue') }}">
                     <i class="fab fa-fw fa-whatsapp"></i>
                     <span>WA Queue</span></a>
-            </li> --}}
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Missing
-            </div>
-
-            <!-- Nav Item - Monthly -->
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('missing') }}">
-                    <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing DST</span></a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('missing.mc') }}">
-                    <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing MC</span></a>
             </li>
 
             <!-- Divider -->

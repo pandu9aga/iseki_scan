@@ -111,11 +111,11 @@
                     <span>Forgot</span></a>
             </li>
 
-            {{-- <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.urgents') }}">
             <i class="fas fa-fw fa-exclamation-circle"></i>
             <span>Urgent</span></a>
-            </li> --}}
+            </li>
 
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">

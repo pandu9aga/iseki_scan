@@ -88,6 +88,7 @@ class RecordController extends Controller
 
         if (! $exists) {
             $exists = DB::connection('label')->table('rack_part_lists')
+                ->where('rack_no', $codeRack)
                 ->where('item_code', 'LIKE', '%'.$codeItem.'%')
                 ->exists();
         }

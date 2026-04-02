@@ -40,8 +40,8 @@
                     <input type="text" class="form-control" id="filter_code_rack" placeholder="Code Rack...">
                 </div>
                 <div class="form-group col-md-4">
-                    <label for="filter_time_urgent">Time Urgent</label>
-                    <input type="time" step="1" class="form-control" id="filter_time_urgent" placeholder="HH:MM:SS">
+                    <label for="filter_date_urgent">Date Urgent</label>
+                    <input type="date" class="form-control" id="filter_date_urgent">
                 </div>
                 <div class="form-group col-md-4 d-flex align-items-end">
                     <button id="btn-filter" class="btn btn-primary mr-2">Filter</button>
@@ -61,6 +61,7 @@
                         <tr>
                             <th>No</th>
                             <th>Time Urgent</th>
+                            <th>Category</th>
                             <th>Code Rack</th>
                             <th>PIC</th>
                             <th>Reporter</th>
@@ -96,7 +97,7 @@
                 url: "{{ route('urgents.data') }}",
                 data: function (d) {
                     d.codeRack = $('#filter_code_rack').val();
-                    d.timeUrgent = $('#filter_time_urgent').val();
+                    d.dateUrgent = $('#filter_date_urgent').val();
                 }
             },
             columns: [
@@ -110,6 +111,7 @@
                     }
                 },
                 { data: 'Time_Urgent', name: 'Time_Urgent' },
+                { data: 'Mistake_Category', name: 'Mistake_Category', searchable: false },
                 { data: 'Code_Rack', name: 'Code_Rack' },
                 { data: 'PIC_Urgent', name: 'PIC_Urgent', searchable: false },
                 { data: 'Reporter', name: 'Reporter', searchable: false },
@@ -127,12 +129,12 @@
         // Reset button
         $('#btn-reset').click(function () {
             $('#filter_code_rack').val('');
-            $('#filter_time_urgent').val('');
+            $('#filter_date_urgent').val('');
             table.draw();
         });
 
         // Enter on inputs
-        $('#filter_code_rack, #filter_time_urgent').on('keypress', function(e) {
+        $('#filter_code_rack, #filter_date_urgent').on('keypress', function(e) {
             if(e.which == 13) {
                 table.draw();
             }

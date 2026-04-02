@@ -23,6 +23,10 @@ class MistakeController extends Controller
         $mistakes = Mistake::with(['request.member'])
             ->whereMonth('Day_Mistake', $date->month)
             ->whereYear('Day_Mistake', $date->year)
+            ->where(function ($q) {
+                $q->where('Status_Mistake', '!=', 1)
+                  ->orWhereNull('Status_Mistake');
+            })
             ->get();
 
         $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->get();
@@ -114,7 +118,11 @@ class MistakeController extends Controller
         
         $query = Mistake::with(['request.member', 'request.rack', 'request.record.member'])
             ->where('PIC', $member->Name_Member)
-            ->where('Category_Mistake', $category);
+            ->where('Category_Mistake', $category)
+            ->where(function ($q) {
+                $q->where('Status_Mistake', '!=', 1)
+                  ->orWhereNull('Status_Mistake');
+            });
 
         if ($day) {
             $date = Carbon::parse($month . '-' . $day)->format('Y-m-d');
@@ -206,6 +214,10 @@ class MistakeController extends Controller
         $mistakes = Mistake::with(['request.member'])
             ->whereMonth('Day_Mistake', $date->month)
             ->whereYear('Day_Mistake', $date->year)
+            ->where(function ($q) {
+                $q->where('Status_Mistake', '!=', 1)
+                  ->orWhereNull('Status_Mistake');
+            })
             ->get();
 
         $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->get();

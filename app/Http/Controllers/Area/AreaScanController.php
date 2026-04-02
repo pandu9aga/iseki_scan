@@ -62,21 +62,24 @@ class AreaScanController extends Controller
                     $nameMemberTarget = 'system';
                 }
 
-                // "insert di urgents Id_Member itu juga"
-                $urgent = Urgent::create([
-                    'Id_User' => $idUserLogged,
-                    'Code_Rack' => $codeRack,
-                    'Id_Request' => $idRequest,
-                    'Id_Member' => $idMemberTarget,
-                    'Time_Urgent' => $nowTime,
-                ]);
-
                 // "insert di mistakes category telat supply dengan Id_Member tersebut"
-                Mistake::create([
+                $mistake = Mistake::create([
                     'Id_Request' => $idRequest,
                     'PIC' => $nameMemberTarget,
                     'Category_Mistake' => 'telat supply',
                     'Day_Mistake' => $nowDate,
+                    'Status_Mistake' => 1,
+                ]);
+
+                // "insert di urgents Id_Member itu juga"
+                $urgent = Urgent::create([
+                    'Id_User' => $idUserLogged,
+                    'Id_Type_User' => session('Id_Type_User'),
+                    'Code_Rack' => $codeRack,
+                    'Id_Request' => $idRequest,
+                    'Id_Member' => $idMemberTarget,
+                    'Time_Urgent' => $nowTime,
+                    'Id_Mistake' => $mistake->Id_Mistake,
                 ]);
 
                 // Queue WA notification
@@ -111,20 +114,23 @@ class AreaScanController extends Controller
                     $category = 'shipping';
                 }
 
-                Urgent::create([
-                    'Id_User' => $idUserLogged,
-                    'Code_Rack' => $codeRack,
-                    'Id_Request' => $idRequest,
-                    'Id_Member' => $idBossMc,
-                    'Time_Urgent' => $nowTime,
-                ]);
-
-                Mistake::create([
+                $mistake = Mistake::create([
                     'Id_Request' => $idRequest,
                     'PIC' => $nameBossMc,
                     'Category_Mistake' => $category,
                     'Manual_Category_Detail' => $manualDetail,
                     'Day_Mistake' => $nowDate,
+                    'Status_Mistake' => 1,
+                ]);
+
+                Urgent::create([
+                    'Id_User' => $idUserLogged,
+                    'Id_Type_User' => session('Id_Type_User'),
+                    'Code_Rack' => $codeRack,
+                    'Id_Request' => $idRequest,
+                    'Id_Member' => $idBossMc,
+                    'Time_Urgent' => $nowTime,
+                    'Id_Mistake' => $mistake->Id_Mistake,
                 ]);
 
                 // Queue WA notification
@@ -141,13 +147,29 @@ class AreaScanController extends Controller
 
             // Capture data for success modal
             $pic = ($waitingRequest->Ready_Request !== null) ? $nameMemberTarget : $nameBossMc;
-            $displayCategory = (isset($category) && $category !== 'telat supply mc') ? $category : 'Belum Supply';
-            if (isset($manualDetail) && $manualDetail === 'produksi') {
-                $displayCategory = 'Produksi';
+            
+            $cat = strtolower($category ?? 'telat supply'); // category is set in the logic above
+            $mDetail = strtolower($manualDetail ?? '');
+            
+            $displayCategory = strtoupper($cat);
+            $badgeClass = 'secondary';
+            
+            if ($cat == 'perubahan desain') {
+                $displayCategory = 'DESIGN CHANGE';
+                $badgeClass = 'warning';
+            } elseif ($cat == 'shipping') {
+                $displayCategory = 'SHIPPING';
+                $badgeClass = 'info';
+            } elseif ($cat == 'lain-lain' && $mDetail == 'produksi') {
+                $displayCategory = 'PRODUCTION';
+                $badgeClass = 'primary';
+            } elseif ($cat == 'telat supply' || $cat == 'telat request' || $cat == 'telat supply mc' || $cat == 'telat supply mc') {
+                $badgeClass = 'secondary';
             }
 
             $scanSuccessData = [
                 'category' => $displayCategory,
+                'badge_class' => $badgeClass,
                 'time_request' => $waitingRequest->Time_Request,
                 'sum_request' => $waitingRequest->Sum_Request,
                 'pic' => $pic,
@@ -211,19 +233,22 @@ class AreaScanController extends Controller
 
             $idRequestNew = $newReq->Id_Request;
 
-            Urgent::create([
-                'Id_User' => $idUserLogged,
-                'Code_Rack' => $codeRack,
-                'Id_Request' => $idRequestNew,
-                'Id_Member' => $idMemberTarget,
-                'Time_Urgent' => $nowTime,
-            ]);
-
-            Mistake::create([
+            $mistake = Mistake::create([
                 'Id_Request' => $idRequestNew,
                 'PIC' => $nameMemberTarget,
                 'Category_Mistake' => 'telat request',
                 'Day_Mistake' => $nowDate,
+                'Status_Mistake' => 1,
+            ]);
+
+            Urgent::create([
+                'Id_User' => $idUserLogged,
+                'Id_Type_User' => session('Id_Type_User'),
+                'Code_Rack' => $codeRack,
+                'Id_Request' => $idRequestNew,
+                'Id_Member' => $idMemberTarget,
+                'Time_Urgent' => $nowTime,
+                'Id_Mistake' => $mistake->Id_Mistake,
             ]);
 
             // Queue WA notification
@@ -238,7 +263,8 @@ class AreaScanController extends Controller
             ]);
 
             $scanSuccessData = [
-                'category' => 'Telat Request',
+                'category' => 'TELAT REQUEST',
+                'badge_class' => 'secondary',
                 'time_request' => $nowTime,
                 'sum_request' => $sumRequest,
                 'pic' => $nameMemberTarget,

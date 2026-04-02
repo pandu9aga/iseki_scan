@@ -1,4 +1,4 @@
-@extends('layouts.area')
+@extends('layouts.user')
 
 @section('content')
 <div class="container-fluid">
@@ -105,7 +105,7 @@
                         Scan
                     </button>
 
-                    <form action="{{ route('area.scan.process') }}" method="POST" id="scanForm">
+                    <form action="{{ route('user.urgents.process') }}" method="POST" id="scanForm">
                         @csrf
                         <div class="form-group text-left">
                             <label for="Code_Rack">Scan atau Ketik Kode Rak</label>
