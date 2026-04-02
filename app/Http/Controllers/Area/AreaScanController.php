@@ -139,6 +139,26 @@ class AreaScanController extends Controller
                 ]);
             }
 
+            // Capture data for success modal
+            $pic = ($waitingRequest->Ready_Request !== null) ? $nameMemberTarget : $nameBossMc;
+            $displayCategory = (isset($category) && $category !== 'telat supply mc') ? $category : 'Belum Supply';
+            if (isset($manualDetail) && $manualDetail === 'produksi') {
+                $displayCategory = 'Produksi';
+            }
+
+            $scanSuccessData = [
+                'category' => $displayCategory,
+                'time_request' => $waitingRequest->Time_Request,
+                'sum_request' => $waitingRequest->Sum_Request,
+                'pic' => $pic,
+                'code_rack' => $codeRack,
+            ];
+
+            return redirect()->back()->with([
+                'success' => 'Scan Code Rack '.$codeRack.' berhasil diproses.',
+                'scan_success_data' => $scanSuccessData
+            ]);
+
         } else {
             // "kalau tidak ada maka cari Id_Member rata-rata yang melakukan request code tersebut"
             $avgMemberReq = RequestModel::select('Id_User', DB::raw('COUNT(Id_User) as count'))
@@ -216,9 +236,20 @@ class AreaScanController extends Controller
                 'code_item' => $codeItemRack,
                 'sum_request' => $sumRequest,
             ]);
-        }
 
-        return redirect()->back()->with('success', 'Scan Code Rack '.$codeRack.' berhasil diproses.');
+            $scanSuccessData = [
+                'category' => 'Telat Request',
+                'time_request' => $nowTime,
+                'sum_request' => $sumRequest,
+                'pic' => $nameMemberTarget,
+                'code_rack' => $codeRack,
+            ];
+
+            return redirect()->back()->with([
+                'success' => 'Scan Code Rack '.$codeRack.' berhasil diproses.',
+                'scan_success_data' => $scanSuccessData
+            ]);
+        }
     }
 
     /**

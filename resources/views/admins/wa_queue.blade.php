@@ -168,8 +168,8 @@
 
 @section('script')
 <script>
-    const WA_HOST    = 'https://kudus.wablas.com/';
-    const WA_TOKEN   = 'uTpuO0BweAI485fbGD2e3ERQLiMSlMss98iqfWDefGLkJl36H46zN9v';
+    const PROXY_URL  = 'https://wablas-proxy.isekipandu.workers.dev'; // No trailing slash
+    const WA_TOKEN   = 'uTpuO0BweAI485fbGD2e3ERQLiMSlMss98iqfWDefGLkJl36H46zN9v.EJZ3eriR'; // MUST be TOKEN.SECRET_KEY
     const FETCH_URL  = '{{ route('wa.queue.fetch') }}';
     const DEL_BASE   = '{{ url('/api/wa-queue') }}';
     const DEL_URL    = id => `${DEL_BASE}/${id}`;
@@ -227,12 +227,7 @@
         }
 
         try {
-            // Menggunakan ThingProxy sebagai alternatif karena AllOrigins memblokir header 'Authorization' pada request preflight.
-            // Jika masih bermasalah, user disarankan menggunakan ekstensi "Allow CORS" di browser atau setup Cloudflare Worker.
-            const targetUrl = WA_HOST + 'api/v2/send-group';
-            const proxyUrl = 'https://thingproxy.freeboard.io/fetch/' + targetUrl;
-
-            const resp = await fetch(proxyUrl, {
+            const resp = await fetch(PROXY_URL + '/api/v2/send-message', {
                 method: 'POST',
                 headers: {
                     'Authorization': WA_TOKEN,
@@ -240,13 +235,16 @@
                 },
                 body: JSON.stringify({
                     data: [{
-                        groupId: groupId,
+                        phone: groupId,
                         message: message,
+                        isGroup: "true"
                     }]
                 })
             });
 
-            if (resp.ok) {
+            const result = await resp.json();
+
+            if (resp.ok && (result.status === true || result.status === 'success')) {
                 // Delete from queue on server
                 await fetch(DEL_URL(id), {
                     method: 'DELETE',
@@ -256,8 +254,7 @@
                 removeCard(id);
                 return true;
             } else {
-                const errorData = await resp.text();
-                console.error('Wablas Error Response:', errorData);
+                console.error('Wablas Proxy Error:', result);
                 
                 // Mark as failed on server
                 await fetch(FAIL_URL(id), {
@@ -272,11 +269,10 @@
                 return false;
             }
         } catch (err) {
-            console.error('WA Send Error:', err);
-            alert('Gagal mengirim WA: Masalah Koneksi atau CORS Proxy. Coba buka https://thingproxy.freeboard.io/ di tab baru lalu refresh halaman ini.');
+            console.error('Network Error:', err);
             failedCount++;
             if (card) {
-                card.querySelector('.badge').textContent = 'GAGAL';
+                card.querySelector('.badge').textContent = 'ERR: PROXY';
                 card.querySelector('.badge').className = 'badge badge-failed mr-2';
             }
             return false;
