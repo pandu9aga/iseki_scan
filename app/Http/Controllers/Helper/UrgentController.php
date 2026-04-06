@@ -44,8 +44,8 @@ class UrgentController extends Controller
                 $query->where('Code_Rack', 'LIKE', '%'.$codeRack.'%');
             }
 
-            if ($timeUrgent = $request->input('timeUrgent')) {
-                $query->where('Time_Urgent', 'LIKE', '%'.$timeUrgent.'%');
+            if ($dateUrgent = $request->input('dateUrgent')) {
+                $query->where('Time_Urgent', 'LIKE', '%'.$dateUrgent.'%');
             }
 
             return DataTables::eloquent($query)

@@ -66,13 +66,13 @@
                         <tr>
                             <th>No</th>
                             <th>Time Urgent</th>
+                            <th>Category</th>
                             <th>Code Rack</th>
                             <th>PIC</th>
-                            <th>Mistake Category</th>
                             <th>Reporter</th>
-                            <th>Request Time</th>
-                            <th>Record Time</th>
                             <th>Request Details</th>
+                            <th>Request</th>
+                            <th>Record</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -111,7 +111,7 @@
                 url: "{{ route('urgents.data') }}",
                 data: function (d) {
                     d.codeRack = $('#filter_code_rack').val();
-                    d.timeUrgent = $('#filter_time_urgent').val();
+                    d.dateUrgent = $('#filter_date_urgent').val();
                 }
             },
             columns: [
@@ -125,6 +125,7 @@
                     }
                 },
                 { data: 'Time_Urgent', name: 'Time_Urgent' },
+                { data: 'Mistake_Category', name: 'Mistake_Category', searchable: false },
                 { data: 'Code_Rack', name: 'Code_Rack' },
                 { 
                     data: 'PIC_Urgent', 
@@ -136,11 +137,10 @@
                         }
                     }
                 },
-                { data: 'Mistake_Category', name: 'Mistake_Category', searchable: false },
                 { data: 'Reporter', name: 'Reporter', searchable: false },
+                { data: 'Request_Details', name: 'Request_Details', searchable: false },
                 { data: 'Request_Time', name: 'Request_Time', searchable: false },
                 { data: 'Record_Time', name: 'Record_Time', searchable: false },
-                { data: 'Request_Details', name: 'Request_Details', searchable: false },
             ],
             order: [[1, 'desc']], // Order by time by default
             searching: false, // Turn off default global search
@@ -161,7 +161,7 @@
         });
 
         // Enter on inputs
-        $('#filter_code_rack, #filter_time_urgent').on('keypress', function(e) {
+        $('#filter_code_rack, #filter_date_urgent').on('keypress', function(e) {
             if(e.which == 13) {
                 table.draw();
                 fetchRecap();
