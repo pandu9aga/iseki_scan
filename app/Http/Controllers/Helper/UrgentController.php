@@ -152,7 +152,69 @@ class UrgentController extends Controller
         if ($waitingRequest) {
             $idRequest = $waitingRequest->Id_Request;
 
-            if ($waitingRequest->Ready_Request !== null) {
+            // Check if request is less than 24 hours old
+            $requestTime = Carbon::parse($waitingRequest->Day_Request . ' ' . $waitingRequest->Time_Request);
+            $isLessThan24Hours = $requestTime->diffInHours(Carbon::now()) < 24;
+
+            if ($isLessThan24Hours) {
+                // If < 24 hours, category is "telat request" and PIC is the member responsible
+                $avgMemberRecord = Record::select('Id_User', DB::raw('COUNT(Id_User) as count'))
+                    ->where('Code_Rack', $codeRack)
+                    ->groupBy('Id_User')
+                    ->orderBy('count', 'desc')
+                    ->first();
+
+                $idMemberTarget = null;
+                $nameMemberTarget = null;
+                if ($avgMemberRecord) {
+                    $idMemberTarget = $avgMemberRecord->Id_User;
+                    $member = Member::find($idMemberTarget);
+                    // Check if member is inactive
+                    if ($member && $member->Status_Non_Active == 1) {
+                        $systemMember = Member::where('Name_Member', 'system')->first();
+                        $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
+                        $nameMemberTarget = 'system';
+                    } else {
+                        $nameMemberTarget = $member ? $member->Name_Member : null;
+                    }
+                } else {
+                    $systemMember = Member::where('Name_Member', 'system')->first();
+                    $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
+                    $nameMemberTarget = 'system';
+                }
+
+                $category = 'telat request';
+                $manualDetail = null;
+
+                $mistake = Mistake::create([
+                    'Id_Request' => $idRequest,
+                    'PIC' => $nameMemberTarget,
+                    'Category_Mistake' => $category,
+                    'Day_Mistake' => $nowDate,
+                    'Status_Mistake' => 1,
+                ]);
+
+                Urgent::create([
+                    'Id_User' => $idMemberLogged,
+                    'Id_Type_User' => null,
+                    'Code_Rack' => $codeRack,
+                    'Id_Request' => $idRequest,
+                    'Id_Member' => $idMemberTarget,
+                    'Time_Urgent' => $nowTime,
+                    'Id_Mistake' => $mistake->Id_Mistake,
+                ]);
+
+                // Queue WA notification
+                $reporter = Member::find($idMemberLogged);
+                $this->queueWaMessage([
+                    'time_urgent' => $nowTime,
+                    'code_rack' => $codeRack,
+                    'pic' => $nameMemberTarget,
+                    'reporter' => $reporter ? $reporter->Name_Member : 'Member',
+                    'code_item' => $waitingRequest->Code_Item_Rack,
+                    'sum_request' => $waitingRequest->Sum_Request,
+                ]);
+            } elseif ($waitingRequest->Ready_Request !== null) {
                 // Determine target member PIC
                 $avgMemberRecord = Record::select('Id_User', DB::raw('COUNT(Id_User) as count'))
                     ->where('Code_Rack', $codeRack)
@@ -165,17 +227,27 @@ class UrgentController extends Controller
                 if ($avgMemberRecord) {
                     $idMemberTarget = $avgMemberRecord->Id_User;
                     $member = Member::find($idMemberTarget);
-                    $nameMemberTarget = $member ? $member->Name_Member : null;
+                    // Check if member is inactive
+                    if ($member && $member->Status_Non_Active == 1) {
+                        $systemMember = Member::where('Name_Member', 'system')->first();
+                        $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
+                        $nameMemberTarget = 'system';
+                    } else {
+                        $nameMemberTarget = $member ? $member->Name_Member : null;
+                    }
                 } else {
                     $systemMember = Member::where('Name_Member', 'system')->first();
                     $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
                     $nameMemberTarget = 'system';
                 }
 
+                $category = 'telat supply';
+                $manualDetail = null;
+
                 $mistake = Mistake::create([
                     'Id_Request' => $idRequest,
                     'PIC' => $nameMemberTarget,
-                    'Category_Mistake' => 'telat supply',
+                    'Category_Mistake' => $category,
                     'Day_Mistake' => $nowDate,
                     'Status_Mistake' => 1,
                 ]);
@@ -203,8 +275,15 @@ class UrgentController extends Controller
 
             } else {
                 $bossMcMember = Member::where('Name_Member', 'Boss MC')->first();
-                $idBossMc = $bossMcMember ? $bossMcMember->Id_Member : 32;
-                $nameBossMc = 'Boss MC';
+                // Check if Boss MC is inactive
+                if ($bossMcMember && $bossMcMember->Status_Non_Active == 1) {
+                    $systemMember = Member::where('Name_Member', 'system')->first();
+                    $idBossMc = $systemMember ? $systemMember->Id_Member : 35;
+                    $nameBossMc = 'system';
+                } else {
+                    $idBossMc = $bossMcMember ? $bossMcMember->Id_Member : 32;
+                    $nameBossMc = 'Boss MC';
+                }
 
                 $category = 'telat supply mc';
                 $manualDetail = null;
@@ -248,7 +327,8 @@ class UrgentController extends Controller
                 ]);
             }
 
-            $pic = ($waitingRequest->Ready_Request !== null) ? $nameMemberTarget : $nameBossMc;
+
+            $pic = ($isLessThan24Hours || $waitingRequest->Ready_Request !== null) ? $nameMemberTarget : $nameBossMc;
 
             $cat = strtolower($category ?? 'telat supply');
             $mDetail = strtolower($manualDetail ?? '');
@@ -295,7 +375,14 @@ class UrgentController extends Controller
             if ($avgMemberReq) {
                 $idMemberTarget = $avgMemberReq->Id_User;
                 $member = Member::find($idMemberTarget);
-                $nameMemberTarget = $member ? $member->Name_Member : null;
+                // Check if member is inactive
+                if ($member && $member->Status_Non_Active == 1) {
+                    $systemMember = Member::where('Name_Member', 'system')->first();
+                    $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
+                    $nameMemberTarget = 'system';
+                } else {
+                    $nameMemberTarget = $member ? $member->Name_Member : null;
+                }
             } else {
                 $systemMember = Member::where('Name_Member', 'system')->first();
                 $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;

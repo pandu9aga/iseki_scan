@@ -115,7 +115,16 @@
                 { data: 'Time_Urgent', name: 'Time_Urgent' },
                 { data: 'Mistake_Category', name: 'Mistake_Category', searchable: false },
                 { data: 'Code_Rack', name: 'Code_Rack' },
-                { data: 'PIC_Urgent', name: 'PIC_Urgent', searchable: false },
+                { 
+                    data: 'PIC_Urgent', 
+                    name: 'PIC_Urgent', 
+                    searchable: false,
+                    createdCell: function (td, cellData, rowData, row, col) {
+                        if (cellData === 'Boss MC') {
+                            $(td).css('background-color', 'yellow');
+                        }
+                    }
+                },
                 { data: 'Reporter', name: 'Reporter', searchable: false },
                 { data: 'Request_Details', name: 'Request_Details', searchable: false },
                 { data: 'Request_Time', name: 'Request_Time', searchable: false },
