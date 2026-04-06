@@ -217,7 +217,9 @@ class AdminRequestController extends Controller
 
             $estimationDisplay = '';
             if ($request->Estimation_Stock) {
-                $estimationDisplay = \Carbon\Carbon::parse($request->Estimation_Stock)->format('d/m/Y');
+                $estimationDisplay = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
+                    \Carbon\Carbon::parse($request->Estimation_Stock)
+                );
             }
 
             $sheet->fromArray([
@@ -244,6 +246,21 @@ class AdminRequestController extends Controller
             $no++;
             $row++;
         }
+
+        $sheet->getStyle('L2:L1000')->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $validation = $sheet->getCell('L2')->getDataValidation();
+        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
+        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
+        $validation->setAllowBlank(true);
+        $validation->setShowInputMessage(true);
+        $validation->setShowErrorMessage(true);
+        $validation->setErrorTitle('Input Error');
+        $validation->setError('Harus berupa tanggal!');
+        $validation->setPromptTitle('Pilih Tanggal');
+        $validation->setPrompt('Format: DD/MM/YYYY');
+        $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
+        $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(\Carbon\Carbon::parse('1900-01-01')));
+        $sheet->setDataValidation('L2:L1000', $validation);
 
         // 🔑 Auto size kolom
         foreach (range('A', $sheet->getHighestColumn()) as $col) {

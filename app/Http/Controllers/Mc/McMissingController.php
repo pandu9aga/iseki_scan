@@ -289,7 +289,7 @@ class McMissingController extends Controller
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
             "1=Ready,2=Ship,\n3=Prod,4=Design", // ← \n = line break
-            'Sum Stock', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
+            'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 
             'Member Record', 'Updated', 'Id'
         ];
         $sheet->fromArray([$headers], null, 'A1');
@@ -299,8 +299,8 @@ class McMissingController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
-        $sheet->getStyle('A1:Q1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:R1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -315,7 +315,7 @@ class McMissingController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $request->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 17, '-'), // 17 kolom sesuai header
+                    array_fill(0, 18, '-'), // 18 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -355,6 +355,13 @@ class McMissingController extends Controller
                 $statusCode = '4';
             }
 
+            $estimationDisplay = '';
+            if ($request->Estimation_Stock) {
+                $estimationDisplay = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
+                    \Carbon\Carbon::parse($request->Estimation_Stock)
+                );
+            }
+
             $sheet->fromArray([
                 $no,
                 $timeRequest,
@@ -367,6 +374,7 @@ class McMissingController extends Controller
                 $statusCode,
                 $request->Sum_Stock ?? '',
                 $readyStockDisplay,
+                $estimationDisplay,
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',
@@ -382,13 +390,28 @@ class McMissingController extends Controller
 
         $lastRow = $row - 1;
         if ($lastRow >= 2) {
-            $columnsToCenter = ['E', 'F', 'I', 'J', 'M'];
+            $columnsToCenter = ['E', 'F', 'I', 'J', 'L', 'N'];
             foreach ($columnsToCenter as $col) {
                 $range = $col . '2:' . $col . $lastRow;
                 $sheet->getStyle($range)->getAlignment()
                     ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
             }
         }
+
+        $sheet->getStyle('L2:L1000')->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $validation = $sheet->getCell('L2')->getDataValidation();
+        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
+        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
+        $validation->setAllowBlank(true);
+        $validation->setShowInputMessage(true);
+        $validation->setShowErrorMessage(true);
+        $validation->setErrorTitle('Input Error');
+        $validation->setError('Harus berupa tanggal!');
+        $validation->setPromptTitle('Pilih Tanggal');
+        $validation->setPrompt('Format: DD/MM/YYYY');
+        $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
+        $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(\Carbon\Carbon::parse('1900-01-01')));
+        $sheet->setDataValidation('L2:L1000', $validation);
 
         // 🔑 Auto size kolom
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
@@ -482,7 +505,12 @@ class McMissingController extends Controller
             }
 
             $timeRequest = ($req->Day_Request ?? '') . " " . ($req->Time_Request ?? '');
-            $estimationDate = $req->Estimation_Stock ? Carbon::parse($req->Estimation_Stock)->format('d/m/Y') : '';
+            $estimationDate = '';
+            if ($req->Estimation_Stock) {
+                $estimationDate = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
+                    \Carbon\Carbon::parse($req->Estimation_Stock)
+                );
+            }
 
             // Calculate overdue from Estimation_Stock
             $overdueDay = '-';
@@ -520,6 +548,21 @@ class McMissingController extends Controller
 
             $row++;
         }
+
+        $sheet->getStyle('H2:H1000')->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $validation = $sheet->getCell('H2')->getDataValidation();
+        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
+        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
+        $validation->setAllowBlank(true);
+        $validation->setShowInputMessage(true);
+        $validation->setShowErrorMessage(true);
+        $validation->setErrorTitle('Input Error');
+        $validation->setError('Harus berupa tanggal!');
+        $validation->setPromptTitle('Pilih Tanggal');
+        $validation->setPrompt('Format: DD/MM/YYYY');
+        $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
+        $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(\Carbon\Carbon::parse('1900-01-01')));
+        $sheet->setDataValidation('H2:H1000', $validation);
 
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);

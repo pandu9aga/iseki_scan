@@ -147,7 +147,7 @@ class TransitRequestController extends Controller
 
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
-            "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Time Record', 'Sum Record', 'Member Request', 
+            "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 
             'Member Record', 'Updated', 'Id'
         ];
         $sheet->fromArray([$headers], null, 'A1');
@@ -156,8 +156,8 @@ class TransitRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
-        $sheet->getStyle('A1:Q1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:R1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
 
@@ -167,7 +167,7 @@ class TransitRequestController extends Controller
 
         foreach ($requests as $index => $requestItem) {
             if ($lastUser !== null && $lastUser != $requestItem->Id_User) {
-                $sheet->fromArray(array_fill(0, 17, '-'), null, 'A' . $row);
+                $sheet->fromArray(array_fill(0, 18, '-'), null, 'A' . $row);
                 $row++;
                 $no = 1;
             }
@@ -188,6 +188,13 @@ class TransitRequestController extends Controller
             elseif ($requestItem->Production_Area_Request !== null) $statusCode = '3';
             elseif ($requestItem->Design_Changes_Request !== null) $statusCode = '4';
 
+            $estimationDisplay = '';
+            if ($requestItem->Estimation_Stock) {
+                $estimationDisplay = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
+                    \Carbon\Carbon::parse($requestItem->Estimation_Stock)
+                );
+            }
+
             $sheet->fromArray([
                 $no,
                 $timeRequest,
@@ -200,6 +207,7 @@ class TransitRequestController extends Controller
                 $statusCode,
                 $requestItem->Sum_Stock ?? '',
                 $readyStockDisplay,
+                $estimationDisplay,
                 $timeRecord,
                 optional($requestItem->record)->Sum_Record ?? '',
                 $requestItem->member->Name_Member ?? '',
@@ -212,6 +220,21 @@ class TransitRequestController extends Controller
             $no++;
             $row++;
         }
+
+        $sheet->getStyle('L2:L1000')->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $validation = $sheet->getCell('L2')->getDataValidation();
+        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
+        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
+        $validation->setAllowBlank(true);
+        $validation->setShowInputMessage(true);
+        $validation->setShowErrorMessage(true);
+        $validation->setErrorTitle('Input Error');
+        $validation->setError('Harus berupa tanggal!');
+        $validation->setPromptTitle('Pilih Tanggal');
+        $validation->setPrompt('Format: DD/MM/YYYY');
+        $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
+        $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(\Carbon\Carbon::parse('1900-01-01')));
+        $sheet->setDataValidation('L2:L1000', $validation);
 
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);

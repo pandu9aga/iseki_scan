@@ -247,10 +247,12 @@ class McRequestController extends Controller
                 $statusCode = '4';
             }
 
-            // Format Estimation Date
+            // Format Estimation Date to Excel serial date for date picker
             $estimationDisplay = '';
             if ($request->Estimation_Stock) {
-                $estimationDisplay = Carbon::parse($request->Estimation_Stock)->format('d/m/Y');
+                $estimationDisplay = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
+                    Carbon::parse($request->Estimation_Stock)
+                );
             }
 
             $sheet->fromArray([
@@ -274,11 +276,6 @@ class McRequestController extends Controller
                 $request->Id_Request,
             ], null, 'A' . $row);
 
-            // Format kolom Estimation Date sebagai tanggal
-            if ($estimationDisplay !== '') {
-                $sheet->getStyle('L' . $row)->getNumberFormat()
-                    ->setFormatCode('DD/MM/YYYY');
-            }
 
             $lastUser = $request->Id_User;
             $no++;
@@ -294,6 +291,27 @@ class McRequestController extends Controller
                     ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
             }
         }
+
+        // Apply Date Format & Data Validation to Estimation Date column (L)
+        // Up to row 1000 so empty rows also have the date picker
+        $sheet->getStyle('L2:L1000')->getNumberFormat()
+            ->setFormatCode('DD/MM/YYYY');
+
+        $validation = $sheet->getCell('L2')->getDataValidation();
+        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
+        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
+        $validation->setAllowBlank(true);
+        $validation->setShowInputMessage(true);
+        $validation->setShowErrorMessage(true);
+        $validation->setErrorTitle('Input Error');
+        $validation->setError('Harus berupa tanggal!');
+        $validation->setPromptTitle('Pilih Tanggal');
+        $validation->setPrompt('Format: DD/MM/YYYY');
+        // Setting data validation for exactly dates >= 1 Jan 1900
+        $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
+        $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(Carbon::parse('1900-01-01')));
+
+        $sheet->setDataValidation('L2:L1000', $validation);
 
         // 🔑 Auto size kolom
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
@@ -502,14 +520,14 @@ class McRequestController extends Controller
                     return optional($r->rack)->Name_Item_Rack ?? '';
                 })
                 ->addColumn('Type_Tractor_Rack', function ($r) {
-                $type = optional($r->rack)->Type_Tractor_Rack ?? '-';
-                if ($type === '-') {
-                    return '-';
-                }
-                $short = \Illuminate\Support\Str::limit($type, 20);
-                return '<span title="'.e($type).'">'.e($short).'</span>';
-            })
-            ->addColumn('Time_Record', function ($r) {
+                    $type = optional($r->rack)->Type_Tractor_Rack ?? '-';
+                    if ($type === '-') {
+                        return '-';
+                    }
+                    $short = \Illuminate\Support\Str::limit($type, 20);
+                    return '<span title="' . e($type) . '">' . e($short) . '</span>';
+                })
+                ->addColumn('Time_Record', function ($r) {
                     $day = optional($r->record)->Day_Record ?? '';
                     $time = optional($r->record)->Time_Record ?? '';
                     return trim("$day $time");
