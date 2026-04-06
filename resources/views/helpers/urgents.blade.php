@@ -40,8 +40,13 @@
                     <input type="text" class="form-control" id="filter_code_rack" placeholder="Code Rack...">
                 </div>
                 <div class="form-group col-md-4">
+<<<<<<< Updated upstream
                     <label for="filter_time_urgent">Time Urgent</label>
                     <input type="time" step="1" class="form-control" id="filter_time_urgent" placeholder="HH:MM:SS">
+=======
+                    <label for="filter_date_urgent">Date Urgent</label>
+                    <input type="date" class="form-control" id="filter_date_urgent" value="{{ \Carbon\Carbon::today()->format('Y-m-d') }}">
+>>>>>>> Stashed changes
                 </div>
                 <div class="form-group col-md-4 d-flex align-items-end">
                     <button id="btn-filter" class="btn btn-primary mr-2">Filter</button>
@@ -49,6 +54,11 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Daily Recap -->
+    <div class="row" id="daily-recap-container">
+        <!-- populated by JS -->
     </div>
 
     <!-- DataTales Example -->
@@ -76,6 +86,13 @@
 
 </div>
 <!-- /.container-fluid -->
+
+<!-- Monthly Recap -->
+<div class="container-fluid">
+    <div class="row mt-2" id="monthly-recap-container">
+        <!-- populated by JS -->
+    </div>
+</div>
 
 @endsection
 
@@ -122,21 +139,95 @@
         // Filter button
         $('#btn-filter').click(function () {
             table.draw();
+            fetchRecap();
         });
 
         // Reset button
         $('#btn-reset').click(function () {
             $('#filter_code_rack').val('');
+<<<<<<< Updated upstream
             $('#filter_time_urgent').val('');
+=======
+            $('#filter_date_urgent').val('{{ \Carbon\Carbon::today()->format("Y-m-d") }}');
+>>>>>>> Stashed changes
             table.draw();
+            fetchRecap();
         });
 
         // Enter on inputs
         $('#filter_code_rack, #filter_time_urgent').on('keypress', function(e) {
             if(e.which == 13) {
                 table.draw();
+                fetchRecap();
             }
         });
+
+        function fetchRecap() {
+            var dateInput = $('#filter_date_urgent').val();
+            $.ajax({
+                url: '{{ route("urgents.recap") }}',
+                data: { dateUrgent: dateInput },
+                success: function(res) {
+                    renderRecapCard('#daily-recap-container', 'Daily Recap: ' + res.date_formatted, res.daily);
+                    renderRecapCard('#monthly-recap-container', 'Monthly Recap: ' + res.month_formatted, res.monthly);
+                }
+            });
+        }
+
+        function renderRecapCard(containerId, title, data) {
+            $(containerId).empty();
+            var bossMcHtml = generateCardHtml('Boss MC', data.boss_mc, 'warning');
+            var dstHtml = generateCardHtml('DST', data.dst, 'info');
+
+            var html = `
+                <div class="col-12 mb-2">
+                    <h5 class="text-gray-800 font-weight-bold">${title}</h5>
+                </div>
+                ${bossMcHtml}
+                ${dstHtml}
+            `;
+            $(containerId).html(html);
+        }
+
+        function generateCardHtml(title, dat, colorClass) {
+            var catHtml = '';
+            for(var key in dat.categories) {
+                catHtml += `<div class="d-flex justify-content-between mb-1">
+                                <span class="small font-weight-bold text-gray-800">${key}</span>
+                                <span class="small text-gray-800">${dat.categories[key]}</span>
+                            </div>`;
+            }
+            if(Object.keys(dat.categories).length === 0) {
+                catHtml = '<span class="small text-muted">Blank (0 Items)</span>';
+            }
+
+            return `
+                <div class="col-xl-6 col-md-6 mb-4">
+                    <div class="card border-left-${colorClass} shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center mb-3">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-${colorClass} text-uppercase mb-1">
+                                        PIC: ${title}
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        Total: ${dat.total}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                            <hr>
+                            ${catHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initial fetch
+        fetchRecap();
     });
 </script>
 @endsection

@@ -117,6 +117,8 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/missing/export', [MissingController::class, 'export'])->name('missing.export');
     Route::get('/missing_mc', [MissingController::class, 'missing_mc'])->name('missing.mc');
     Route::get('/missing_mc/export', [MissingController::class, 'missing_mc_export'])->name('missing.mc.export');
+    Route::get('/missing_estimation', [MissingController::class, 'missing_estimation'])->name('admin.missing.estimation');
+    Route::get('/missing_estimation/export', [MissingController::class, 'missing_estimation_export'])->name('admin.missing.estimation.export');
 
     Route::get('/achievement', [AchievementController::class, 'index'])->name('achievement');
     Route::get('/achievement/export', [AchievementController::class, 'export'])->name('achievement.export');
@@ -254,6 +256,7 @@ Route::post('/api/get-code-item', function (Request $request) {
 });
 
 Route::get('/api/urgents/data', [UrgentController::class, 'getData'])->name('urgents.data');
+Route::get('/api/urgents/recap', [UrgentController::class, 'getRecapData'])->name('urgents.recap');
 
 Route::get('/admin', [MainController::class, 'admin'])->name('admin');
 Route::post('/admin/create', [MainController::class, 'create'])->name('admin.create');

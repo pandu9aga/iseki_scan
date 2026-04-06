@@ -234,7 +234,7 @@
             var isChecked = input.is(':checked') ? 1 : 0;
             
             $.ajax({
-                url: '/mc_submission/ok-stock/' + requestId,
+                url: '{{ url("mc_submission/ok-stock") }}/' + requestId,
                 type: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',

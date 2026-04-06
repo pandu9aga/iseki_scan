@@ -63,8 +63,8 @@
             <!-- Nav Item - Report -->
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin_submission') }}">
-                    <i class="fas fa-fw fa-bullhorn"></i>
-                    <span>All</span></a>
+            <i class="fas fa-fw fa-bullhorn"></i>
+            <span>All</span></a>
             </li> --}}
 
             <!-- Nav Item - Report -->
@@ -85,8 +85,8 @@
             <!-- Nav Item - Monthly -->
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('monthly') }}">
-                    <i class="fas fa-fw fa-qrcode"></i>
-                    <span>All</span></a>
+            <i class="fas fa-fw fa-qrcode"></i>
+            <span>All</span></a>
             </li> --}}
 
             <!-- Nav Item - Report -->
@@ -108,8 +108,8 @@
             <!-- Nav Item - Validation -->
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('validation') }}">
-                    <i class="fas fa-fw fa-file"></i>
-                    <span>Validation</span></a>
+            <i class="fas fa-fw fa-file"></i>
+            <span>Validation</span></a>
             </li> --}}
 
             <!-- Divider -->
@@ -117,6 +117,42 @@
 
             <!-- Heading -->
             <div class="sidebar-heading">
+<<<<<<< Updated upstream
+=======
+                Missing
+            </div>
+
+            <!-- Nav Item - Monthly -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('missing') }}">
+                    <i class="fas fa-fw fa-ban"></i>
+                    <span>Missing DST</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('missing.mc') }}">
+                    <i class="fas fa-fw fa-ban"></i>
+                    <span>Missing MC</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.missing.estimation') }}">
+                    <i class="fas fa-fw fa-clock"></i>
+                    <span>Missing Estimation</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.urgents') }}">
+                    <i class="fas fa-fw fa-exclamation-circle"></i>
+                    <span>Urgent</span></a>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+>>>>>>> Stashed changes
                 Evaluation
             </div>
 
@@ -146,8 +182,8 @@
 
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('wa.queue') }}">
-                    <i class="fab fa-fw fa-whatsapp"></i>
-                    <span>WA Queue</span></a>
+            <i class="fab fa-fw fa-whatsapp"></i>
+            <span>WA Queue</span></a>
             </li> --}}
 
             <!-- Divider -->
@@ -310,7 +346,7 @@
     @yield('script')
 
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             var table;
 
             if ($.fn.DataTable && $.fn.DataTable.isDataTable('#dataTable')) {
@@ -319,7 +355,10 @@
             } else if ($.fn.DataTable) {
                 table = $('#dataTable').DataTable({
                     pageLength: 100,
-                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+                    lengthMenu: [
+                        [10, 25, 50, 100, -1],
+                        [10, 25, 50, 100, "All"]
+                    ]
                 });
             }
         });

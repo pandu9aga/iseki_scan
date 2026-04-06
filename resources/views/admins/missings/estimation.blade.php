@@ -1,4 +1,4 @@
-@extends('layouts.mc')
+@extends('layouts.main')
 @section('content')
 <!-- Begin Page Content -->
 <div class="container-fluid">
@@ -18,7 +18,7 @@
     </div>
 
     <div class="mb-4 col-md-4 col-lg-3">
-        <form action="{{ route('mc.missing.estimation.export') }}" method="GET" target="_blank" class="mr-2">
+        <form action="{{ route('admin.missing.estimation.export') }}" method="GET" target="_blank" class="mr-2">
             <input name="Day_Request_Hidden" type="hidden" value="{{ $date }}">
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
                 <i class="fas fa-download fa-sm text-white-50"></i> Download Missing Estimation
@@ -45,7 +45,6 @@
                             <th>Estimation Date</th>
                             <th>Overdue</th>
                             <th>PIC</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -96,15 +95,6 @@
                                     @endphp
                             </td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
-                            <td class="text-center">
-                                <div class="custom-control custom-switch d-inline-block" title="Toggle OK Stock">
-                                    <input type="checkbox" class="custom-control-input ok-stock-switch" 
-                                            id="okSwitch_{{ $s->Id_Request }}" 
-                                            data-id="{{ $s->Id_Request }}" 
-                                            {{ $s->Ok_Stock == 1 ? 'checked' : '' }}>
-                                    <label class="custom-control-label" for="okSwitch_{{ $s->Id_Request }}"></label>
-                                </div>
-                            </td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -195,40 +185,4 @@
 <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
 <script src="{{ asset('js/demo/datatables-demo.js') }}"></script>
-<script>
-    $(document).ready(function() {
-        $(document).on('change', '.ok-stock-switch', function() {
-            var input = $(this);
-            var requestId = input.data('id');
-            var isChecked = input.is(':checked') ? 1 : 0;
-            
-            $.ajax({
-                url: '{{ url("mc_submission/ok-stock") }}/' + requestId,
-                type: 'POST',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    status: isChecked
-                },
-                success: function(response) {
-                    if(response.success) {
-                        // Jika berhasil OK, hapus baris dari list (karena data missing sudah resolved)
-                        if(isChecked === 1) {
-                            var tr = input.closest('tr');
-                            tr.fadeOut(400, function() {
-                                tr.remove(); // Optional: or table.row(tr).remove().draw() if using datatables API directly
-                            });
-                        }
-                    } else {
-                        alert('Gagal update status!');
-                        input.prop('checked', !isChecked);
-                    }
-                },
-                error: function() {
-                    alert('Terjadi kesalahan saat menghubungi server!');
-                    input.prop('checked', !isChecked);
-                }
-            });
-        });
-    });
-</script>
 @endsection
