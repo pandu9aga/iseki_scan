@@ -117,8 +117,6 @@
 
             <!-- Heading -->
             <div class="sidebar-heading">
-<<<<<<< Updated upstream
-=======
                 Missing
             </div>
 
@@ -152,7 +150,6 @@
 
             <!-- Heading -->
             <div class="sidebar-heading">
->>>>>>> Stashed changes
                 Evaluation
             </div>
 
