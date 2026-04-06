@@ -188,27 +188,6 @@
 
             <!-- Heading -->
             <div class="sidebar-heading">
-                Missing
-            </div>
-
-            <!-- Nav Item - Monthly -->
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('missing') }}">
-                    <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing DST</span></a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link" href="{{ route('missing.mc') }}">
-                    <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing MC</span></a>
-            </li>
-
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
                 Data
             </div>
 
