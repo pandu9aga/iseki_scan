@@ -42,7 +42,7 @@ class AreaScanController extends Controller
             $idRequest = $waitingRequest->Id_Request;
 
             // Check if request is less than 24 hours old
-            $requestTime = Carbon::parse($waitingRequest->Day_Request . ' ' . $waitingRequest->Time_Request);
+            $requestTime = Carbon::parse($waitingRequest->Day_Request.' '.$waitingRequest->Time_Request);
             $isLessThan24Hours = $requestTime->diffInHours(Carbon::now()) < 24;
 
             if ($isLessThan24Hours) {
@@ -80,7 +80,7 @@ class AreaScanController extends Controller
                     'PIC' => $nameMemberTarget,
                     'Category_Mistake' => $category,
                     'Day_Mistake' => $nowDate,
-                    'Status_Mistake' => 1,
+                    'Status_Mistake' => 0,
                 ]);
 
                 Urgent::create([
@@ -102,6 +102,8 @@ class AreaScanController extends Controller
                     'reporter' => $reporter ? $reporter->Name_User : 'Area User',
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'sum_request' => $waitingRequest->Sum_Request,
+                    'category' => 'telat request',
+                    'time_request' => $waitingRequest->Day_Request . ' ' . $waitingRequest->Time_Request,
                 ]);
             } elseif ($waitingRequest->Ready_Request !== null) {
                 // "jika Ready_Request not null, maka cari Id_Member rata-rata di records untuk Code_Rack yang sama"
@@ -139,7 +141,7 @@ class AreaScanController extends Controller
                     'PIC' => $nameMemberTarget,
                     'Category_Mistake' => $category,
                     'Day_Mistake' => $nowDate,
-                    'Status_Mistake' => 1,
+                    'Status_Mistake' => 0,
                 ]);
 
                 // "insert di urgents Id_Member itu juga"
@@ -162,6 +164,8 @@ class AreaScanController extends Controller
                     'reporter' => $reporter ? $reporter->Name_User : 'Area User',
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'sum_request' => $waitingRequest->Sum_Request,
+                    'category' => 'telat supply',
+                    'time_request' => $waitingRequest->Day_Request . ' ' . $waitingRequest->Time_Request,
                 ]);
 
             } else {
@@ -194,7 +198,7 @@ class AreaScanController extends Controller
                     'Category_Mistake' => $category,
                     'Manual_Category_Detail' => $manualDetail,
                     'Day_Mistake' => $nowDate,
-                    'Status_Mistake' => 1,
+                    'Status_Mistake' => 0,
                 ]);
 
                 Urgent::create([
@@ -216,6 +220,8 @@ class AreaScanController extends Controller
                     'reporter' => $reporter ? $reporter->Name_User : 'Area User',
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'sum_request' => $waitingRequest->Sum_Request,
+                    'category' => $category,
+                    'time_request' => $waitingRequest->Day_Request . ' ' . $waitingRequest->Time_Request,
                 ]);
             }
 
@@ -341,6 +347,8 @@ class AreaScanController extends Controller
                 'reporter' => $reporter ? $reporter->Name_User : 'Area User',
                 'code_item' => $codeItemRack,
                 'sum_request' => $sumRequest,
+                'category' => 'telat request',
+                'time_request' => $nowTime,
             ]);
 
             $scanSuccessData = [
@@ -367,6 +375,8 @@ class AreaScanController extends Controller
         $message = "URGENT SCAN ALERT\n";
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "Time Urgent: {$data['time_urgent']}\n";
+        $message .= "Time Request: {$data['time_request']}\n";
+        $message .= "Category: " . strtoupper($data['category']) . "\n";
         $message .= "Code Rack: {$data['code_rack']}\n";
         $message .= "PIC: {$data['pic']}\n";
         $message .= "Reporter: {$data['reporter']}\n";
@@ -375,7 +385,7 @@ class AreaScanController extends Controller
 
         WaQueue::create([
             'message' => $message,
-            'group_id' => '120363417614072057@g.us',
+            'group_id' => '6281358518202',
             'status' => 'pending',
         ]);
     }

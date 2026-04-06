@@ -7,11 +7,11 @@ use App\Models\WaQueue;
 
 class WaQueueController extends Controller
 {
-    const WA_GROUP_ID = '120363417614072057@g.us';
+    const WA_GROUP_ID = '6281358518202';
 
-    const WA_TOKEN = 'uTpuO0BweAI485fbGD2e3ERQLiMSlMss98iqfWDefGLkJl36H46zN9v';
+    const WA_TOKEN = 't5wx1eefCYvMchKePC5OCj0j7UdURmj4omtoaCqfmDtCA4pWpeZycH9';
 
-    const WA_HOST = 'https://kudus.wablas.com/';
+    const WA_HOST = 'https://deu.wablas.com/';
 
     /**
      * Halaman monitoring antrian WA
@@ -34,14 +34,25 @@ class WaQueueController extends Controller
     }
 
     /**
-     * API: tandai pesan sebagai terkirim dan hapus dari antrian
+     * API: tandai pesan sebagai terkirim
+     */
+    public function markSent($id)
+    {
+        $queue = WaQueue::findOrFail($id);
+        $queue->update(['status' => 'sent']);
+
+        return response()->json(['success' => true, 'message' => 'Pesan ditandai terkirim.']);
+    }
+
+    /**
+     * API: hapus pesan (opsional, tapi user minta tidak hapus, jadi kita bisa simpan destroy tapi mungkin ubah status ke cancelled)
      */
     public function destroy($id)
     {
         $queue = WaQueue::findOrFail($id);
-        $queue->delete();
+        $queue->update(['status' => 'cancelled']);
 
-        return response()->json(['success' => true, 'message' => 'Pesan berhasil dihapus dari antrian.']);
+        return response()->json(['success' => true, 'message' => 'Pesan dibatalkan.']);
     }
 
     /**

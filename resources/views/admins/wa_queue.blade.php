@@ -169,12 +169,14 @@
 @section('script')
 <script>
     const PROXY_URL  = 'https://wablas-proxy.isekipandu.workers.dev'; // No trailing slash
-    const WA_TOKEN   = 'uTpuO0BweAI485fbGD2e3ERQLiMSlMss98iqfWDefGLkJl36H46zN9v.EJZ3eriR'; // MUST be TOKEN.SECRET_KEY
+    const WA_TOKEN   = 't5wx1eefCYvMchKePC5OCj0j7UdURmj4omtoaCqfmDtCA4pWpeZycH9.w9A02qKW'; // MUST be TOKEN.SECRET_KEY
     const FETCH_URL  = '{{ route('wa.queue.fetch') }}';
-    const DEL_BASE   = '{{ url('/api/wa-queue') }}';
-    const DEL_URL    = id => `${DEL_BASE}/${id}`;
+    const SENT_BASE  = '{{ url('/api/wa-queue') }}';
+    const SENT_URL   = id => `${SENT_BASE}/${id}/sent`;
     const FAIL_BASE  = '{{ url('/api/wa-queue') }}';
     const FAIL_URL   = id => `${FAIL_BASE}/${id}/failed`;
+    const CANCEL_BASE = '{{ url('/api/wa-queue') }}';
+    const CANCEL_URL  = id => `${CANCEL_BASE}/${id}`;
     const CSRF_TOKEN = '{{ csrf_token() }}';
 
     let isRunning = false;
@@ -245,9 +247,9 @@
             const result = await resp.json();
 
             if (resp.ok && (result.status === true || result.status === 'success')) {
-                // Delete from queue on server
-                await fetch(DEL_URL(id), {
-                    method: 'DELETE',
+                // Mark as sent on server
+                await fetch(SENT_URL(id), {
+                    method: 'PATCH',
                     headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
                 });
                 sentCount++;
@@ -405,7 +407,7 @@
         if (delBtn) {
             if (!confirm('Hapus pesan ini dari antrian tanpa mengirim?')) return;
             const id = delBtn.dataset.id;
-            await fetch(DEL_URL(id), {
+            await fetch(CANCEL_URL(id), {
                 method: 'DELETE',
                 headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }
             });
