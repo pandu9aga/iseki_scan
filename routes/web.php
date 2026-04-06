@@ -214,6 +214,7 @@ Route::middleware(McMiddleware::class)->group(function () {
     Route::get('/mc_missing_mc/export', [McMissingController::class, 'missing_mc_export'])->name('mc.missing.mc.export');
     Route::post('/mc_submission/upload-ready', [McRequestController::class, 'uploadReady'])->name('mc_submission.upload_ready');
     Route::post('/mc_submission/ok-stock/{id}', [McRequestController::class, 'okStock'])->name('mc_submission.ok_stock');
+    Route::post('/mc_submission/no-stock/{id}', [McRequestController::class, 'noStock'])->name('mc_submission.no_stock');
 
     Route::get('/mc_missing_estimation', [McMissingController::class, 'missing_estimation'])->name('mc.missing.estimation');
     Route::get('/mc_missing_estimation/export', [McMissingController::class, 'missing_estimation_export'])->name('mc.missing.estimation.export');

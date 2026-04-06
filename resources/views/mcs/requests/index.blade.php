@@ -187,16 +187,13 @@
                             <td>{{ $s->Sum_Stock ?? '' }}</td>
                             <td class="text-center">
                                 @if($s->Shipping_Request || $s->Design_Changes_Request)
-                                @if($s->Ok_Stock == 1)
-                                <span class="badge badge-success">OK</span>
-                                @else
-                                <form action="{{ route('mc_submission.ok_stock', $s->Id_Request) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin OK Stock?')">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-outline-success">
-                                        <i class="fas fa-check"></i> OK
-                                    </button>
-                                </form>
-                                @endif
+                                    <div class="custom-control custom-switch d-inline-block" title="Toggle OK Stock">
+                                        <input type="checkbox" class="custom-control-input ok-stock-switch" 
+                                               id="okSwitch_{{ $s->Id_Request }}" 
+                                               data-id="{{ $s->Id_Request }}" 
+                                               {{ $s->Ok_Stock == 1 ? 'checked' : '' }}>
+                                        <label class="custom-control-label" for="okSwitch_{{ $s->Id_Request }}"></label>
+                                    </div>
                                 @endif
                             </td>
                             <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
@@ -229,6 +226,31 @@
         $('select[multiple]').select2({
             placeholder: "Pilih member...",
             allowClear: false
+        });
+
+        $(document).on('change', '.ok-stock-switch', function() {
+            var input = $(this);
+            var requestId = input.data('id');
+            var isChecked = input.is(':checked') ? 1 : 0;
+            
+            $.ajax({
+                url: '/mc_submission/ok-stock/' + requestId,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    status: isChecked
+                },
+                success: function(response) {
+                    if(!response.success) {
+                        alert('Gagal update status!');
+                        input.prop('checked', !isChecked);
+                    }
+                },
+                error: function() {
+                    alert('Terjadi kesalahan saat menghubungi server!');
+                    input.prop('checked', !isChecked);
+                }
+            });
         });
     });
 </script>

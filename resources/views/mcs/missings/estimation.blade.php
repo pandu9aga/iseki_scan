@@ -57,42 +57,42 @@
                             <td>{{ $s->Sum_Request }}</td>
                             <td>
                                 @if($s->Design_Changes_Request)
-                                    <span class="badge badge-warning">Design Change</span>
+                                <span class="badge badge-warning">Design Change</span>
                                 @elseif($s->Shipping_Request)
-                                    <span class="badge badge-info">Shipping</span>
+                                <span class="badge badge-info">Shipping</span>
                                 @endif
                             </td>
                             <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
                             <td class="text-center">
                                 @if($s->Estimation_Stock)
-                                    {{ \Carbon\Carbon::parse($s->Estimation_Stock)->format('d/m/Y') }}
+                                {{ \Carbon\Carbon::parse($s->Estimation_Stock)->format('d/m/Y') }}
                                 @endif
                             </td>
                             <td class="text-danger font-weight-bold overdue">
                                 @php
-                                    if ($s->Estimation_Stock) {
-                                        $estTime = \Carbon\Carbon::parse($s->Estimation_Stock);
-                                        $now = \Carbon\Carbon::now();
-                                        $totalSeconds = $now->timestamp - $estTime->timestamp;
+                                if ($s->Estimation_Stock) {
+                                $estTime = \Carbon\Carbon::parse($s->Estimation_Stock);
+                                $now = \Carbon\Carbon::now();
+                                $totalSeconds = $now->timestamp - $estTime->timestamp;
 
-                                        if ($totalSeconds <= 0) {
-                                            echo 'On time';
-                                        } else {
-                                            $days = floor($totalSeconds / 86400);
-                                            $hours = floor(($totalSeconds % 86400) / 3600);
-                                            $minutes = floor(($totalSeconds % 3600) / 60);
-
-                                            $parts = [];
-                                            if ($days > 0) $parts[] = $days . ' day(s)';
-                                            if ($hours > 0) $parts[] = $hours . ' hour(s)';
-                                            if ($minutes > 0) $parts[] = $minutes . ' minute(s)';
-
-                                            echo implode(' ', $parts);
-                                        }
+                                if ($totalSeconds <= 0) {
+                                    echo 'On time' ;
                                     } else {
-                                        echo '-';
+                                    $days=floor($totalSeconds / 86400);
+                                    $hours=floor(($totalSeconds % 86400) / 3600);
+                                    $minutes=floor(($totalSeconds % 3600) / 60);
+
+                                    $parts=[];
+                                    if ($days> 0) $parts[] = $days . ' day(s)';
+                                    if ($hours > 0) $parts[] = $hours . ' hour(s)';
+                                    if ($minutes > 0) $parts[] = $minutes . ' minute(s)';
+
+                                    echo implode(' ', $parts);
                                     }
-                                @endphp
+                                    } else {
+                                    echo '-';
+                                    }
+                                    @endphp
                             </td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
                         </tr>
@@ -108,63 +108,76 @@
 @section('style')
 <link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
 <style>
-  .marquee-container {
-    position: relative;
-    width: 100%;
-    overflow: hidden;
-    padding: 10px 0;
-  }
+    .marquee-container {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        padding: 10px 0;
+    }
 
-  .marquee {
-    display: flex;
-    width: max-content;
-    animation: marquee 30s linear infinite;
-  }
+    .marquee {
+        display: flex;
+        width: max-content;
+        animation: marquee 30s linear infinite;
+    }
 
-  .marquee span {
-    font-size: 5vw;
-    font-weight: 900;
-    text-transform: uppercase;
-    background: linear-gradient(90deg, #ff6b00, #ff0000, #ff6b00);
-    background-size: 300% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    padding: 0 2rem;
-    white-space: nowrap;
-    animation: colorChange 6s linear infinite;
-  }
+    .marquee span {
+        font-size: 5vw;
+        font-weight: 900;
+        text-transform: uppercase;
+        background: linear-gradient(90deg, #ff6b00, #ff0000, #ff6b00);
+        background-size: 300% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        padding: 0 2rem;
+        white-space: nowrap;
+        animation: colorChange 6s linear infinite;
+    }
 
-  @keyframes marquee {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
+    @keyframes marquee {
+        0% {
+            transform: translateX(0);
+        }
 
-  @keyframes colorChange {
-    0%   { background-position: 0% 50%; }
-    50%  { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
+        100% {
+            transform: translateX(-50%);
+        }
+    }
 
-  table th,
-  table td {
-      vertical-align: middle;
-  }
+    @keyframes colorChange {
+        0% {
+            background-position: 0% 50%;
+        }
 
-  table th {
-      font-size: 2rem;
-      white-space: nowrap;
-      text-align: center;
-      padding-right: 0 !important;
-      padding-left: 0 !important;
-  }
+        50% {
+            background-position: 100% 50%;
+        }
 
-  table td.overdue {
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: red;
-      width:1%;
-      white-space: nowrap;
-  }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    table th,
+    table td {
+        vertical-align: middle;
+    }
+
+    table th {
+        font-size: 2rem;
+        white-space: nowrap;
+        text-align: center;
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    table td.overdue {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: red;
+        width: 1%;
+        white-space: nowrap;
+    }
 </style>
 @endsection
 
