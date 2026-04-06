@@ -66,6 +66,8 @@
                             <th>PIC</th>
                             <th>Reporter</th>
                             <th>Request Details</th>
+                            <th>Request</th>
+                            <th>Record</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,6 +118,8 @@
                 { data: 'PIC_Urgent', name: 'PIC_Urgent', searchable: false },
                 { data: 'Reporter', name: 'Reporter', searchable: false },
                 { data: 'Request_Details', name: 'Request_Details', searchable: false },
+                { data: 'Request_Time', name: 'Request_Time', searchable: false },
+                { data: 'Record_Time', name: 'Record_Time', searchable: false },
             ],
             order: [[1, 'desc']], // Order by time by default
             searching: false, // Turn off default global search

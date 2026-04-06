@@ -30,6 +30,12 @@ class Urgent extends Model
         return $this->belongsTo(Member::class, 'Id_Member', 'Id_Member');
     }
 
+    // Relationship for when the reporter is a Member (Id_Type_User is NULL)
+    public function reporterMember()
+    {
+        return $this->belongsTo(Member::class, 'Id_User', 'Id_Member');
+    }
+
     // This could belong to User or Member depending on Id_User origin
     public function user()
     {
@@ -44,5 +50,10 @@ class Urgent extends Model
     public function mistake()
     {
         return $this->belongsTo(Mistake::class, 'Id_Mistake', 'Id_Mistake');
+    }
+
+    public function record()
+    {
+        return $this->belongsTo(Record::class, 'Id_Request', 'Id_Request');
     }
 }

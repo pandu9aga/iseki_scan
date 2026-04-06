@@ -46,7 +46,7 @@ class UrgentController extends Controller
     public function getData(Request $request)
     {
         if ($request->ajax()) {
-            $query = Urgent::with(['member', 'user', 'requestModel', 'mistake']);
+            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel', 'mistake', 'record']);
 
             // Custom Filter logic
             if ($codeRack = $request->input('codeRack')) {
@@ -62,14 +62,16 @@ class UrgentController extends Controller
                     return $urgent->member ? $urgent->member->Name_Member : '-';
                 })
                 ->addColumn('Mistake_Category', function ($urgent) {
-                    if (!$urgent->mistake) return '-';
-                    
+                    if (! $urgent->mistake) {
+                        return '-';
+                    }
+
                     $cat = strtolower($urgent->mistake->Category_Mistake);
                     $detail = strtolower($urgent->mistake->Manual_Category_Detail);
-                    
+
                     $label = strtoupper($urgent->mistake->Category_Mistake);
                     $class = 'secondary';
-                    
+
                     if ($cat == 'perubahan desain') {
                         $label = 'DESIGN CHANGE';
                         $class = 'warning';
@@ -82,7 +84,7 @@ class UrgentController extends Controller
                     } elseif ($cat == 'telat supply' || $cat == 'telat request') {
                         $class = 'secondary';
                     }
-                    
+
                     return '<span class="badge badge-'.$class.'">'.$label.'</span>';
                 })
                 ->addColumn('Request_Details', function ($urgent) {
@@ -93,20 +95,27 @@ class UrgentController extends Controller
                     return 'N/A';
                 })
                 ->addColumn('Reporter', function ($urgent) {
-                    // Sometimes Id_User comes from Member for old records? Let's check user table first
-                    if ($urgent->user) {
-                        return $urgent->user->Username_User;
-                    } else {
-                        // try member table if user doesn't exist
-                        $member = \App\Models\Member::find($urgent->Id_User);
-                        if ($member) {
-                            return $member->Name_Member;
-                        }
+                    if (empty($urgent->Id_Type_User)) {
+                        return optional($urgent->reporterMember)->Name_Member ?? '-';
                     }
 
-                    return $urgent->Id_User;
+                    return optional($urgent->user)->Username_User ?? '-';
                 })
-                ->rawColumns(['PIC_Urgent', 'Mistake_Category', 'Request_Details', 'Reporter'])
+                ->addColumn('Request_Time', function ($urgent) {
+                    if ($urgent->requestModel) {
+                        return $urgent->requestModel->Day_Request.' '.$urgent->requestModel->Time_Request;
+                    }
+
+                    return '-';
+                })
+                ->addColumn('Record_Time', function ($urgent) {
+                    if ($urgent->record) {
+                        return $urgent->record->Day_Record.' '.$urgent->record->Time_Record;
+                    }
+
+                    return '-';
+                })
+                ->rawColumns(['PIC_Urgent', 'Mistake_Category', 'Request_Details', 'Reporter', 'Record_Time', 'Request_Time'])
                 ->make(true);
         }
 
@@ -240,13 +249,13 @@ class UrgentController extends Controller
             }
 
             $pic = ($waitingRequest->Ready_Request !== null) ? $nameMemberTarget : $nameBossMc;
-            
+
             $cat = strtolower($category ?? 'telat supply');
             $mDetail = strtolower($manualDetail ?? '');
-            
+
             $displayCategory = strtoupper($cat);
             $badgeClass = 'secondary';
-            
+
             if ($cat == 'perubahan desain') {
                 $displayCategory = 'DESIGN CHANGE';
                 $badgeClass = 'warning';
@@ -324,7 +333,7 @@ class UrgentController extends Controller
                 'PIC' => $nameMemberTarget,
                 'Category_Mistake' => 'telat request',
                 'Day_Mistake' => $nowDate,
-                'Status_Mistake' => 1,
+                'Status_Mistake' => 0,
             ]);
 
             Urgent::create([
@@ -369,14 +378,14 @@ class UrgentController extends Controller
      */
     private function queueWaMessage(array $data): void
     {
-        $message = "⚠️ *URGENT SCAN ALERT (MEMBER)*\n";
+        $message = "URGENT SCAN ALERT\n";
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $message .= "🕐 *Time Urgent:* {$data['time_urgent']}\n";
-        $message .= "📦 *Code Rack:* {$data['code_rack']}\n";
-        $message .= "👤 *PIC:* {$data['pic']}\n";
-        $message .= "📡 *Reporter:* {$data['reporter']}\n";
-        $message .= "🔧 *Request Details:*\n";
-        $message .= "   Item: {$data['code_item']} - Sum: {$data['sum_request']}";
+        $message .= "Time Urgent: {$data['time_urgent']}\n";
+        $message .= "Code Rack: {$data['code_rack']}\n";
+        $message .= "PIC: {$data['pic']}\n";
+        $message .= "Reporter: {$data['reporter']}\n";
+        $message .= "Request Details:\n";
+        $message .= "Item: {$data['code_item']} - Sum: {$data['sum_request']}";
 
         WaQueue::create([
             'message' => $message,

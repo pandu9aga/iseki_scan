@@ -238,7 +238,7 @@ class AreaScanController extends Controller
                 'PIC' => $nameMemberTarget,
                 'Category_Mistake' => 'telat request',
                 'Day_Mistake' => $nowDate,
-                'Status_Mistake' => 1,
+                'Status_Mistake' => 0,
             ]);
 
             Urgent::create([
@@ -283,14 +283,14 @@ class AreaScanController extends Controller
      */
     private function queueWaMessage(array $data): void
     {
-        $message = "⚠️ *URGENT SCAN ALERT*\n";
+        $message = "URGENT SCAN ALERT\n";
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $message .= "🕐 *Time Urgent:* {$data['time_urgent']}\n";
-        $message .= "📦 *Code Rack:* {$data['code_rack']}\n";
-        $message .= "👤 *PIC:* {$data['pic']}\n";
-        $message .= "📡 *Reporter:* {$data['reporter']}\n";
-        $message .= "🔧 *Request Details:*\n";
-        $message .= "   Item: {$data['code_item']} - Sum: {$data['sum_request']}";
+        $message .= "Time Urgent: {$data['time_urgent']}\n";
+        $message .= "Code Rack: {$data['code_rack']}\n";
+        $message .= "PIC: {$data['pic']}\n";
+        $message .= "Reporter: {$data['reporter']}\n";
+        $message .= "Request Details:\n";
+        $message .= "Item: {$data['code_item']} - Sum: {$data['sum_request']}";
 
         WaQueue::create([
             'message' => $message,
