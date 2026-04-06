@@ -16,7 +16,7 @@ class UrgentController extends Controller
     {
         // Determine layout based on session Id_Type_User
         $layout = 'layouts.user'; // Default for member
-        
+
         if (session()->has('Id_User')) {
             $typeUser = session('Id_Type_User');
             if ($typeUser == 2) {
@@ -27,7 +27,7 @@ class UrgentController extends Controller
                 $layout = 'layouts.area'; // Area
             }
         }
-        
+
         return view('helpers.urgents', compact('layout'));
     }
 
@@ -41,11 +41,11 @@ class UrgentController extends Controller
 
             // Custom Filter logic
             if ($codeRack = $request->input('codeRack')) {
-                $query->where('Code_Rack', 'LIKE', '%' . $codeRack . '%');
+                $query->where('Code_Rack', 'LIKE', '%'.$codeRack.'%');
             }
 
             if ($timeUrgent = $request->input('timeUrgent')) {
-                $query->where('Time_Urgent', 'LIKE', '%' . $timeUrgent . '%');
+                $query->where('Time_Urgent', 'LIKE', '%'.$timeUrgent.'%');
             }
 
             return DataTables::eloquent($query)
@@ -54,8 +54,9 @@ class UrgentController extends Controller
                 })
                 ->addColumn('Request_Details', function ($urgent) {
                     if ($urgent->requestModel) {
-                       return "Item: " . $urgent->requestModel->Code_Item_Rack . " - Sum: " . $urgent->requestModel->Sum_Request;
+                        return 'Item: '.$urgent->requestModel->Code_Item_Rack.' - Sum: '.$urgent->requestModel->Sum_Request;
                     }
+
                     return 'N/A';
                 })
                 ->addColumn('Reporter', function ($urgent) {
@@ -69,6 +70,7 @@ class UrgentController extends Controller
                             return $member->Name_Member;
                         }
                     }
+
                     return $urgent->Id_User;
                 })
                 ->rawColumns(['PIC_Urgent', 'Request_Details', 'Reporter'])
@@ -77,8 +79,6 @@ class UrgentController extends Controller
 
         return abort(403, 'Unauthorized action.');
     }
-<<<<<<< Updated upstream
-=======
 
     /**
      * Compute and return daily and monthly recap JSON for urgents.
@@ -86,7 +86,7 @@ class UrgentController extends Controller
     public function getRecapData(Request $request)
     {
         $dateUrgentParam = $request->input('dateUrgent');
-        if (!$dateUrgentParam) {
+        if (! $dateUrgentParam) {
             $dateUrgentParam = Carbon::today()->format('Y-m-d');
         }
 
@@ -111,7 +111,7 @@ class UrgentController extends Controller
             'daily' => $dailyMetrics,
             'monthly' => $monthlyMetrics,
             'date_formatted' => $dateUrgent->format('d M Y'),
-            'month_formatted' => $dateUrgent->format('F Y')
+            'month_formatted' => $dateUrgent->format('F Y'),
         ]);
     }
 
@@ -145,7 +145,7 @@ class UrgentController extends Controller
                 }
             }
 
-            if (!isset($metrics[$bucket]['categories'][$categoryLabel])) {
+            if (! isset($metrics[$bucket]['categories'][$categoryLabel])) {
                 $metrics[$bucket]['categories'][$categoryLabel] = 0;
             }
             $metrics[$bucket]['categories'][$categoryLabel]++;
@@ -246,7 +246,7 @@ class UrgentController extends Controller
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => 'telat request',
-                    'time_request' => $waitingRequest->Day_Request . ' ' . $waitingRequest->Time_Request,
+                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
                 ]);
             } elseif ($waitingRequest->Ready_Request !== null) {
                 // Determine target member PIC
@@ -306,7 +306,7 @@ class UrgentController extends Controller
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => 'telat supply',
-                    'time_request' => $waitingRequest->Day_Request . ' ' . $waitingRequest->Time_Request,
+                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
                 ]);
 
             } else {
@@ -361,7 +361,7 @@ class UrgentController extends Controller
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => $category,
-                    'time_request' => $waitingRequest->Day_Request . ' ' . $waitingRequest->Time_Request,
+                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
                 ]);
             }
 
@@ -508,7 +508,7 @@ class UrgentController extends Controller
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "Time Urgent: {$data['time_urgent']}\n";
         $message .= "Time Request: {$data['time_request']}\n";
-        $message .= "Category: " . strtoupper($data['category']) . "\n";
+        $message .= 'Category: '.strtoupper($data['category'])."\n";
         $message .= "Code Rack: {$data['code_rack']}\n";
         $message .= "PIC: {$data['pic']}\n";
         $message .= "Reporter: {$data['reporter']}\n";
@@ -521,5 +521,4 @@ class UrgentController extends Controller
             'status' => 'pending',
         ]);
     }
->>>>>>> Stashed changes
 }

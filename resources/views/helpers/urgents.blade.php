@@ -40,13 +40,10 @@
                     <input type="text" class="form-control" id="filter_code_rack" placeholder="Code Rack...">
                 </div>
                 <div class="form-group col-md-4">
-<<<<<<< Updated upstream
                     <label for="filter_time_urgent">Time Urgent</label>
                     <input type="time" step="1" class="form-control" id="filter_time_urgent" placeholder="HH:MM:SS">
-=======
                     <label for="filter_date_urgent">Date Urgent</label>
                     <input type="date" class="form-control" id="filter_date_urgent" value="{{ \Carbon\Carbon::today()->format('Y-m-d') }}">
->>>>>>> Stashed changes
                 </div>
                 <div class="form-group col-md-4 d-flex align-items-end">
                     <button id="btn-filter" class="btn btn-primary mr-2">Filter</button>
@@ -145,11 +142,8 @@
         // Reset button
         $('#btn-reset').click(function () {
             $('#filter_code_rack').val('');
-<<<<<<< Updated upstream
             $('#filter_time_urgent').val('');
-=======
             $('#filter_date_urgent').val('{{ \Carbon\Carbon::today()->format("Y-m-d") }}');
->>>>>>> Stashed changes
             table.draw();
             fetchRecap();
         });
