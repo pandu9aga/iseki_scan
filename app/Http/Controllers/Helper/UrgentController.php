@@ -3,8 +3,17 @@
 namespace App\Http\Controllers\Helper;
 
 use App\Http\Controllers\Controller;
+use App\Models\Member;
+use App\Models\Mistake;
+use App\Models\Rack;
+use App\Models\Record;
+use App\Models\Request as RequestModel;
 use App\Models\Urgent;
+use App\Models\User;
+use App\Models\WaQueue;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class UrgentController extends Controller
