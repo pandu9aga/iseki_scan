@@ -68,7 +68,10 @@
                             <th>Time Urgent</th>
                             <th>Code Rack</th>
                             <th>PIC</th>
+                            <th>Mistake Category</th>
                             <th>Reporter</th>
+                            <th>Request Time</th>
+                            <th>Record Time</th>
                             <th>Request Details</th>
                         </tr>
                     </thead>
@@ -123,8 +126,20 @@
                 },
                 { data: 'Time_Urgent', name: 'Time_Urgent' },
                 { data: 'Code_Rack', name: 'Code_Rack' },
-                { data: 'PIC_Urgent', name: 'PIC_Urgent', searchable: false },
+                { 
+                    data: 'PIC_Urgent', 
+                    name: 'PIC_Urgent', 
+                    searchable: false,
+                    createdCell: function (td, cellData, rowData, row, col) {
+                        if (cellData === 'Boss MC') {
+                            $(td).css('background-color', '#fff3cd');
+                        }
+                    }
+                },
+                { data: 'Mistake_Category', name: 'Mistake_Category', searchable: false },
                 { data: 'Reporter', name: 'Reporter', searchable: false },
+                { data: 'Request_Time', name: 'Request_Time', searchable: false },
+                { data: 'Record_Time', name: 'Record_Time', searchable: false },
                 { data: 'Request_Details', name: 'Request_Details', searchable: false },
             ],
             order: [[1, 'desc']], // Order by time by default

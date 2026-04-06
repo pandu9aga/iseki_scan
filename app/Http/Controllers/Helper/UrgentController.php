@@ -37,7 +37,7 @@ class UrgentController extends Controller
     public function getData(Request $request)
     {
         if ($request->ajax()) {
-            $query = Urgent::with(['member', 'user', 'requestModel']);
+            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel', 'mistake', 'record']);
 
             // Custom Filter logic
             if ($codeRack = $request->input('codeRack')) {
@@ -52,6 +52,32 @@ class UrgentController extends Controller
                 ->addColumn('PIC_Urgent', function ($urgent) {
                     return $urgent->member ? $urgent->member->Name_Member : '-';
                 })
+                ->addColumn('Mistake_Category', function ($urgent) {
+                    if (! $urgent->mistake) {
+                        return '-';
+                    }
+
+                    $cat = strtolower($urgent->mistake->Category_Mistake);
+                    $detail = strtolower($urgent->mistake->Manual_Category_Detail);
+
+                    $label = strtoupper($urgent->mistake->Category_Mistake);
+                    $class = 'secondary';
+
+                    if ($cat == 'perubahan desain') {
+                        $label = 'DESIGN CHANGE';
+                        $class = 'warning';
+                    } elseif ($cat == 'shipping') {
+                        $label = 'SHIPPING';
+                        $class = 'info';
+                    } elseif ($cat == 'lain-lain' && $detail == 'produksi') {
+                        $label = 'PRODUCTION';
+                        $class = 'primary';
+                    } elseif ($cat == 'telat supply' || $cat == 'telat request') {
+                        $class = 'secondary';
+                    }
+
+                    return '<span class="badge badge-'.$class.'">'.$label.'</span>';
+                })
                 ->addColumn('Request_Details', function ($urgent) {
                     if ($urgent->requestModel) {
                         return 'Item: '.$urgent->requestModel->Code_Item_Rack.' - Sum: '.$urgent->requestModel->Sum_Request;
@@ -60,20 +86,27 @@ class UrgentController extends Controller
                     return 'N/A';
                 })
                 ->addColumn('Reporter', function ($urgent) {
-                    // Sometimes Id_User comes from Member for old records? Let's check user table first
-                    if ($urgent->user) {
-                        return $urgent->user->Username_User;
-                    } else {
-                        // try member table if user doesn't exist
-                        $member = \App\Models\Member::find($urgent->Id_User);
-                        if ($member) {
-                            return $member->Name_Member;
-                        }
+                    if (empty($urgent->Id_Type_User)) {
+                        return optional($urgent->reporterMember)->Name_Member ?? '-';
                     }
 
-                    return $urgent->Id_User;
+                    return optional($urgent->user)->Username_User ?? '-';
                 })
-                ->rawColumns(['PIC_Urgent', 'Request_Details', 'Reporter'])
+                ->addColumn('Request_Time', function ($urgent) {
+                    if ($urgent->requestModel) {
+                        return $urgent->requestModel->Day_Request.' '.$urgent->requestModel->Time_Request;
+                    }
+
+                    return '-';
+                })
+                ->addColumn('Record_Time', function ($urgent) {
+                    if ($urgent->record) {
+                        return $urgent->record->Day_Record.' '.$urgent->record->Time_Record;
+                    }
+
+                    return '-';
+                })
+                ->rawColumns(['PIC_Urgent', 'Mistake_Category', 'Request_Details', 'Reporter', 'Record_Time', 'Request_Time'])
                 ->make(true);
         }
 
