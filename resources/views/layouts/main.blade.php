@@ -171,18 +171,6 @@
                     <span>Forgot</span></a>
             </li>
 
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('admin.urgents') }}">
-                    <i class="fas fa-fw fa-exclamation-circle"></i>
-                    <span>Urgent</span></a>
-            </li> --}}
-
-            {{-- <li class="nav-item">
-                <a class="nav-link" href="{{ route('wa.queue') }}">
-            <i class="fab fa-fw fa-whatsapp"></i>
-            <span>WA Queue</span></a>
-            </li> --}}
-
             <!-- Divider -->
             <hr class="sidebar-divider">
 
@@ -210,6 +198,12 @@
                 <a class="nav-link" href="{{ route('rack') }}">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Rack</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('wa.queue') }}">
+                    <i class="fab fa-fw fa-whatsapp"></i>
+                    <span>WA Queue</span></a>
             </li>
 
             <!-- Divider -->

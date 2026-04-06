@@ -103,7 +103,7 @@ class AreaScanController extends Controller
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => 'telat request',
-                    'time_request' => $waitingRequest->Day_Request . ' ' . $waitingRequest->Time_Request,
+                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
                 ]);
             } elseif ($waitingRequest->Ready_Request !== null) {
                 // "jika Ready_Request not null, maka cari Id_Member rata-rata di records untuk Code_Rack yang sama"
@@ -165,7 +165,7 @@ class AreaScanController extends Controller
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => 'telat supply',
-                    'time_request' => $waitingRequest->Day_Request . ' ' . $waitingRequest->Time_Request,
+                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
                 ]);
 
             } else {
@@ -221,7 +221,7 @@ class AreaScanController extends Controller
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => $category,
-                    'time_request' => $waitingRequest->Day_Request . ' ' . $waitingRequest->Time_Request,
+                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
                 ]);
             }
 
@@ -376,7 +376,7 @@ class AreaScanController extends Controller
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "Time Urgent: {$data['time_urgent']}\n";
         $message .= "Time Request: {$data['time_request']}\n";
-        $message .= "Category: " . strtoupper($data['category']) . "\n";
+        $message .= 'Category: '.strtoupper($data['category'])."\n";
         $message .= "Code Rack: {$data['code_rack']}\n";
         $message .= "PIC: {$data['pic']}\n";
         $message .= "Reporter: {$data['reporter']}\n";
@@ -385,7 +385,7 @@ class AreaScanController extends Controller
 
         WaQueue::create([
             'message' => $message,
-            'group_id' => '6281358518202',
+            'group_id' => '120363045467407165@g.us',
             'status' => 'pending',
         ]);
     }

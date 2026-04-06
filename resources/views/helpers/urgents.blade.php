@@ -133,7 +133,7 @@
                     searchable: false,
                     createdCell: function (td, cellData, rowData, row, col) {
                         if (cellData === 'Boss MC') {
-                            $(td).css('background-color', '#fff3cd');
+                            $(td).css('background-color', '#f6c23e');
                         }
                     }
                 },

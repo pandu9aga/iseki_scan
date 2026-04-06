@@ -559,7 +559,7 @@ class UrgentController extends Controller
 
         WaQueue::create([
             'message' => $message,
-            'group_id' => '6281358518202',
+            'group_id' => '120363045467407165@g.us',
             'status' => 'pending',
         ]);
     }

@@ -7,7 +7,7 @@ use App\Models\WaQueue;
 
 class WaQueueController extends Controller
 {
-    const WA_GROUP_ID = '6281358518202';
+    const WA_GROUP_ID = '120363045467407165@g.us';
 
     const WA_TOKEN = 't5wx1eefCYvMchKePC5OCj0j7UdURmj4omtoaCqfmDtCA4pWpeZycH9';
 
