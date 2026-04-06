@@ -376,7 +376,16 @@ class AreaScanController extends Controller
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "Time Urgent: {$data['time_urgent']}\n";
         $message .= "Time Request: {$data['time_request']}\n";
-        $message .= 'Category: '.strtoupper($data['category'])."\n";
+        $category = strtoupper($data['category']);
+        if ($data['category'] == 'telat supply' || $data['category'] == 'telat request') {
+            $category .= ' DST';
+        } elseif ($data['category'] == 'shipping' || $data['category'] == 'perubahan desain') {
+            $category .= ' - MC';
+        } elseif ($data['category'] == 'lain-lain' || $data['category'] == 'production') {
+            $category = 'PRODUCTION - MC';
+        }
+
+        $message .= 'Category: ' . $category . "\n";
         $message .= "Code Rack: {$data['code_rack']}\n";
         $message .= "PIC: {$data['pic']}\n";
         $message .= "Reporter: {$data['reporter']}\n";
