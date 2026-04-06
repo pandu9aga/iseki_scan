@@ -175,8 +175,8 @@ class McRequestController extends Controller
             'Name',
             "1=Ready,2=Ship,\n3=Prod,4=Design",
             'Sum Stock',
-            'Ready Stock',
             'Estimation Date',
+            'Ready Stock',
             'Time Record',
             'Sum Record',
             'Member Request',
@@ -266,8 +266,8 @@ class McRequestController extends Controller
                 $request->rack->Name_Item_Rack ?? '',
                 $statusCode,
                 $request->Sum_Stock ?? '',
-                $readyStockDisplay,
                 $estimationDisplay,
+                $readyStockDisplay,
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->member->Name_Member ?? '',
@@ -284,7 +284,7 @@ class McRequestController extends Controller
 
         $lastRow = $row - 1;
         if ($lastRow >= 2) {
-            $columnsToCenter = ['E', 'F', 'I', 'J', 'L', 'N'];
+            $columnsToCenter = ['E', 'F', 'I', 'J', 'K', 'N'];
             foreach ($columnsToCenter as $col) {
                 $range = $col . '2:' . $col . $lastRow;
                 $sheet->getStyle($range)->getAlignment()
@@ -292,12 +292,12 @@ class McRequestController extends Controller
             }
         }
 
-        // Apply Date Format & Data Validation to Estimation Date column (L)
+        // Apply Date Format & Data Validation to Estimation Date column (K)
         // Up to row 1000 so empty rows also have the date picker
-        $sheet->getStyle('L2:L1000')->getNumberFormat()
+        $sheet->getStyle('K2:K1000')->getNumberFormat()
             ->setFormatCode('DD/MM/YYYY');
 
-        $validation = $sheet->getCell('L2')->getDataValidation();
+        $validation = $sheet->getCell('K2')->getDataValidation();
         $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
         $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
         $validation->setAllowBlank(true);
@@ -311,7 +311,7 @@ class McRequestController extends Controller
         $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
         $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(Carbon::parse('1900-01-01')));
 
-        $sheet->setDataValidation('L2:L1000', $validation);
+        $sheet->setDataValidation('K2:K1000', $validation);
 
         // 🔑 Auto size kolom
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
@@ -354,7 +354,7 @@ class McRequestController extends Controller
 
         $colStock = $colStock ?? 'J';
         $colStatus = $colStatus ?? 'I';
-        $colEstimation = $colEstimation ?? 'L';
+        $colEstimation = $colEstimation ?? 'K';
 
         $savedCount = 0;
         $skippedEstimation = 0;
@@ -381,12 +381,12 @@ class McRequestController extends Controller
             // VALIDASI: Status dan Sum Stock WAJIB terisi
             if (!$hasStatus || !$hasStock) continue;
 
-            // VALIDASI: Jika status 3 (Shipping) atau 4 (Design Change), Estimation Date WAJIB
+            // VALIDASI: Jika status 2 (Shipping) atau 4 (Design Change), Estimation Date WAJIB
             $parsedEstimation = null;
-            if (in_array($readyStatus, ['3', '4'])) {
+            if (in_array($readyStatus, ['2', '4'])) {
                 if ($rawEstimation === null || trim(strval($rawEstimation)) === '') {
                     $skippedEstimation++;
-                    continue; // Skip: status 3/4 tapi tidak ada estimation date
+                    continue; // Skip: status 2/4 tapi tidak ada estimation date
                 }
                 // Parse estimation date (support format d/m/Y, d-m-Y, Y-m-d, Excel serial)
                 try {
@@ -402,7 +402,7 @@ class McRequestController extends Controller
                     continue; // Skip: format tanggal tidak valid
                 }
             } elseif ($rawEstimation !== null && trim(strval($rawEstimation)) !== '') {
-                // Status 1/2 tapi ada estimation → simpan juga
+                // Status 1/3 tapi ada estimation → simpan juga
                 try {
                     $estStr = trim(strval($rawEstimation));
                     if (is_numeric($estStr)) {
@@ -411,7 +411,7 @@ class McRequestController extends Controller
                         $parsedEstimation = Carbon::parse($estStr);
                     }
                 } catch (\Exception $e) {
-                    // Abaikan error parsing untuk status 1/2
+                    // Abaikan error parsing untuk status 1/3
                 }
             }
 
@@ -426,8 +426,17 @@ class McRequestController extends Controller
 
             // Update Estimation Date jika ada
             if ($parsedEstimation) {
-                $requestModel->Estimation_Stock = $parsedEstimation;
-                $changed = true;
+                // Konversi keduanya ke format Y-m-d untuk perbandingan agar akurat
+                $oldEst = $requestModel->Estimation_Stock ? Carbon::parse($requestModel->Estimation_Stock)->format('Y-m-d') : null;
+                $newEst = $parsedEstimation->format('Y-m-d');
+                
+                if ($oldEst !== $newEst) {
+                    $requestModel->Estimation_Stock = $parsedEstimation;
+                    // Reset Ok_Stock jika tanggal estimation berubah agar butuh validasi ulang
+                    $requestModel->Ok_Stock = null;
+                    $requestModel->Time_Ok_Stock = null;
+                    $changed = true;
+                }
             }
 
             // Update Status jika terisi DAN belum ada status sebelumnya
@@ -477,14 +486,34 @@ class McRequestController extends Controller
         return redirect()->back()->with('success', $successMsg);
     }
 
-    public function okStock($id)
+    public function okStock(Request $request, $id)
     {
         $requestModel = RequestModel::findOrFail($id);
+
+        if ($request->ajax()) {
+            $status = $request->input('status');
+            $requestModel->Ok_Stock = $status == 1 ? 1 : null;
+            $requestModel->Time_Ok_Stock = Carbon::now();
+            $requestModel->save();
+
+            return response()->json(['success' => true, 'message' => 'Status OK Stock berhasil diupdate.']);
+        }
+
         $requestModel->Ok_Stock = 1;
         $requestModel->Time_Ok_Stock = Carbon::now();
         $requestModel->save();
 
         return redirect()->back()->with('success', 'OK Stock berhasil diupdate.');
+    }
+
+    public function noStock($id)
+    {
+        $requestModel = RequestModel::findOrFail($id);
+        $requestModel->Ok_Stock = 2; // 2 indicates NO Stock
+        $requestModel->Time_Ok_Stock = Carbon::now();
+        $requestModel->save();
+
+        return redirect()->back()->with('success', 'NO Stock berhasil diupdate.');
     }
 
     public function search()
