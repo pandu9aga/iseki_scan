@@ -3,17 +3,8 @@
 namespace App\Http\Controllers\Helper;
 
 use App\Http\Controllers\Controller;
-use App\Models\Member;
-use App\Models\Mistake;
-use App\Models\Rack;
-use App\Models\Record;
-use App\Models\Request as RequestModel;
 use App\Models\Urgent;
-use App\Models\User;
-use App\Models\WaQueue;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class UrgentController extends Controller
@@ -25,7 +16,7 @@ class UrgentController extends Controller
     {
         // Determine layout based on session Id_Type_User
         $layout = 'layouts.user'; // Default for member
-
+        
         if (session()->has('Id_User')) {
             $typeUser = session('Id_Type_User');
             if ($typeUser == 2) {
@@ -36,7 +27,7 @@ class UrgentController extends Controller
                 $layout = 'layouts.area'; // Area
             }
         }
-
+        
         return view('helpers.urgents', compact('layout'));
     }
 
@@ -46,80 +37,121 @@ class UrgentController extends Controller
     public function getData(Request $request)
     {
         if ($request->ajax()) {
-            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel', 'mistake', 'record']);
+            $query = Urgent::with(['member', 'user', 'requestModel']);
 
             // Custom Filter logic
             if ($codeRack = $request->input('codeRack')) {
-                $query->where('Code_Rack', 'LIKE', '%'.$codeRack.'%');
+                $query->where('Code_Rack', 'LIKE', '%' . $codeRack . '%');
             }
 
-            if ($dateUrgent = $request->input('dateUrgent')) {
-                $query->whereDate('Time_Urgent', $dateUrgent);
+            if ($timeUrgent = $request->input('timeUrgent')) {
+                $query->where('Time_Urgent', 'LIKE', '%' . $timeUrgent . '%');
             }
 
             return DataTables::eloquent($query)
                 ->addColumn('PIC_Urgent', function ($urgent) {
                     return $urgent->member ? $urgent->member->Name_Member : '-';
                 })
-                ->addColumn('Mistake_Category', function ($urgent) {
-                    if (! $urgent->mistake) {
-                        return '-';
-                    }
-
-                    $cat = strtolower($urgent->mistake->Category_Mistake);
-                    $detail = strtolower($urgent->mistake->Manual_Category_Detail);
-
-                    $label = strtoupper($urgent->mistake->Category_Mistake);
-                    $class = 'secondary';
-
-                    if ($cat == 'perubahan desain') {
-                        $label = 'DESIGN CHANGE';
-                        $class = 'warning';
-                    } elseif ($cat == 'shipping') {
-                        $label = 'SHIPPING';
-                        $class = 'info';
-                    } elseif ($cat == 'lain-lain' && $detail == 'produksi') {
-                        $label = 'PRODUCTION';
-                        $class = 'primary';
-                    } elseif ($cat == 'telat supply' || $cat == 'telat request') {
-                        $class = 'secondary';
-                    }
-
-                    return '<span class="badge badge-'.$class.'">'.$label.'</span>';
-                })
                 ->addColumn('Request_Details', function ($urgent) {
                     if ($urgent->requestModel) {
-                        return 'Item: '.$urgent->requestModel->Code_Item_Rack.' - Sum: '.$urgent->requestModel->Sum_Request;
+                       return "Item: " . $urgent->requestModel->Code_Item_Rack . " - Sum: " . $urgent->requestModel->Sum_Request;
                     }
-
                     return 'N/A';
                 })
                 ->addColumn('Reporter', function ($urgent) {
-                    if (empty($urgent->Id_Type_User)) {
-                        return optional($urgent->reporterMember)->Name_Member ?? '-';
+                    // Sometimes Id_User comes from Member for old records? Let's check user table first
+                    if ($urgent->user) {
+                        return $urgent->user->Username_User;
+                    } else {
+                        // try member table if user doesn't exist
+                        $member = \App\Models\Member::find($urgent->Id_User);
+                        if ($member) {
+                            return $member->Name_Member;
+                        }
                     }
-
-                    return optional($urgent->user)->Username_User ?? '-';
+                    return $urgent->Id_User;
                 })
-                ->addColumn('Request_Time', function ($urgent) {
-                    if ($urgent->requestModel) {
-                        return $urgent->requestModel->Day_Request.' '.$urgent->requestModel->Time_Request;
-                    }
-
-                    return '-';
-                })
-                ->addColumn('Record_Time', function ($urgent) {
-                    if ($urgent->record) {
-                        return $urgent->record->Day_Record.' '.$urgent->record->Time_Record;
-                    }
-
-                    return '-';
-                })
-                ->rawColumns(['PIC_Urgent', 'Mistake_Category', 'Request_Details', 'Reporter', 'Record_Time', 'Request_Time'])
+                ->rawColumns(['PIC_Urgent', 'Request_Details', 'Reporter'])
                 ->make(true);
         }
 
         return abort(403, 'Unauthorized action.');
+    }
+<<<<<<< Updated upstream
+=======
+
+    /**
+     * Compute and return daily and monthly recap JSON for urgents.
+     */
+    public function getRecapData(Request $request)
+    {
+        $dateUrgentParam = $request->input('dateUrgent');
+        if (!$dateUrgentParam) {
+            $dateUrgentParam = Carbon::today()->format('Y-m-d');
+        }
+
+        try {
+            $dateUrgent = Carbon::parse($dateUrgentParam);
+        } catch (\Exception $e) {
+            $dateUrgent = Carbon::today();
+        }
+
+        $dailyUrgents = Urgent::with(['member', 'mistake'])
+            ->whereDate('Time_Urgent', $dateUrgent)
+            ->get();
+        $dailyMetrics = $this->calculateMetrics($dailyUrgents);
+
+        $monthlyUrgents = Urgent::with(['member', 'mistake'])
+            ->whereYear('Time_Urgent', $dateUrgent->year)
+            ->whereMonth('Time_Urgent', $dateUrgent->month)
+            ->get();
+        $monthlyMetrics = $this->calculateMetrics($monthlyUrgents);
+
+        return response()->json([
+            'daily' => $dailyMetrics,
+            'monthly' => $monthlyMetrics,
+            'date_formatted' => $dateUrgent->format('d M Y'),
+            'month_formatted' => $dateUrgent->format('F Y')
+        ]);
+    }
+
+    private function calculateMetrics($urgents)
+    {
+        $metrics = [
+            'boss_mc' => ['total' => 0, 'categories' => []],
+            'dst' => ['total' => 0, 'categories' => []],
+        ];
+
+        foreach ($urgents as $urgent) {
+            $picName = $urgent->member ? $urgent->member->Name_Member : '-';
+            $isBossMc = ($picName === 'Boss MC');
+
+            $bucket = $isBossMc ? 'boss_mc' : 'dst';
+            $metrics[$bucket]['total']++;
+
+            $categoryLabel = '-';
+            if ($urgent->mistake) {
+                $cat = strtolower($urgent->mistake->Category_Mistake);
+                $detail = strtolower($urgent->mistake->Manual_Category_Detail);
+
+                if ($cat == 'perubahan desain') {
+                    $categoryLabel = 'DESIGN CHANGE';
+                } elseif ($cat == 'shipping') {
+                    $categoryLabel = 'SHIPPING';
+                } elseif ($cat == 'lain-lain' && $detail == 'produksi') {
+                    $categoryLabel = 'PRODUCTION';
+                } else {
+                    $categoryLabel = strtoupper($cat);
+                }
+            }
+
+            if (!isset($metrics[$bucket]['categories'][$categoryLabel])) {
+                $metrics[$bucket]['categories'][$categoryLabel] = 0;
+            }
+            $metrics[$bucket]['categories'][$categoryLabel]++;
+        }
+
+        return $metrics;
     }
 
     /**
@@ -480,4 +512,5 @@ class UrgentController extends Controller
             'status' => 'pending',
         ]);
     }
+>>>>>>> Stashed changes
 }
