@@ -221,6 +221,15 @@ class UrgentController extends Controller
             return redirect()->back()->with('error', 'Code Rack tidak boleh kosong');
         }
 
+        // Mencegah double input dalam rentang waktu 2 detik
+        $recentUrgent = Urgent::where('Code_Rack', $codeRack)
+            ->where('Time_Urgent', '>=', Carbon::now()->subSeconds(2)->format('Y-m-d H:i:s'))
+            ->first();
+
+        if ($recentUrgent) {
+            return redirect()->back()->with('success', 'Scan sedang diproses atau sudah berhasil (Double Input dicegah).');
+        }
+
         // Check if waiting request exists
         $waitingRequest = RequestModel::where('Code_Rack', $codeRack)
             ->where('Status_Request', 'Waiting')

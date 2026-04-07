@@ -155,7 +155,7 @@
         rackScanner.clear();
         
         // Auto process form when scan success
-        document.getElementById("scanForm").submit();
+        disableSubmitAndSubmitForm();
     }
 
     // button scan
@@ -173,9 +173,28 @@
     document.getElementById("Code_Rack").addEventListener("keypress", function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            document.getElementById("scanForm").submit();
+            disableSubmitAndSubmitForm();
         }
     });
+
+    // Disable button if submitted via button click
+    document.getElementById("scanForm").addEventListener("submit", function() {
+        disableSubmitButton();
+    });
+
+    function disableSubmitButton() {
+        var submitBtn = document.querySelector('#scanForm button[type="submit"]');
+        if(submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Memproses...';
+        }
+        document.getElementById('Code_Rack').readOnly = true;
+    }
+
+    function disableSubmitAndSubmitForm() {
+        disableSubmitButton();
+        document.getElementById("scanForm").submit();
+    }
 
     // Force uppercase on input
     document.getElementById("Code_Rack").addEventListener("input", function() {
