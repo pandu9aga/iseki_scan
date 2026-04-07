@@ -33,9 +33,9 @@ class AreaScanController extends Controller
             return redirect()->back()->with('error', 'Code Rack tidak boleh kosong');
         }
 
-        // Mencegah double input dalam rentang waktu 2 detik
+        // Mencegah double input dalam rentang waktu 5 detik
         $recentUrgent = Urgent::where('Code_Rack', $codeRack)
-            ->where('Time_Urgent', '>=', Carbon::now()->subSeconds(2)->format('Y-m-d H:i:s'))
+            ->where('Time_Urgent', '>=', Carbon::now()->subSeconds(5)->format('Y-m-d H:i:s'))
             ->first();
 
         if ($recentUrgent) {
@@ -401,7 +401,7 @@ class AreaScanController extends Controller
             $category = 'PRODUCTION - MC';
         }
 
-        $message .= 'Category: ' . $category . "\n";
+        $message .= 'Category: '.$category."\n";
         $message .= "Code Rack: {$data['code_rack']}\n";
         $message .= "PIC: {$data['pic']}\n";
         $message .= "Reporter: {$data['reporter']}\n";
