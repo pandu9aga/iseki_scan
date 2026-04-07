@@ -6,6 +6,9 @@
             <a class="d-sm-inline-block btn btn-md btn-primary shadow-sm m-3" href="{{ route('admin_request') }}">
                 <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back
             </a>
+            <button class="d-sm-inline-block btn btn-md btn-success shadow-sm m-3" data-toggle="modal" data-target="#downloadExcelModal" type="button">
+                <i class="fas fa-file-excel fa-sm text-white-50"></i> Download Excel
+            </button>
         </div>
 
         <div class="card shadow mb-4">
@@ -41,6 +44,57 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Download Excel -->
+    <div class="modal fade" id="downloadExcelModal" tabindex="-1" role="dialog" aria-labelledby="downloadExcelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="downloadExcelModalLabel">
+                        <i class="fas fa-file-excel mr-2"></i>Download Excel - Advanced Search
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{ route('request.export_search') }}" method="GET" target="_blank" id="exportSearchForm">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="exportStatus"><strong>Status Ready <span class="text-danger">*</span></strong></label>
+                            <select class="form-control" id="exportStatus" name="status" required>
+                                <option value="">-- Pilih Status --</option>
+                                <option value="no_status">No Status</option>
+                                <option value="ready">Ready Stock</option>
+                                <option value="shipping">Shipping</option>
+                                <option value="design_change">Design Change</option>
+                                <option value="production">Production</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="exportStartDate"><strong>Start Date <span class="text-danger">*</span></strong></label>
+                                <input type="date" class="form-control" id="exportStartDate" name="start_date" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="exportEndDate"><strong>End Date <span class="text-danger">*</span></strong></label>
+                                <input type="date" class="form-control" id="exportEndDate" name="end_date" required>
+                            </div>
+                        </div>
+                        <div class="alert alert-info py-2 mb-0">
+                            <small><i class="fas fa-info-circle"></i> Data yang didownload akan difilter berdasarkan status dan range tanggal request yang dipilih.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-download mr-1"></i>Download
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @section('style')

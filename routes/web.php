@@ -111,6 +111,7 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/admin_request/submit', [AdminRequestController::class, 'submit'])->name('request.submit');
     Route::get('/admin_request/export', [AdminRequestController::class, 'export'])->name('request.export');
     Route::get('/admin_request/search', [AdminRequestController::class, 'search'])->name('request.search');
+    Route::get('/admin_request/export-search', [AdminRequestController::class, 'exportSearch'])->name('request.export_search');
     Route::post('/admin_request/reset', [AdminRequestController::class, 'reset'])->name('admin_request.reset');
 
     Route::get('/missing', [MissingController::class, 'index'])->name('missing');
@@ -203,6 +204,7 @@ Route::middleware(McMiddleware::class)->group(function () {
     Route::get('/mc_submission/submit', [McRequestController::class, 'submit'])->name('mc_submission.submit');
     Route::get('/mc_submission/export', [McRequestController::class, 'export'])->name('mc_submission.export');
     Route::get('/mc_submission/search', [McRequestController::class, 'search'])->name('mc_submission.search');
+    Route::get('/mc_submission/export-search', [McRequestController::class, 'exportSearch'])->name('mc_submission.export_search');
 
     Route::get('/mc_validation', [McValidationController::class, 'index'])->name('mc_validation');
     Route::get('/mc_validation/submit', [McValidationController::class, 'submit'])->name('mc_validation.submit');

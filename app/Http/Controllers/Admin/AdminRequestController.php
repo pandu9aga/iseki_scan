@@ -276,6 +276,180 @@ class AdminRequestController extends Controller
         return response()->download($filePath)->deleteFileAfterSend(true);
     }
 
+    public function exportSearch(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date'   => 'required|date|after_or_equal:start_date',
+            'status'     => 'required',
+        ]);
+
+        $startDate    = Carbon::parse($request->input('start_date'))->format('Y-m-d');
+        $endDate      = Carbon::parse($request->input('end_date'))->format('Y-m-d');
+        $statusFilter = $request->input('status');
+
+        $query = RequestModel::with('member', 'record', 'rack')
+            ->whereDate('Day_Request', '>=', $startDate)
+            ->whereDate('Day_Request', '<=', $endDate)
+            ->orderBy('Id_User')
+            ->orderBy('Urgent_Request', 'desc')
+            ->orderBy('Area_Request')
+            ->orderBy('Time_Request');
+
+        switch ($statusFilter) {
+            case 'no_status':
+                $query->whereNull('Ready_Request')
+                      ->whereNull('Shipping_Request')
+                      ->whereNull('Production_Area_Request')
+                      ->whereNull('Design_Changes_Request');
+                break;
+            case 'ready':
+                $query->whereNotNull('Ready_Request');
+                break;
+            case 'shipping':
+                $query->whereNotNull('Shipping_Request');
+                break;
+            case 'production':
+                $query->whereNotNull('Production_Area_Request');
+                break;
+            case 'design_change':
+                $query->whereNotNull('Design_Changes_Request');
+                break;
+        }
+
+        $requests = $query->get();
+
+        // Buat Spreadsheet (sama persis dengan export di MC Request)
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = [
+            'No',
+            'Time Request',
+            'Area',
+            'Rack',
+            'Sum Request',
+            'Urgenity',
+            'Item',
+            'Name',
+            "1=Ready,2=Ship,\n3=Prod,4=Design",
+            'Sum Stock',
+            'Estimation Date',
+            'Ready Stock',
+            'Time Record',
+            'Sum Record',
+            'Member Request',
+            'Member Record',
+            'Updated',
+            'Id'
+        ];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
+        ];
+        $sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:R1')->getAlignment()->setWrapText(true);
+        $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
+
+        $row      = 2;
+        $lastUser = null;
+        $no       = 1;
+
+        foreach ($requests as $req) {
+            if ($lastUser !== null && $lastUser != $req->Id_User) {
+                $sheet->fromArray(array_fill(0, 18, '-'), null, 'A' . $row);
+                $row++;
+                $no = 1;
+            }
+
+            $readyDisplay = [];
+            if ($req->Ready_Request) $readyDisplay[] = 'Ready: ' . $req->Ready_Request;
+            if ($req->Shipping_Request) $readyDisplay[] = 'Shipping: ' . $req->Shipping_Request;
+            if ($req->Production_Area_Request) $readyDisplay[] = 'Production: ' . $req->Production_Area_Request;
+            if ($req->Design_Changes_Request) $readyDisplay[] = 'Design: ' . $req->Design_Changes_Request;
+            $readyStockDisplay = implode(' | ', $readyDisplay);
+
+            $timeRequest = ($req->Day_Request ?? '') . ' ' . ($req->Time_Request ?? '');
+            $timeRecord  = ($req->record->Day_Record ?? '') . ' ' . ($req->record->Time_Record ?? '');
+
+            $statusCode = '';
+            if ($req->Ready_Request !== null) $statusCode = '1';
+            elseif ($req->Shipping_Request !== null) $statusCode = '2';
+            elseif ($req->Production_Area_Request !== null) $statusCode = '3';
+            elseif ($req->Design_Changes_Request !== null) $statusCode = '4';
+
+            $estimationDisplay = '';
+            if ($req->Estimation_Stock) {
+                $estimationDisplay = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
+                    Carbon::parse($req->Estimation_Stock)
+                );
+            }
+
+            $sheet->fromArray([
+                $no,
+                $timeRequest,
+                $req->Area_Request ?? '',
+                $req->Code_Rack,
+                $req->Sum_Request,
+                $req->Urgent_Request == 1 ? '✓' : '',
+                $req->Code_Item_Rack,
+                $req->rack->Name_Item_Rack ?? '',
+                $statusCode,
+                $req->Sum_Stock ?? '',
+                $estimationDisplay,
+                $readyStockDisplay,
+                $timeRecord,
+                optional($req->record)->Sum_Record ?? '',
+                $req->member->Name_Member ?? '',
+                optional($req->record)->member->Name_Member ?? '',
+                $req->Updated_At_Request,
+                $req->Id_Request,
+            ], null, 'A' . $row);
+
+            $lastUser = $req->Id_User;
+            $no++;
+            $row++;
+        }
+
+        $lastRow = $row - 1;
+        if ($lastRow >= 2) {
+            $columnsToCenter = ['E', 'F', 'I', 'J', 'K', 'N'];
+            foreach ($columnsToCenter as $col) {
+                $sheet->getStyle($col . '2:' . $col . $lastRow)
+                      ->getAlignment()
+                      ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            }
+        }
+
+        $sheet->getStyle('K2:K1000')->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $validation = $sheet->getCell('K2')->getDataValidation();
+        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
+        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
+        $validation->setAllowBlank(true);
+        $validation->setShowInputMessage(true);
+        $validation->setShowErrorMessage(true);
+        $validation->setErrorTitle('Input Error');
+        $validation->setError('Harus berupa tanggal!');
+        $validation->setPromptTitle('Pilih Tanggal');
+        $validation->setPrompt('Format: DD/MM/YYYY');
+        $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
+        $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(Carbon::parse('1900-01-01')));
+        $sheet->setDataValidation('K2:K1000', $validation);
+
+        foreach (range('A', $sheet->getHighestColumn()) as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = "Request_Search_{$startDate}_to_{$endDate}.xlsx";
+        $writer   = new Xlsx($spreadsheet);
+        $filePath = storage_path('app/public/' . $fileName);
+        $writer->save($filePath);
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
     public function search()
     {
         if (request()->ajax()) {
