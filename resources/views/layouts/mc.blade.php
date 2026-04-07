@@ -85,11 +85,11 @@
                     <span>Missing MC</span></a>
             </li>
 
-            {{-- <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.missing.estimation') }}">
                     <i class="fas fa-fw fa-clock"></i>
                     <span>Missing Estimation</span></a>
-            </li> --}}
+            </li>
 
             <!-- Divider -->
             <hr class="sidebar-divider">
