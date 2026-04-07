@@ -93,6 +93,21 @@ class RecordController extends Controller
                 ->exists();
         }
 
+        if (! $exists) {
+            $exists = RequestModel::where('Code_Rack', $codeRack)
+                ->where('Code_Item_Rack', 'LIKE', '%'.$codeItem.'%')
+                ->where('Status_Request', 'Waiting')
+                ->exists();
+        }
+
+        if (! $exists) {
+            $exists = RequestModel::where('Code_Rack', $codeRack)
+                ->where('Status_Request', 'Waiting')
+                ->whereNotNull('Design_Changes_Request')
+                ->where('Design_Changes_Request', '!=', '')
+                ->exists();
+        }
+
         return response()->json([
             'status' => $exists ? 'correct' : 'incorrect',
         ]);
