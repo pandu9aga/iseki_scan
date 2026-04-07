@@ -39,6 +39,8 @@ class AreaScanController extends Controller
             ->first();
 
         if ($waitingRequest) {
+            $rackModel = Rack::where('Code_Rack', $codeRack)->first();
+            $namePart = $rackModel ? ($rackModel->Name_Item_Rack ?? '-') : '-';
             $idRequest = $waitingRequest->Id_Request;
 
             // Check if request is less than 24 hours old
@@ -101,6 +103,7 @@ class AreaScanController extends Controller
                     'pic' => $nameMemberTarget,
                     'reporter' => $reporter ? $reporter->Name_User : 'Area User',
                     'code_item' => $waitingRequest->Code_Item_Rack,
+                    'name_part' => $namePart,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => 'telat request',
                     'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
@@ -163,6 +166,7 @@ class AreaScanController extends Controller
                     'pic' => $nameMemberTarget,
                     'reporter' => $reporter ? $reporter->Name_User : 'Area User',
                     'code_item' => $waitingRequest->Code_Item_Rack,
+                    'name_part' => $namePart,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => 'telat supply',
                     'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
@@ -219,6 +223,7 @@ class AreaScanController extends Controller
                     'pic' => $nameBossMc,
                     'reporter' => $reporter ? $reporter->Name_User : 'Area User',
                     'code_item' => $waitingRequest->Code_Item_Rack,
+                    'name_part' => $namePart,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => $category,
                     'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
@@ -340,12 +345,14 @@ class AreaScanController extends Controller
 
             // Queue WA notification
             $reporter = User::find($idUserLogged);
+            $namePart = $rack ? ($rack->Name_Item_Rack ?? '-') : '-';
             $this->queueWaMessage([
                 'time_urgent' => $nowTime,
                 'code_rack' => $codeRack,
                 'pic' => $nameMemberTarget,
                 'reporter' => $reporter ? $reporter->Name_User : 'Area User',
                 'code_item' => $codeItemRack,
+                'name_part' => $namePart,
                 'sum_request' => $sumRequest,
                 'category' => 'telat request',
                 'time_request' => $nowTime,
@@ -390,7 +397,8 @@ class AreaScanController extends Controller
         $message .= "PIC: {$data['pic']}\n";
         $message .= "Reporter: {$data['reporter']}\n";
         $message .= "Request Details:\n";
-        $message .= "Item: {$data['code_item']} - Sum: {$data['sum_request']}";
+        $namePart = $data['name_part'] ?? '-';
+        $message .= "Item: {$data['code_item']} ({$namePart}) - Sum: {$data['sum_request']}";
 
         WaQueue::create([
             'message' => $message,

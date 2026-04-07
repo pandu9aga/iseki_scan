@@ -1,6 +1,17 @@
 @extends($layout)
 @section('style')
 <link href="{{asset('vendor/datatables/dataTables.bootstrap4.min.css')}}" rel="stylesheet">
+<style>
+    .name-part-col {
+        min-width: 90px;
+        max-width: 110px;
+        width: 100px;
+        white-space: normal !important;
+        word-break: break-word;
+        font-size: 11px;
+        line-height: 1.3;
+    }
+</style>
 @endsection
 
 @section('content')
@@ -68,6 +79,7 @@
                             <th>Time Urgent</th>
                             <th>Category</th>
                             <th>Code Rack</th>
+                            <th style="min-width:90px;max-width:110px;">Name Part</th>
                             <th>PIC</th>
                             <th>Reporter</th>
                             <th>Request Details</th>
@@ -127,6 +139,13 @@
                 { data: 'Time_Urgent', name: 'Time_Urgent' },
                 { data: 'Mistake_Category', name: 'Mistake_Category', searchable: false },
                 { data: 'Code_Rack', name: 'Code_Rack' },
+                { 
+                    data: 'Name_Part', 
+                    name: 'Name_Part', 
+                    searchable: false,
+                    orderable: false,
+                    className: 'name-part-col'
+                },
                 { 
                     data: 'PIC_Urgent', 
                     name: 'PIC_Urgent', 

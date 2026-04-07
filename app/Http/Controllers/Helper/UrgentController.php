@@ -46,7 +46,7 @@ class UrgentController extends Controller
     public function getData(Request $request)
     {
         if ($request->ajax()) {
-            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel', 'mistake', 'record']);
+            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'mistake', 'record']);
 
             // Custom Filter logic
             if ($codeRack = $request->input('codeRack')) {
@@ -87,6 +87,9 @@ class UrgentController extends Controller
 
                     return '<span class="badge badge-'.$class.'">'.$label.'</span>';
                 })
+                ->addColumn('Name_Part', function ($urgent) {
+                    return optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
+                })
                 ->addColumn('Request_Details', function ($urgent) {
                     if ($urgent->requestModel) {
                         return 'Item: '.$urgent->requestModel->Code_Item_Rack.' - Sum: '.$urgent->requestModel->Sum_Request;
@@ -115,7 +118,7 @@ class UrgentController extends Controller
 
                     return '-';
                 })
-                ->rawColumns(['PIC_Urgent', 'Mistake_Category', 'Request_Details', 'Reporter', 'Record_Time', 'Request_Time'])
+                ->rawColumns(['PIC_Urgent', 'Name_Part', 'Mistake_Category', 'Request_Details', 'Reporter', 'Record_Time', 'Request_Time'])
                 ->make(true);
         }
 
@@ -224,6 +227,9 @@ class UrgentController extends Controller
             ->first();
 
         if ($waitingRequest) {
+            // Get Part Name for this rack
+            $rackModel = Rack::where('Code_Rack', $codeRack)->first();
+            $namePart = $rackModel ? ($rackModel->Name_Item_Rack ?? '-') : '-';
             $idRequest = $waitingRequest->Id_Request;
 
             // Check if request is less than 24 hours old
@@ -286,6 +292,7 @@ class UrgentController extends Controller
                     'pic' => $nameMemberTarget,
                     'reporter' => $reporter ? $reporter->Name_Member : 'Member',
                     'code_item' => $waitingRequest->Code_Item_Rack,
+                    'name_part' => $namePart,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => 'telat request',
                     'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
@@ -346,6 +353,7 @@ class UrgentController extends Controller
                     'pic' => $nameMemberTarget,
                     'reporter' => $reporter ? $reporter->Name_Member : 'Member',
                     'code_item' => $waitingRequest->Code_Item_Rack,
+                    'name_part' => $namePart,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => 'telat supply',
                     'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
@@ -401,6 +409,7 @@ class UrgentController extends Controller
                     'pic' => $nameBossMc,
                     'reporter' => $reporter ? $reporter->Name_Member : 'Member',
                     'code_item' => $waitingRequest->Code_Item_Rack,
+                    'name_part' => $namePart,
                     'sum_request' => $waitingRequest->Sum_Request,
                     'category' => $category,
                     'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
@@ -514,12 +523,14 @@ class UrgentController extends Controller
 
             // Queue WA notification
             $reporter = Member::find($idMemberLogged);
+            $namePart = $rack ? ($rack->Name_Item_Rack ?? '-') : '-';
             $this->queueWaMessage([
                 'time_urgent' => $nowTime,
                 'code_rack' => $codeRack,
                 'pic' => $nameMemberTarget,
                 'reporter' => $reporter ? $reporter->Name_Member : 'Member',
                 'code_item' => $codeItemRack,
+                'name_part' => $namePart,
                 'sum_request' => $sumRequest,
                 'category' => 'telat request',
                 'time_request' => $nowTime,
@@ -564,7 +575,8 @@ class UrgentController extends Controller
         $message .= "PIC: {$data['pic']}\n";
         $message .= "Reporter: {$data['reporter']}\n";
         $message .= "Request Details:\n";
-        $message .= "Item: {$data['code_item']} - Sum: {$data['sum_request']}";
+        $namePart = $data['name_part'] ?? '-';
+        $message .= "Item: {$data['code_item']} ({$namePart}) - Sum: {$data['sum_request']}";
 
         WaQueue::create([
             'message' => $message,
