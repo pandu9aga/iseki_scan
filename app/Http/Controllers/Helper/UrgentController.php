@@ -247,30 +247,7 @@ class UrgentController extends Controller
 
             if ($isLessThan24Hours) {
                 // If < 24 hours, category is "telat request" and PIC is the member responsible
-                $avgMemberRecord = Record::select('Id_User', DB::raw('COUNT(Id_User) as count'))
-                    ->where('Code_Rack', $codeRack)
-                    ->groupBy('Id_User')
-                    ->orderBy('count', 'desc')
-                    ->first();
-
-                $idMemberTarget = null;
-                $nameMemberTarget = null;
-                if ($avgMemberRecord) {
-                    $idMemberTarget = $avgMemberRecord->Id_User;
-                    $member = Member::find($idMemberTarget);
-                    // Check if member is inactive
-                    if ($member && $member->Status_Non_Active == 1) {
-                        $systemMember = Member::where('Name_Member', 'system')->first();
-                        $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                        $nameMemberTarget = 'system';
-                    } else {
-                        $nameMemberTarget = $member ? $member->Name_Member : null;
-                    }
-                } else {
-                    $systemMember = Member::where('Name_Member', 'system')->first();
-                    $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                    $nameMemberTarget = 'system';
-                }
+                list($idMemberTarget, $nameMemberTarget) = $this->getLastRecordPic($codeRack);
 
                 $category = 'telat request';
                 $manualDetail = null;
@@ -308,30 +285,7 @@ class UrgentController extends Controller
                 ]);
             } elseif ($waitingRequest->Ready_Request !== null) {
                 // Determine target member PIC
-                $avgMemberRecord = Record::select('Id_User', DB::raw('COUNT(Id_User) as count'))
-                    ->where('Code_Rack', $codeRack)
-                    ->groupBy('Id_User')
-                    ->orderBy('count', 'desc')
-                    ->first();
-
-                $idMemberTarget = null;
-                $nameMemberTarget = null;
-                if ($avgMemberRecord) {
-                    $idMemberTarget = $avgMemberRecord->Id_User;
-                    $member = Member::find($idMemberTarget);
-                    // Check if member is inactive
-                    if ($member && $member->Status_Non_Active == 1) {
-                        $systemMember = Member::where('Name_Member', 'system')->first();
-                        $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                        $nameMemberTarget = 'system';
-                    } else {
-                        $nameMemberTarget = $member ? $member->Name_Member : null;
-                    }
-                } else {
-                    $systemMember = Member::where('Name_Member', 'system')->first();
-                    $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                    $nameMemberTarget = 'system';
-                }
+                list($idMemberTarget, $nameMemberTarget) = $this->getLastRecordPic($codeRack);
 
                 $category = 'telat supply';
                 $manualDetail = null;
@@ -461,30 +415,7 @@ class UrgentController extends Controller
             ]);
 
         } else {
-            $avgMemberReq = RequestModel::select('Id_User', DB::raw('COUNT(Id_User) as count'))
-                ->where('Code_Rack', $codeRack)
-                ->groupBy('Id_User')
-                ->orderBy('count', 'desc')
-                ->first();
-
-            $idMemberTarget = null;
-            $nameMemberTarget = null;
-            if ($avgMemberReq) {
-                $idMemberTarget = $avgMemberReq->Id_User;
-                $member = Member::find($idMemberTarget);
-                // Check if member is inactive
-                if ($member && $member->Status_Non_Active == 1) {
-                    $systemMember = Member::where('Name_Member', 'system')->first();
-                    $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                    $nameMemberTarget = 'system';
-                } else {
-                    $nameMemberTarget = $member ? $member->Name_Member : null;
-                }
-            } else {
-                $systemMember = Member::where('Name_Member', 'system')->first();
-                $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                $nameMemberTarget = 'system';
-            }
+            list($idMemberTarget, $nameMemberTarget) = $this->getLastRequestPic($codeRack);
 
             $lastReq = RequestModel::where('Code_Rack', $codeRack)->orderBy('Id_Request', 'desc')->first();
             $sumRequest = 1;
@@ -592,5 +523,58 @@ class UrgentController extends Controller
             'group_id' => '120363045467407165@g.us',
             'status' => 'pending',
         ]);
+    }
+
+    /**
+     * Get the latest PIC for a rack based on the most recent record.
+     */
+    private function getLastRecordPic($codeRack)
+    {
+        $lastRecord = \App\Models\Record::where('Code_Rack', $codeRack)
+            ->orderBy('Day_Record', 'desc')
+            ->orderBy('Time_Record', 'desc')
+            ->first();
+
+        $targetUserId = $lastRecord ? $lastRecord->Id_User : null;
+        return $this->resolvePicFromUserId($targetUserId);
+    }
+
+    /**
+     * Get the latest PIC for a rack based on the most recent request.
+     */
+    private function getLastRequestPic($codeRack)
+    {
+        $lastRequest = RequestModel::where('Code_Rack', $codeRack)
+            ->orderBy('Day_Request', 'desc')
+            ->orderBy('Time_Request', 'desc')
+            ->first();
+
+        $targetUserId = $lastRequest ? $lastRequest->Id_User : null;
+        return $this->resolvePicFromUserId($targetUserId);
+    }
+
+    private function resolvePicFromUserId($targetUserId)
+    {
+        $idMemberTarget = null;
+        $nameMemberTarget = null;
+
+        if ($targetUserId) {
+            $member = Member::find($targetUserId);
+            if ($member && $member->Status_Non_Active == 1) {
+                // fall back to system
+                $targetUserId = null;
+            } else {
+                $idMemberTarget = $targetUserId;
+                $nameMemberTarget = $member ? $member->Name_Member : null;
+            }
+        }
+
+        if (!$targetUserId) {
+            $systemMember = Member::where('Name_Member', 'system')->first();
+            $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
+            $nameMemberTarget = 'system';
+        }
+
+        return [$idMemberTarget, $nameMemberTarget];
     }
 }

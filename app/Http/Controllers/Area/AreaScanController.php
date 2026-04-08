@@ -58,30 +58,7 @@ class AreaScanController extends Controller
 
             if ($isLessThan24Hours) {
                 // If < 24 hours, category is "telat request" and PIC is the member responsible
-                $avgMemberRecord = Record::select('Id_User', DB::raw('COUNT(Id_User) as count'))
-                    ->where('Code_Rack', $codeRack)
-                    ->groupBy('Id_User')
-                    ->orderBy('count', 'desc')
-                    ->first();
-
-                $idMemberTarget = null;
-                $nameMemberTarget = null;
-                if ($avgMemberRecord) {
-                    $idMemberTarget = $avgMemberRecord->Id_User;
-                    $member = Member::find($idMemberTarget);
-                    // Check if member is inactive
-                    if ($member && $member->Status_Non_Active == 1) {
-                        $systemMember = Member::where('Name_Member', 'system')->first();
-                        $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                        $nameMemberTarget = 'system';
-                    } else {
-                        $nameMemberTarget = $member ? $member->Name_Member : null;
-                    }
-                } else {
-                    $systemMember = Member::where('Name_Member', 'system')->first();
-                    $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                    $nameMemberTarget = 'system';
-                }
+                list($idMemberTarget, $nameMemberTarget) = $this->getLastRecordPic($codeRack);
 
                 $category = 'telat request';
                 $manualDetail = null;
@@ -119,30 +96,7 @@ class AreaScanController extends Controller
                 ]);
             } elseif ($waitingRequest->Ready_Request !== null) {
                 // "jika Ready_Request not null, maka cari Id_Member rata-rata di records untuk Code_Rack yang sama"
-                $avgMemberRecord = Record::select('Id_User', DB::raw('COUNT(Id_User) as count'))
-                    ->where('Code_Rack', $codeRack)
-                    ->groupBy('Id_User')
-                    ->orderBy('count', 'desc')
-                    ->first();
-
-                $idMemberTarget = null;
-                $nameMemberTarget = null;
-                if ($avgMemberRecord) {
-                    $idMemberTarget = $avgMemberRecord->Id_User;
-                    $member = Member::find($idMemberTarget);
-                    // Check if member is inactive
-                    if ($member && $member->Status_Non_Active == 1) {
-                        $systemMember = Member::where('Name_Member', 'system')->first();
-                        $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                        $nameMemberTarget = 'system';
-                    } else {
-                        $nameMemberTarget = $member ? $member->Name_Member : null;
-                    }
-                } else {
-                    $systemMember = Member::where('Name_Member', 'system')->first();
-                    $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                    $nameMemberTarget = 'system';
-                }
+                list($idMemberTarget, $nameMemberTarget) = $this->getLastRecordPic($codeRack);
 
                 $category = 'telat supply';
                 $manualDetail = null;
@@ -277,32 +231,8 @@ class AreaScanController extends Controller
 
         } else {
             // "kalau tidak ada maka cari Id_Member rata-rata yang melakukan request code tersebut"
-            $avgMemberReq = RequestModel::select('Id_User', DB::raw('COUNT(Id_User) as count'))
-                ->where('Code_Rack', $codeRack)
-                ->groupBy('Id_User')
-                ->orderBy('count', 'desc')
-                ->first();
-
-            $idMemberTarget = null;
-            $nameMemberTarget = null;
-            if ($avgMemberReq) {
-                // Id_User in Request table is actually Id_Member mapped from Member table
-                $idMemberTarget = $avgMemberReq->Id_User;
-                $member = Member::find($idMemberTarget);
-                // Check if member is inactive
-                if ($member && $member->Status_Non_Active == 1) {
-                    $systemMember = Member::where('Name_Member', 'system')->first();
-                    $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                    $nameMemberTarget = 'system';
-                } else {
-                    $nameMemberTarget = $member ? $member->Name_Member : null;
-                }
-            } else {
-                // "kalau tidak ada maka Cari Id_Member dengan nama system"
-                $systemMember = Member::where('Name_Member', 'system')->first();
-                $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
-                $nameMemberTarget = 'system';
-            }
+            // Diganti menggunakan last PIC berdasar logic baru
+            list($idMemberTarget, $nameMemberTarget) = $this->getLastRequestPic($codeRack);
 
             // "untuk sum request nya isi berdasarkan sum request terakhir dari kode rak yang sama, kalau tidak ada maka default isi 1"
             $lastReq = RequestModel::where('Code_Rack', $codeRack)->orderBy('Id_Request', 'desc')->first();
@@ -414,5 +344,58 @@ class AreaScanController extends Controller
             'group_id' => '120363045467407165@g.us',
             'status' => 'pending',
         ]);
+    }
+
+    /**
+     * Get the latest PIC for a rack based on the most recent record.
+     */
+    private function getLastRecordPic($codeRack)
+    {
+        $lastRecord = \App\Models\Record::where('Code_Rack', $codeRack)
+            ->orderBy('Day_Record', 'desc')
+            ->orderBy('Time_Record', 'desc')
+            ->first();
+
+        $targetUserId = $lastRecord ? $lastRecord->Id_User : null;
+        return $this->resolvePicFromUserId($targetUserId);
+    }
+
+    /**
+     * Get the latest PIC for a rack based on the most recent request.
+     */
+    private function getLastRequestPic($codeRack)
+    {
+        $lastRequest = RequestModel::where('Code_Rack', $codeRack)
+            ->orderBy('Day_Request', 'desc')
+            ->orderBy('Time_Request', 'desc')
+            ->first();
+
+        $targetUserId = $lastRequest ? $lastRequest->Id_User : null;
+        return $this->resolvePicFromUserId($targetUserId);
+    }
+
+    private function resolvePicFromUserId($targetUserId)
+    {
+        $idMemberTarget = null;
+        $nameMemberTarget = null;
+
+        if ($targetUserId) {
+            $member = Member::find($targetUserId);
+            if ($member && $member->Status_Non_Active == 1) {
+                // fall back to system
+                $targetUserId = null;
+            } else {
+                $idMemberTarget = $targetUserId;
+                $nameMemberTarget = $member ? $member->Name_Member : null;
+            }
+        }
+
+        if (!$targetUserId) {
+            $systemMember = Member::where('Name_Member', 'system')->first();
+            $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
+            $nameMemberTarget = 'system';
+        }
+
+        return [$idMemberTarget, $nameMemberTarget];
     }
 }
