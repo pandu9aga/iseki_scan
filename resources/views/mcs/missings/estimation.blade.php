@@ -45,6 +45,7 @@
                             <th>Estimation Date</th>
                             <th>Overdue</th>
                             <th>PIC</th>
+                            <th>Stock Shipping</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -96,14 +97,24 @@
                                     @endphp
                             </td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
+                            <td class="text-center" style="min-width: 90px;">
+                                <input type="number" class="form-control form-control-sm stock-shipping-input" 
+                                       data-id="{{ $s->Id_Request }}" 
+                                       value="{{ $s->Stock_Shipping }}" 
+                                       placeholder="0" style="width:80px; display:inline-block;">
+                            </td>
                             <td class="text-center">
                                 <div class="custom-control custom-switch d-inline-block" title="Toggle OK Stock">
                                     <input type="checkbox" class="custom-control-input ok-stock-switch" 
                                             id="okSwitch_{{ $s->Id_Request }}" 
                                             data-id="{{ $s->Id_Request }}" 
-                                            {{ $s->Ok_Stock == 1 ? 'checked' : '' }}>
+                                            {{ $s->Ok_Stock == 1 ? 'checked' : '' }}
+                                            {{ empty($s->Stock_Shipping) ? 'disabled' : '' }}>
                                     <label class="custom-control-label" for="okSwitch_{{ $s->Id_Request }}"></label>
                                 </div>
+                                @if(empty($s->Stock_Shipping))
+                                <small class="text-muted d-block" style="font-size:10px;">Isi Stock Shipping</small>
+                                @endif
                             </td>
                         </tr>
                         @endforeach
@@ -138,6 +149,7 @@
         background: linear-gradient(90deg, #ff6b00, #ff0000, #ff6b00);
         background-size: 300% auto;
         -webkit-background-clip: text;
+        background-clip: text;
         -webkit-text-fill-color: transparent;
         padding: 0 2rem;
         white-space: nowrap;
@@ -145,33 +157,17 @@
     }
 
     @keyframes marquee {
-        0% {
-            transform: translateX(0);
-        }
-
-        100% {
-            transform: translateX(-50%);
-        }
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
     }
 
     @keyframes colorChange {
-        0% {
-            background-position: 0% 50%;
-        }
-
-        50% {
-            background-position: 100% 50%;
-        }
-
-        100% {
-            background-position: 0% 50%;
-        }
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
 
-    table th,
-    table td {
-        vertical-align: middle;
-    }
+    table th, table td { vertical-align: middle; }
 
     table th {
         font-size: 2rem;
@@ -197,6 +193,7 @@
 <script src="{{ asset('js/demo/datatables-demo.js') }}"></script>
 <script>
     $(document).ready(function() {
+        // OK Stock switch
         $(document).on('change', '.ok-stock-switch', function() {
             var input = $(this);
             var requestId = input.data('id');
@@ -211,21 +208,52 @@
                 },
                 success: function(response) {
                     if(response.success) {
-                        // Jika berhasil OK, hapus baris dari list (karena data missing sudah resolved)
                         if(isChecked === 1) {
                             var tr = input.closest('tr');
-                            tr.fadeOut(400, function() {
-                                tr.remove(); // Optional: or table.row(tr).remove().draw() if using datatables API directly
-                            });
+                            tr.fadeOut(400, function() { tr.remove(); });
                         }
                     } else {
-                        alert('Gagal update status!');
+                        alert(response.message || 'Gagal update status!');
                         input.prop('checked', !isChecked);
                     }
                 },
                 error: function() {
                     alert('Terjadi kesalahan saat menghubungi server!');
                     input.prop('checked', !isChecked);
+                }
+            });
+        });
+
+        // Stock Shipping inline save
+        $(document).on('change', '.stock-shipping-input', function() {
+            var input = $(this);
+            var requestId = input.data('id');
+            var value = input.val();
+            
+            $.ajax({
+                url: '{{ url("mc_submission/stock-shipping") }}/' + requestId,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    stock_shipping: value
+                },
+                success: function(response) {
+                    if(response.success) {
+                        var okSwitch = $('#okSwitch_' + requestId);
+                        if(value && parseInt(value) > 0) {
+                            okSwitch.prop('disabled', false);
+                            okSwitch.closest('td').find('small').hide();
+                        } else {
+                            okSwitch.prop('disabled', true);
+                            okSwitch.prop('checked', false);
+                            okSwitch.closest('td').find('small').show();
+                        }
+                    } else {
+                        alert('Gagal menyimpan Stock Shipping!');
+                    }
+                },
+                error: function() {
+                    alert('Terjadi kesalahan saat menghubungi server!');
                 }
             });
         });

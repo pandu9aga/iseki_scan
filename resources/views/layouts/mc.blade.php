@@ -27,12 +27,20 @@
 
     <!-- Dynamic Favicon -->
     <script src="/iseki_pro_app/js/dynamic-favicon.js"></script>
-    <script>document.addEventListener("DOMContentLoaded", function() { setDynamicFavicon("qr_code", "Part"); });</script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            setDynamicFavicon("qr_code", "Part");
+        });
+    </script>
 
     <!-- Dynamic Favicon Assets -->
     <link rel="stylesheet" href="/iseki_pro_app/css/icon.css">
     <script src="/iseki_pro_app/js/dynamic-favicon.js"></script>
-    <script>document.addEventListener("DOMContentLoaded", function() { setDynamicFavicon("qr_code", "Part"); });</script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            setDynamicFavicon("qr_code", "Part");
+        });
+    </script>
 </head>
 
 <body id="page-top" class="sidebar-toggled">
@@ -99,6 +107,13 @@
                     <i class="fas fa-fw fa-clock"></i>
                     <span>Missing Estimation</span></a>
             </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('mc.oke.estimation') }}">
+                    <i class="fas fa-fw fa-check-circle"></i>
+                    <span>Oke Estimation</span></a>
+            </li>
+
 
             <!-- Divider -->
             <hr class="sidebar-divider">

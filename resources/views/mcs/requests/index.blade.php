@@ -32,11 +32,11 @@
                             <form class="user" action="{{ route('mc_submission.submit') }}" method="GET">
                                 @csrf
                                 <div class="row d-flex align-items-center">
-                                    <div class="col-lg-4 col-md-6 mb-1">
+                                    <div class="col-lg-3 col-md-6 mb-1">
                                         <input name="Day_Request" type="date" class="form-control" value="{{ $dateForInput }}" required>
                                     </div>
                                     <div class="col-lg-3 col-md-6 mb-1">
-                                        <select name="Id_User[]" class="form-control" multiple>
+                                        <select name="Id_User[]" class="form-control" multiple id="memberSelect">
                                             <option value="">All Members</option>
                                             @foreach($members as $m)
                                             <option value="{{ $m->Id_Member }}"
@@ -46,14 +46,25 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-lg-3 col-md-6 mb-1">
-                                        <select name="statusFilter" class="form-control">
-                                            <option value="">All Status</option>
-                                            <option value="ready" {{ request('statusFilter') == 'ready' ? 'selected' : '' }}>Ready</option>
-                                            <option value="shipping" {{ request('statusFilter') == 'shipping' ? 'selected' : '' }}>Shipping</option>
-                                            <option value="production" {{ request('statusFilter') == 'production' ? 'selected' : '' }}>Production</option>
-                                            <option value="design_change" {{ request('statusFilter') == 'design_change' ? 'selected' : '' }}>Design Change</option>
-                                        </select>
+                                    <div class="col-lg-4 col-md-6 mb-1">
+                                        <div class="d-flex flex-wrap">
+                                            <div class="custom-control custom-checkbox custom-control-inline">
+                                                <input class="custom-control-input" type="checkbox" name="statusFilter[]" id="filter1" value="1" {{ in_array('1', request('statusFilter', [])) ? 'checked' : '' }}>
+                                                <label class="custom-control-label" style="font-size: 0.85rem; padding-top:2px;" for="filter1">Ready</label>
+                                            </div>
+                                            <div class="custom-control custom-checkbox custom-control-inline">
+                                                <input class="custom-control-input" type="checkbox" name="statusFilter[]" id="filter2" value="2" {{ in_array('2', request('statusFilter', [])) ? 'checked' : '' }}>
+                                                <label class="custom-control-label" style="font-size: 0.85rem; padding-top:2px;" for="filter2">Shipping</label>
+                                            </div>
+                                            <div class="custom-control custom-checkbox custom-control-inline">
+                                                <input class="custom-control-input" type="checkbox" name="statusFilter[]" id="filter3" value="3" {{ in_array('3', request('statusFilter', [])) ? 'checked' : '' }}>
+                                                <label class="custom-control-label" style="font-size: 0.85rem; padding-top:2px;" for="filter3">Prod</label>
+                                            </div>
+                                            <div class="custom-control custom-checkbox custom-control-inline">
+                                                <input class="custom-control-input" type="checkbox" name="statusFilter[]" id="filter4" value="4" {{ in_array('4', request('statusFilter', [])) ? 'checked' : '' }}>
+                                                <label class="custom-control-label" style="font-size: 0.85rem; padding-top:2px;" for="filter4">Design</label>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="col-lg-2 col-md-6">
                                         <button class="d-sm-inline btn btn-md btn-primary shadow-sm" type="submit">
@@ -75,7 +86,9 @@
             @foreach(request('Id_User', []) as $id)
             <input type="hidden" name="Id_User[]" value="{{ $id }}">
             @endforeach
-            <input type="hidden" name="statusFilter" value="{{ request('statusFilter') }}">
+            @foreach(request('statusFilter', []) as $sf)
+            <input type="hidden" name="statusFilter[]" value="{{ $sf }}">
+            @endforeach
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
                 <i class="fas fa-download fa-sm text-white-50"></i> Download Report
             </button>
@@ -123,9 +136,10 @@
                             <th>Item</th>
                             <th>Name</th>
                             <th>Ready Stock</th>
-                            <th>Estimation Date</th>
                             <th>Sum Stock</th>
+                            <th>Estimation Date</th>
                             <th>OK Stock</th>
+                            <th>Stock Shipping</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -145,9 +159,10 @@
                             <th>Item</th>
                             <th>Name</th>
                             <th>Ready Stock</th>
-                            <th>Estimation Date</th>
                             <th>Sum Stock</th>
+                            <th>Estimation Date</th>
                             <th>OK Stock</th>
+                            <th>Stock Shipping</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -179,21 +194,33 @@
                                 echo implode(' | ', $statuses);
                                 @endphp
                             </td>
+                            <td>{{ $s->Sum_Stock ?? '' }}</td>
                             <td class="text-center">
                                 @if($s->Estimation_Stock)
                                 {{ \Carbon\Carbon::parse($s->Estimation_Stock)->format('d/m/Y') }}
                                 @endif
                             </td>
-                            <td>{{ $s->Sum_Stock ?? '' }}</td>
                             <td class="text-center">
                                 @if($s->Shipping_Request || $s->Design_Changes_Request)
                                     <div class="custom-control custom-switch d-inline-block" title="Toggle OK Stock">
                                         <input type="checkbox" class="custom-control-input ok-stock-switch" 
                                                id="okSwitch_{{ $s->Id_Request }}" 
                                                data-id="{{ $s->Id_Request }}" 
-                                               {{ $s->Ok_Stock == 1 ? 'checked' : '' }}>
+                                               {{ $s->Ok_Stock == 1 ? 'checked' : '' }}
+                                               {{ empty($s->Stock_Shipping) ? 'disabled' : '' }}>
                                         <label class="custom-control-label" for="okSwitch_{{ $s->Id_Request }}"></label>
                                     </div>
+                                    @if(empty($s->Stock_Shipping))
+                                    <small class="text-muted d-block" style="font-size:10px;">Isi Stock Shipping</small>
+                                    @endif
+                                @endif
+                            </td>
+                            <td class="text-center" style="min-width: 90px;">
+                                @if($s->Shipping_Request || $s->Design_Changes_Request)
+                                <input type="number" class="form-control form-control-sm stock-shipping-input" 
+                                       data-id="{{ $s->Id_Request }}" 
+                                       value="{{ $s->Stock_Shipping }}" 
+                                       placeholder="0" style="width:80px; display:inline-block;">
                                 @endif
                             </td>
                             <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
@@ -223,11 +250,12 @@
 <script src="{{ asset('js/select2.min.js') }}"></script>
 <script>
     $(document).ready(function() {
-        $('select[multiple]').select2({
+        $('#memberSelect').select2({
             placeholder: "Pilih member...",
             allowClear: false
         });
 
+        // OK Stock switch
         $(document).on('change', '.ok-stock-switch', function() {
             var input = $(this);
             var requestId = input.data('id');
@@ -242,13 +270,49 @@
                 },
                 success: function(response) {
                     if(!response.success) {
-                        alert('Gagal update status!');
+                        alert(response.message || 'Gagal update status!');
                         input.prop('checked', !isChecked);
                     }
                 },
                 error: function() {
                     alert('Terjadi kesalahan saat menghubungi server!');
                     input.prop('checked', !isChecked);
+                }
+            });
+        });
+
+        // Stock Shipping inline save on blur
+        $(document).on('change', '.stock-shipping-input', function() {
+            var input = $(this);
+            var requestId = input.data('id');
+            var value = input.val();
+            
+            $.ajax({
+                url: '{{ url("mc_submission/stock-shipping") }}/' + requestId,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    stock_shipping: value
+                },
+                success: function(response) {
+                    if(response.success) {
+                        // Enable/disable the OK switch based on stock shipping value
+                        var okSwitch = $('#okSwitch_' + requestId);
+                        var hintText = okSwitch.closest('td').prev().find('small');
+                        if(value && parseInt(value) > 0) {
+                            okSwitch.prop('disabled', false);
+                            okSwitch.closest('td').find('small').hide();
+                        } else {
+                            okSwitch.prop('disabled', true);
+                            okSwitch.prop('checked', false);
+                            okSwitch.closest('td').find('small').show();
+                        }
+                    } else {
+                        alert('Gagal menyimpan Stock Shipping!');
+                    }
+                },
+                error: function() {
+                    alert('Terjadi kesalahan saat menghubungi server!');
                 }
             });
         });

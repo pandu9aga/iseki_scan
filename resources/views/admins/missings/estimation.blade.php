@@ -45,6 +45,7 @@
                             <th>Estimation Date</th>
                             <th>Overdue</th>
                             <th>PIC</th>
+                            <th>Stock Shipping</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -95,6 +96,7 @@
                                     @endphp
                             </td>
                             <td>{{ $s->member->Name_Member ?? '' }}</td>
+                            <td class="text-center">{{ $s->Stock_Shipping ?? '-' }}</td>
                         </tr>
                         @endforeach
                     </tbody>

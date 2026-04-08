@@ -29,6 +29,7 @@ class Request extends Model
         'Production_Area_Request',
         'Design_Changes_Request',
         'Sum_Stock',
+        'Stock_Shipping',
         'Updated_At_Request',
     ];
 

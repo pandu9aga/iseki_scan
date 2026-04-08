@@ -31,22 +31,18 @@ class McRequestController extends Controller
             $query->whereIn('Id_User', $memberIds); // ← whereIn, bukan where
         }
 
-        $statusFilter = request('statusFilter');
-        if ($statusFilter) {
-            switch ($statusFilter) {
-                case 'ready':
-                    $query->whereNotNull('Ready_Request');
-                    break;
-                case 'shipping':
-                    $query->whereNotNull('Shipping_Request');
-                    break;
-                case 'production':
-                    $query->whereNotNull('Production_Area_Request');
-                    break;
-                case 'design_change':
-                    $query->whereNotNull('Design_Changes_Request');
-                    break;
-            }
+        $statusFilters = request('statusFilter', []);
+        if (!empty($statusFilters)) {
+            $query->where(function ($q) use ($statusFilters) {
+                foreach ($statusFilters as $sf) {
+                    switch ($sf) {
+                        case '1': $q->orWhereNotNull('Ready_Request'); break;
+                        case '2': $q->orWhereNotNull('Shipping_Request'); break;
+                        case '3': $q->orWhereNotNull('Production_Area_Request'); break;
+                        case '4': $q->orWhereNotNull('Design_Changes_Request'); break;
+                    }
+                }
+            });
         }
 
         $requests = $query->get();
@@ -84,22 +80,18 @@ class McRequestController extends Controller
             $query->whereIn('Id_User', $memberIds);
         }
 
-        $statusFilter = $request->input('statusFilter');
-        if ($statusFilter) {
-            switch ($statusFilter) {
-                case 'ready':
-                    $query->whereNotNull('Ready_Request');
-                    break;
-                case 'shipping':
-                    $query->whereNotNull('Shipping_Request');
-                    break;
-                case 'production':
-                    $query->whereNotNull('Production_Area_Request');
-                    break;
-                case 'design_change':
-                    $query->whereNotNull('Design_Changes_Request');
-                    break;
-            }
+        $statusFilters = $request->input('statusFilter', []);
+        if (!empty($statusFilters)) {
+            $query->where(function ($q) use ($statusFilters) {
+                foreach ($statusFilters as $sf) {
+                    switch ($sf) {
+                        case '1': $q->orWhereNotNull('Ready_Request'); break;
+                        case '2': $q->orWhereNotNull('Shipping_Request'); break;
+                        case '3': $q->orWhereNotNull('Production_Area_Request'); break;
+                        case '4': $q->orWhereNotNull('Design_Changes_Request'); break;
+                    }
+                }
+            });
         }
 
         $requests = $query->get();
@@ -139,22 +131,18 @@ class McRequestController extends Controller
             $query->whereIn('Id_User', $memberIds);
         }
 
-        $statusFilter = $request->input('statusFilter');
-        if ($statusFilter) {
-            switch ($statusFilter) {
-                case 'ready':
-                    $query->whereNotNull('Ready_Request');
-                    break;
-                case 'shipping':
-                    $query->whereNotNull('Shipping_Request');
-                    break;
-                case 'production':
-                    $query->whereNotNull('Production_Area_Request');
-                    break;
-                case 'design_change':
-                    $query->whereNotNull('Design_Changes_Request');
-                    break;
-            }
+        $statusFilters = $request->input('statusFilter', []);
+        if (!empty($statusFilters)) {
+            $query->where(function ($q) use ($statusFilters) {
+                foreach ($statusFilters as $sf) {
+                    switch ($sf) {
+                        case '1': $q->orWhereNotNull('Ready_Request'); break;
+                        case '2': $q->orWhereNotNull('Shipping_Request'); break;
+                        case '3': $q->orWhereNotNull('Production_Area_Request'); break;
+                        case '4': $q->orWhereNotNull('Design_Changes_Request'); break;
+                    }
+                }
+            });
         }
 
         $requests = $query->get();
@@ -378,31 +366,33 @@ class McRequestController extends Controller
             $hasStatus = in_array($readyStatus, ['1', '2', '3', '4']);
             $hasStock = ($rawStock !== null && $rawStock !== '' && is_numeric($rawStock));
 
-            // VALIDASI: Status dan Sum Stock WAJIB terisi
-            if (!$hasStatus || !$hasStock) continue;
+            // VALIDASI per status:
+            // Status 1 (Ready): WAJIB Sum Stock
+            // Status 2/4 (Shipping/Design Change): WAJIB Estimation Date, Sum Stock opsional
+            // Status 3 (Production): WAJIB Sum Stock
+            if (!$hasStatus) continue;
 
-            // VALIDASI: Jika status 2 (Shipping) atau 4 (Design Change), Estimation Date WAJIB
+            if (in_array($readyStatus, ['1', '3']) && !$hasStock) continue;
+
+            // Parse Estimation Date
             $parsedEstimation = null;
             if (in_array($readyStatus, ['2', '4'])) {
                 if ($rawEstimation === null || trim(strval($rawEstimation)) === '') {
                     $skippedEstimation++;
                     continue; // Skip: status 2/4 tapi tidak ada estimation date
                 }
-                // Parse estimation date (support format d/m/Y, d-m-Y, Y-m-d, Excel serial)
                 try {
                     $estStr = trim(strval($rawEstimation));
                     if (is_numeric($estStr)) {
-                        // Excel serial date number
                         $parsedEstimation = Carbon::instance(\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject(intval($estStr)));
                     } else {
                         $parsedEstimation = Carbon::parse($estStr);
                     }
                 } catch (\Exception $e) {
                     $skippedEstimation++;
-                    continue; // Skip: format tanggal tidak valid
+                    continue;
                 }
             } elseif ($rawEstimation !== null && trim(strval($rawEstimation)) !== '') {
-                // Status 1/3 tapi ada estimation → simpan juga
                 try {
                     $estStr = trim(strval($rawEstimation));
                     if (is_numeric($estStr)) {
@@ -420,9 +410,11 @@ class McRequestController extends Controller
 
             $changed = false;
 
-            // Update Sum Stock
-            $requestModel->Sum_Stock = intval($rawStock);
-            $changed = true;
+            // Update Sum Stock (jika ada)
+            if ($hasStock) {
+                $requestModel->Sum_Stock = intval($rawStock);
+                $changed = true;
+            }
 
             // Update Estimation Date jika ada
             if ($parsedEstimation) {
@@ -490,6 +482,15 @@ class McRequestController extends Controller
     {
         $requestModel = RequestModel::findOrFail($id);
 
+        // Validasi: untuk tipe 2/4 harus isi Stock_Shipping dulu
+        $isShippingOrDesign = ($requestModel->Shipping_Request !== null || $requestModel->Design_Changes_Request !== null);
+        if ($isShippingOrDesign && empty($requestModel->Stock_Shipping)) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Harus isi Stock Shipping terlebih dahulu!']);
+            }
+            return redirect()->back()->with('error', 'Harus isi Stock Shipping terlebih dahulu!');
+        }
+
         if ($request->ajax()) {
             $status = $request->input('status');
             $requestModel->Ok_Stock = $status == 1 ? 1 : null;
@@ -514,6 +515,24 @@ class McRequestController extends Controller
         $requestModel->save();
 
         return redirect()->back()->with('success', 'NO Stock berhasil diupdate.');
+    }
+
+    public function updateStockShipping(Request $request, $id)
+    {
+        $requestModel = RequestModel::findOrFail($id);
+        $value = $request->input('stock_shipping');
+
+        if ($value === null || $value === '') {
+            $requestModel->Stock_Shipping = null;
+        } else {
+            $requestModel->Stock_Shipping = intval($value);
+        }
+        $requestModel->save();
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Stock Shipping berhasil diupdate.']);
+        }
+        return redirect()->back()->with('success', 'Stock Shipping berhasil diupdate.');
     }
 
     public function exportSearch(Request $request)

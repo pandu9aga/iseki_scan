@@ -438,7 +438,7 @@ class MissingController extends Controller
                 $query->whereNull('Ok_Stock')
                       ->orWhere('Ok_Stock', '!=', 1);
             })
-            ->orderBy('Estimation_Stock', 'asc')
+            ->orderBy('Estimation_Stock', 'desc')
             ->get();
 
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
@@ -465,7 +465,7 @@ class MissingController extends Controller
                 $query->whereNull('Ok_Stock')
                       ->orWhere('Ok_Stock', '!=', 1);
             })
-            ->orderBy('Estimation_Stock', 'asc')
+            ->orderBy('Estimation_Stock', 'desc')
             ->get();
 
         $spreadsheet = new Spreadsheet();

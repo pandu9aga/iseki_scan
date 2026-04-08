@@ -222,9 +222,13 @@ Route::middleware(McMiddleware::class)->group(function () {
     Route::post('/mc_submission/upload-ready', [McRequestController::class, 'uploadReady'])->name('mc_submission.upload_ready');
     Route::post('/mc_submission/ok-stock/{id}', [McRequestController::class, 'okStock'])->name('mc_submission.ok_stock');
     Route::post('/mc_submission/no-stock/{id}', [McRequestController::class, 'noStock'])->name('mc_submission.no_stock');
+    Route::post('/mc_submission/stock-shipping/{id}', [McRequestController::class, 'updateStockShipping'])->name('mc_submission.stock_shipping');
 
     Route::get('/mc_missing_estimation', [McMissingController::class, 'missing_estimation'])->name('mc.missing.estimation');
     Route::get('/mc_missing_estimation/export', [McMissingController::class, 'missing_estimation_export'])->name('mc.missing.estimation.export');
+
+    Route::get('/mc_oke_estimation', [McMissingController::class, 'oke_estimation'])->name('mc.oke.estimation');
+    Route::get('/mc_oke_estimation/export', [McMissingController::class, 'oke_estimation_export'])->name('mc.oke.estimation.export');
 
     Route::get('/mc_mistake', [McMistakeController::class, 'index'])->name('mc_mistake');
     Route::get('/mc_achievement', [McAchievementController::class, 'index'])->name('mc_achievement');
