@@ -384,7 +384,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <title>Bujukan Tok</title>
-    </head>
+    
+    <!-- Dynamic Favicon -->
+    <script src="/iseki_pro_app/js/dynamic-favicon.js"></script>
+    <script>document.addEventListener("DOMContentLoaded", function() { setDynamicFavicon("qr_code", "Part"); });</script>
+
+    <!-- Dynamic Favicon Assets -->
+    <link rel="stylesheet" href="/iseki_pro_app/css/icon.css">
+    <script src="/iseki_pro_app/js/dynamic-favicon.js"></script>
+    <script>document.addEventListener("DOMContentLoaded", function() { setDynamicFavicon("qr_code", "Part"); });</script>
+</head>
 
     <body>
         <div class="row">
