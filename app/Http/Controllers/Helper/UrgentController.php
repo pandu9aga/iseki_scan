@@ -46,7 +46,8 @@ class UrgentController extends Controller
     public function getData(Request $request)
     {
         if ($request->ajax()) {
-            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'mistake', 'record']);
+            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'mistake', 'record'])
+                ->orderBy('Time_Urgent', 'asc');
 
             // Custom Filter logic
             if ($codeRack = $request->input('codeRack')) {

@@ -161,7 +161,7 @@
                 { data: 'Request_Time', name: 'Request_Time', searchable: false },
                 { data: 'Record_Time', name: 'Record_Time', searchable: false },
             ],
-            order: [[1, 'desc']], // Order by time by default
+            order: [[1, 'asc']], // Order by time by default (oldest first)
             searching: false, // Turn off default global search
         });
 
