@@ -58,7 +58,7 @@ class AreaScanController extends Controller
 
             if ($isLessThan24Hours) {
                 // If < 24 hours, category is "telat request" and PIC is the member responsible
-                list($idMemberTarget, $nameMemberTarget) = $this->getLastRecordPic($codeRack);
+                list($idMemberTarget, $nameMemberTarget) = $this->getLastRequestPic($codeRack);
 
                 $category = 'telat request';
                 $manualDetail = null;
