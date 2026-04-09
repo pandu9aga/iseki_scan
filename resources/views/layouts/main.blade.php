@@ -149,6 +149,12 @@
             </li>
 
             <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.oke.estimation') }}">
+                    <i class="fas fa-fw fa-check-circle"></i>
+                    <span>Oke Estimation</span></a>
+            </li>
+
+            <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.urgents') }}">
                     <i class="fas fa-fw fa-exclamation-circle"></i>
                     <span>Urgent</span></a>

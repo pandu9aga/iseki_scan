@@ -28,6 +28,7 @@ use App\Http\Controllers\Transit\TransitScanController;
 use App\Http\Controllers\User\HomeController;
 use App\Http\Controllers\User\LabelControlller;
 use App\Http\Controllers\User\RecordController;
+use App\Http\Controllers\User\UserMissingController;
 use App\Http\Controllers\User\RequestController;
 use App\Http\Controllers\User\SubmissionController;
 use App\Http\Controllers\User\UserAchievementController;
@@ -121,6 +122,9 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/missing_estimation', [MissingController::class, 'missing_estimation'])->name('admin.missing.estimation');
     Route::get('/missing_estimation/export', [MissingController::class, 'missing_estimation_export'])->name('admin.missing.estimation.export');
 
+    Route::get('/oke_estimation', [MissingController::class, 'oke_estimation'])->name('admin.oke.estimation');
+    Route::get('/oke_estimation/export', [MissingController::class, 'oke_estimation_export'])->name('admin.oke.estimation.export');
+
     Route::get('/achievement', [AchievementController::class, 'index'])->name('achievement');
     Route::get('/achievement/export', [AchievementController::class, 'export'])->name('achievement.export');
 
@@ -158,6 +162,9 @@ Route::patch('/api/wa-queue/{id}/failed', [WaQueueController::class, 'markFailed
 
 Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home');
+
+    Route::get('/user_oke_estimation', [UserMissingController::class, 'oke_estimation'])->name('user.oke.estimation');
+    Route::get('/user_oke_estimation/export', [UserMissingController::class, 'oke_estimation_export'])->name('user.oke.estimation.export');
 
     Route::get('/user_report', [UserReportController::class, 'index'])->name('user_report');
     Route::get('/user_report/submit', [UserReportController::class, 'submit'])->name('user_report.submit');

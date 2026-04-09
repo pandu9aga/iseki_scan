@@ -192,6 +192,12 @@
                     <span>Recording</span></a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('user.oke.estimation') }}">
+                    <i class="fas fa-fw fa-check-circle"></i>
+                    <span>Oke Estimation</span></a>
+            </li>
+
             <!-- Divider -->
             <hr class="sidebar-divider">
 

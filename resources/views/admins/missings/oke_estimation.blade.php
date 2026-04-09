@@ -1,11 +1,11 @@
-@extends('layouts.mc')
+@extends('layouts.main')
 @section('content')
 <!-- Begin Page Content -->
 <div class="container-fluid">
     <h1 class="h3 mb-2 text-gray-800">Oke Estimation</h1>
 
     <div class="mb-4 col-md-4 col-lg-3">
-        <form action="{{ route('mc.oke.estimation.export') }}" method="GET" target="_blank" class="mr-2">
+        <form action="{{ route('admin.oke.estimation.export') }}" method="GET" target="_blank" class="mr-2">
             <input name="Day_Request_Hidden" type="hidden" value="{{ $date }}">
             <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
                 <i class="fas fa-download fa-sm text-white-50"></i> Download Oke Estimation
@@ -15,7 +15,7 @@
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Estimasi yang Sudah OK </h6>
+            <h6 class="m-0 font-weight-bold text-primary">Estimation yang Sudah OK ({{ $totalRequests }} items)</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -56,7 +56,7 @@
                                 {{ \Carbon\Carbon::parse($s->Estimation_Stock)->format('d/m/Y') }}
                                 @endif
                             </td>
-                            <td class="text-center">{{ $s->Stock_Shipping ?? '' }}</td>
+                            <td class="text-center">{{ $s->Stock_Shipping ?? '-' }}</td>
                             <td>
                                 @if($s->Time_Ok_Stock)
                                 {{ \Carbon\Carbon::parse($s->Time_Ok_Stock)->format('d/m/Y H:i') }}
