@@ -133,7 +133,7 @@
                     searchable: false, 
                     orderable: false,
                     render: function (data, type, row, meta) {
-                        return meta.row + meta.settings._iDisplayStart + 1;
+                        return meta.settings.fnRecordsDisplay() - meta.row - meta.settings._iDisplayStart;
                     }
                 },
                 { data: 'Time_Urgent', name: 'Time_Urgent' },
@@ -161,7 +161,7 @@
                 { data: 'Request_Time', name: 'Request_Time', searchable: false },
                 { data: 'Record_Time', name: 'Record_Time', searchable: false },
             ],
-            order: [[1, 'asc']], // Order by time by default (oldest first)
+            order: [[1, 'desc']], // Order by time by default (newest first)
             searching: false, // Turn off default global search
         });
 
