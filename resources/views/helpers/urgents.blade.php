@@ -70,6 +70,21 @@
     <!-- DataTales Example -->
     <div class="card shadow mb-4">
         <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-9">
+                    <h6 class="m-0 font-weight-bold text-primary">Table List</h6>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group input-group-sm">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-primary text-white">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </div>
+                        <input type="text" class="form-control" id="table_search_keyword" placeholder="Search data...">
+                    </div>
+                </div>
+            </div>
             <div class="table-responsive">
                 <table class="table table-bordered text-center" id="urgentsTable" width="100%" cellspacing="0"
                     style="font-size: 14px;">
@@ -124,6 +139,7 @@
                 data: function (d) {
                     d.codeRack = $('#filter_code_rack').val();
                     d.dateUrgent = $('#filter_date_urgent').val();
+                    d.keyword = $('#table_search_keyword').val();
                 }
             },
             columns: [
@@ -175,6 +191,7 @@
         $('#btn-reset').click(function () {
             $('#filter_code_rack').val('');
             $('#filter_date_urgent').val('{{ \Carbon\Carbon::today()->format("Y-m-d") }}');
+            $('#table_search_keyword').val('');
             table.draw();
             fetchRecap();
         });
@@ -185,6 +202,15 @@
                 table.draw();
                 fetchRecap();
             }
+        });
+
+        // Keyup on search keyword with debounce
+        var searchTimer;
+        $('#table_search_keyword').on('keyup', function() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function() {
+                table.draw();
+            }, 500);
         });
 
         function fetchRecap() {

@@ -58,6 +58,28 @@ class UrgentController extends Controller
                 $query->where('Time_Urgent', 'LIKE', '%'.$dateUrgent.'%');
             }
 
+            if ($keyword = $request->input('keyword')) {
+                $query->where(function($q) use ($keyword) {
+                    $q->where('Code_Rack', 'LIKE', "%$keyword%")
+                      ->orWhereHas('member', function($q2) use ($keyword) {
+                          $q2->where('Name_Member', 'LIKE', "%$keyword%");
+                      })
+                      ->orWhereHas('mistake', function($q2) use ($keyword) {
+                          $q2->where('Category_Mistake', 'LIKE', "%$keyword%");
+                      })
+                      ->orWhereHas('reporterMember', function($q2) use ($keyword) {
+                          $q2->where('Name_Member', 'LIKE', "%$keyword%");
+                      })
+                      ->orWhereHas('user', function($q2) use ($keyword) {
+                          $q2->where('Username_User', 'LIKE', "%$keyword%");
+                      })
+                      ->orWhereHas('requestModel.rack', function($q2) use ($keyword) {
+                          $q2->where('Name_Item_Rack', 'LIKE', "%$keyword%")
+                             ->orWhere('Code_Item_Rack', 'LIKE', "%$keyword%");
+                      });
+                });
+            }
+
             return DataTables::eloquent($query)
                 ->addColumn('PIC_Urgent', function ($urgent) {
                     return $urgent->member ? $urgent->member->Name_Member : '-';
