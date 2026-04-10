@@ -13,7 +13,6 @@ use App\Models\User;
 use App\Models\WaQueue;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class UrgentController extends Controller
@@ -59,24 +58,24 @@ class UrgentController extends Controller
             }
 
             if ($keyword = $request->input('keyword')) {
-                $query->where(function($q) use ($keyword) {
+                $query->where(function ($q) use ($keyword) {
                     $q->where('Code_Rack', 'LIKE', "%$keyword%")
-                      ->orWhereHas('member', function($q2) use ($keyword) {
-                          $q2->where('Name_Member', 'LIKE', "%$keyword%");
-                      })
-                      ->orWhereHas('mistake', function($q2) use ($keyword) {
-                          $q2->where('Category_Mistake', 'LIKE', "%$keyword%");
-                      })
-                      ->orWhereHas('reporterMember', function($q2) use ($keyword) {
-                          $q2->where('Name_Member', 'LIKE', "%$keyword%");
-                      })
-                      ->orWhereHas('user', function($q2) use ($keyword) {
-                          $q2->where('Username_User', 'LIKE', "%$keyword%");
-                      })
-                      ->orWhereHas('requestModel.rack', function($q2) use ($keyword) {
-                          $q2->where('Name_Item_Rack', 'LIKE', "%$keyword%")
-                             ->orWhere('Code_Item_Rack', 'LIKE', "%$keyword%");
-                      });
+                        ->orWhereHas('member', function ($q2) use ($keyword) {
+                            $q2->where('Name_Member', 'LIKE', "%$keyword%");
+                        })
+                        ->orWhereHas('mistake', function ($q2) use ($keyword) {
+                            $q2->where('Category_Mistake', 'LIKE', "%$keyword%");
+                        })
+                        ->orWhereHas('reporterMember', function ($q2) use ($keyword) {
+                            $q2->where('Name_Member', 'LIKE', "%$keyword%");
+                        })
+                        ->orWhereHas('user', function ($q2) use ($keyword) {
+                            $q2->where('Username_User', 'LIKE', "%$keyword%");
+                        })
+                        ->orWhereHas('requestModel.rack', function ($q2) use ($keyword) {
+                            $q2->where('Name_Item_Rack', 'LIKE', "%$keyword%")
+                                ->orWhere('Code_Item_Rack', 'LIKE', "%$keyword%");
+                        });
                 });
             }
 
@@ -270,7 +269,7 @@ class UrgentController extends Controller
 
             if ($isLessThan24Hours) {
                 // If < 24 hours, category is "telat request" and PIC is the member responsible
-                list($idMemberTarget, $nameMemberTarget) = $this->getLastRequestPic($codeRack);
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
 
                 $category = 'telat request';
                 $manualDetail = null;
@@ -308,7 +307,7 @@ class UrgentController extends Controller
                 ]);
             } elseif ($waitingRequest->Ready_Request !== null) {
                 // Determine target member PIC
-                list($idMemberTarget, $nameMemberTarget) = $this->getLastRecordPic($codeRack);
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
 
                 $category = 'telat supply';
                 $manualDetail = null;
@@ -438,7 +437,7 @@ class UrgentController extends Controller
             ]);
 
         } else {
-            list($idMemberTarget, $nameMemberTarget) = $this->getLastRequestPic($codeRack);
+            [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
 
             $lastReq = RequestModel::where('Code_Rack', $codeRack)->orderBy('Id_Request', 'desc')->first();
             $sumRequest = 1;
@@ -520,10 +519,6 @@ class UrgentController extends Controller
      */
     private function queueWaMessage(array $data): void
     {
-        $message = "URGENT SCAN ALERT\n";
-        $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $message .= "Time Urgent: {$data['time_urgent']}\n";
-        $message .= "Time Request: {$data['time_request']}\n";
         $category = strtoupper($data['category']);
         if ($data['category'] == 'telat supply' || $data['category'] == 'telat request') {
             $category .= ' DST';
@@ -532,9 +527,10 @@ class UrgentController extends Controller
         } elseif ($data['category'] == 'lain-lain' || $data['category'] == 'production') {
             $category = 'PRODUCTION - MC';
         }
-
-        $message .= 'Category: '.$category."\n";
-        $message .= "Code Rack: {$data['code_rack']}\n";
+        $message .= "⚠️ *{$data['code_rack']}* *{$category}*\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= "Time Urgent: {$data['time_urgent']}\n";
+        $message .= "Time Request: {$data['time_request']}\n";
         $message .= "PIC: {$data['pic']}\n";
         $message .= "Reporter: {$data['reporter']}\n";
         $message .= "Request Details:\n";
@@ -559,6 +555,7 @@ class UrgentController extends Controller
             ->first();
 
         $targetUserId = $lastRecord ? $lastRecord->Id_User : null;
+
         return $this->resolvePicFromUserId($targetUserId);
     }
 
@@ -573,6 +570,7 @@ class UrgentController extends Controller
             ->first();
 
         $targetUserId = $lastRequest ? $lastRequest->Id_User : null;
+
         return $this->resolvePicFromUserId($targetUserId);
     }
 
@@ -592,7 +590,7 @@ class UrgentController extends Controller
             }
         }
 
-        if (!$targetUserId) {
+        if (! $targetUserId) {
             $systemMember = Member::where('Name_Member', 'system')->first();
             $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
             $nameMemberTarget = 'system';

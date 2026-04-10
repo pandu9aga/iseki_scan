@@ -13,7 +13,6 @@ use App\Models\User;
 use App\Models\WaQueue;
 use Carbon\Carbon;
 use Illuminate\Http\Request as HttpRequest;
-use Illuminate\Support\Facades\DB;
 
 class AreaScanController extends Controller
 {
@@ -58,7 +57,7 @@ class AreaScanController extends Controller
 
             if ($isLessThan24Hours) {
                 // If < 24 hours, category is "telat request" and PIC is the member responsible
-                list($idMemberTarget, $nameMemberTarget) = $this->getLastRequestPic($codeRack);
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
 
                 $category = 'telat request';
                 $manualDetail = null;
@@ -96,7 +95,7 @@ class AreaScanController extends Controller
                 ]);
             } elseif ($waitingRequest->Ready_Request !== null) {
                 // "jika Ready_Request not null, maka cari Id_Member rata-rata di records untuk Code_Rack yang sama"
-                list($idMemberTarget, $nameMemberTarget) = $this->getLastRecordPic($codeRack);
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
 
                 $category = 'telat supply';
                 $manualDetail = null;
@@ -232,7 +231,7 @@ class AreaScanController extends Controller
         } else {
             // "kalau tidak ada maka cari Id_Member rata-rata yang melakukan request code tersebut"
             // Diganti menggunakan last PIC berdasar logic baru
-            list($idMemberTarget, $nameMemberTarget) = $this->getLastRequestPic($codeRack);
+            [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
 
             // "untuk sum request nya isi berdasarkan sum request terakhir dari kode rak yang sama, kalau tidak ada maka default isi 1"
             $lastReq = RequestModel::where('Code_Rack', $codeRack)->orderBy('Id_Request', 'desc')->first();
@@ -318,10 +317,6 @@ class AreaScanController extends Controller
      */
     private function queueWaMessage(array $data): void
     {
-        $message = "URGENT SCAN ALERT\n";
-        $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
-        $message .= "Time Urgent: {$data['time_urgent']}\n";
-        $message .= "Time Request: {$data['time_request']}\n";
         $category = strtoupper($data['category']);
         if ($data['category'] == 'telat supply' || $data['category'] == 'telat request') {
             $category .= ' DST';
@@ -330,9 +325,10 @@ class AreaScanController extends Controller
         } elseif ($data['category'] == 'lain-lain' || $data['category'] == 'production') {
             $category = 'PRODUCTION - MC';
         }
-
-        $message .= 'Category: '.$category."\n";
-        $message .= "Code Rack: {$data['code_rack']}\n";
+        $message .= "⚠️ *{$data['code_rack']}* *{$category}*\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= "Time Urgent: {$data['time_urgent']}\n";
+        $message .= "Time Request: {$data['time_request']}\n";
         $message .= "PIC: {$data['pic']}\n";
         $message .= "Reporter: {$data['reporter']}\n";
         $message .= "Request Details:\n";
@@ -357,6 +353,7 @@ class AreaScanController extends Controller
             ->first();
 
         $targetUserId = $lastRecord ? $lastRecord->Id_User : null;
+
         return $this->resolvePicFromUserId($targetUserId);
     }
 
@@ -371,6 +368,7 @@ class AreaScanController extends Controller
             ->first();
 
         $targetUserId = $lastRequest ? $lastRequest->Id_User : null;
+
         return $this->resolvePicFromUserId($targetUserId);
     }
 
@@ -390,7 +388,7 @@ class AreaScanController extends Controller
             }
         }
 
-        if (!$targetUserId) {
+        if (! $targetUserId) {
             $systemMember = Member::where('Name_Member', 'system')->first();
             $idMemberTarget = $systemMember ? $systemMember->Id_Member : 35;
             $nameMemberTarget = 'system';
