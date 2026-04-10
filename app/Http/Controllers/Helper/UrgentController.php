@@ -527,7 +527,7 @@ class UrgentController extends Controller
         } elseif ($data['category'] == 'lain-lain' || $data['category'] == 'production') {
             $category = 'PRODUCTION - MC';
         }
-        $message .= "⚠️ *{$data['code_rack']}* *{$category}*\n";
+        $message = "⚠️ *{$data['code_rack']}* *{$category}*\n";
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
         $message .= "Time Urgent: {$data['time_urgent']}\n";
         $message .= "Time Request: {$data['time_request']}\n";
