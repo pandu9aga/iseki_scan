@@ -274,6 +274,10 @@ Route::post('/api/get-code-item', function (Request $request) {
 Route::get('/api/urgents/data', [UrgentController::class, 'getData'])->name('urgents.data');
 Route::get('/api/urgents/recap', [UrgentController::class, 'getRecapData'])->name('urgents.recap');
 
+Route::get('/urgents/unrecorded', [UrgentController::class, 'unrecordedIndex'])->name('urgents.unrecorded');
+Route::get('/api/urgents/unrecorded-data', [UrgentController::class, 'getUnrecordedData'])->name('urgents.unrecorded.data');
+Route::get('/urgents/unrecorded/export', [UrgentController::class, 'exportUnrecorded'])->name('urgents.unrecorded.export');
+
 Route::get('/admin', [MainController::class, 'admin'])->name('admin');
 Route::post('/admin/create', [MainController::class, 'create'])->name('admin.create');
 

@@ -14,6 +14,9 @@ use App\Models\WaQueue;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class UrgentController extends Controller
 {
@@ -597,5 +600,224 @@ class UrgentController extends Controller
         }
 
         return [$idMemberTarget, $nameMemberTarget];
+    }
+
+    /**
+     * Display the unrecorded urgents view based on the current user role layout.
+     */
+    public function unrecordedIndex()
+    {
+        // Determine layout based on session Id_Type_User
+        $layout = 'layouts.user'; // Default for member
+
+        if (session()->has('Id_User')) {
+            $typeUser = session('Id_Type_User');
+            if ($typeUser == 2) {
+                $layout = 'layouts.main'; // Admin
+            } elseif ($typeUser == 1) {
+                $layout = 'layouts.mc'; // Mc
+            } elseif ($typeUser == 4) {
+                $layout = 'layouts.area'; // Area
+            }
+        }
+
+        return view('helpers.unrecorded_urgents', compact('layout'));
+    }
+
+    /**
+     * Return datatables data for unrecorded urgents
+     */
+    public function getUnrecordedData(Request $request)
+    {
+        if ($request->ajax()) {
+            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'mistake'])
+                ->whereDoesntHave('record')
+                ->orderBy('Time_Urgent', 'desc');
+
+            // Custom Filter logic
+            if ($codeRack = $request->input('codeRack')) {
+                $query->where('Code_Rack', 'LIKE', '%'.$codeRack.'%');
+            }
+
+            if ($dateUrgent = $request->input('dateUrgent')) {
+                $query->where('Time_Urgent', 'LIKE', '%'.$dateUrgent.'%');
+            }
+
+            if ($keyword = $request->input('keyword')) {
+                $query->where(function ($q) use ($keyword) {
+                    $q->where('Code_Rack', 'LIKE', "%$keyword%")
+                        ->orWhereHas('member', function ($q2) use ($keyword) {
+                            $q2->where('Name_Member', 'LIKE', "%$keyword%");
+                        })
+                        ->orWhereHas('mistake', function ($q2) use ($keyword) {
+                            $q2->where('Category_Mistake', 'LIKE', "%$keyword%");
+                        })
+                        ->orWhereHas('reporterMember', function ($q2) use ($keyword) {
+                            $q2->where('Name_Member', 'LIKE', "%$keyword%");
+                        })
+                        ->orWhereHas('user', function ($q2) use ($keyword) {
+                            $q2->where('Username_User', 'LIKE', "%$keyword%");
+                        })
+                        ->orWhereHas('requestModel.rack', function ($q2) use ($keyword) {
+                            $q2->where('Name_Item_Rack', 'LIKE', "%$keyword%")
+                                ->orWhere('Code_Item_Rack', 'LIKE', "%$keyword%");
+                        });
+                });
+            }
+
+            return DataTables::eloquent($query)
+                ->addColumn('PIC_Urgent', function ($urgent) {
+                    return $urgent->member ? $urgent->member->Name_Member : '-';
+                })
+                ->addColumn('Mistake_Category', function ($urgent) {
+                    if (! $urgent->mistake) {
+                        return '-';
+                    }
+
+                    $cat = strtolower($urgent->mistake->Category_Mistake);
+                    $detail = strtolower($urgent->mistake->Manual_Category_Detail);
+
+                    $label = strtoupper($urgent->mistake->Category_Mistake);
+                    $class = 'secondary';
+
+                    if ($cat == 'perubahan desain') {
+                        $label = 'DESIGN CHANGE';
+                        $class = 'warning';
+                    } elseif ($cat == 'shipping') {
+                        $label = 'SHIPPING';
+                        $class = 'info';
+                    } elseif ($cat == 'lain-lain' && $detail == 'produksi') {
+                        $label = 'PRODUCTION';
+                        $class = 'primary';
+                    } elseif ($cat == 'telat supply' || $cat == 'telat request') {
+                        $class = 'secondary';
+                    }
+
+                    return '<span class="badge badge-'.$class.'">'.$label.'</span>';
+                })
+                ->addColumn('Name_Part', function ($urgent) {
+                    return optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
+                })
+                ->addColumn('Request_Details', function ($urgent) {
+                    if ($urgent->requestModel) {
+                        return 'Item: '.$urgent->requestModel->Code_Item_Rack.' - Sum: '.$urgent->requestModel->Sum_Request;
+                    }
+
+                    return 'N/A';
+                })
+                ->addColumn('Reporter', function ($urgent) {
+                    if (empty($urgent->Id_Type_User)) {
+                        return optional($urgent->reporterMember)->Name_Member ?? '-';
+                    }
+
+                    return optional($urgent->user)->Username_User ?? '-';
+                })
+                ->addColumn('Request_Time', function ($urgent) {
+                    if ($urgent->requestModel) {
+                        return $urgent->requestModel->Day_Request.' '.$urgent->requestModel->Time_Request;
+                    }
+
+                    return '-';
+                })
+                ->rawColumns(['PIC_Urgent', 'Name_Part', 'Mistake_Category', 'Request_Details', 'Reporter', 'Request_Time'])
+                ->make(true);
+        }
+
+        return abort(403, 'Unauthorized action.');
+    }
+
+    /**
+     * Export unrecorded urgents to excel.
+     */
+    public function exportUnrecorded(Request $request)
+    {
+        $date = Carbon::today()->format('Y-m-d');
+
+        $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'mistake'])
+            ->whereDoesntHave('record')
+            ->orderBy('Time_Urgent', 'desc');
+
+        if ($codeRack = $request->input('codeRack')) {
+            $query->where('Code_Rack', 'LIKE', '%'.$codeRack.'%');
+        }
+
+        if ($dateUrgent = $request->input('dateUrgent')) {
+            $query->where('Time_Urgent', 'LIKE', '%'.$dateUrgent.'%');
+            $date = $dateUrgent;
+        }
+
+        $urgents = $query->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = ['No', 'Time Urgent', 'Category', 'Code Rack', 'Name Part', 'PIC', 'Reporter', 'Code Item', 'Sum Request', 'Time Request'];
+        $sheet->fromArray([$headers], NULL, 'A1');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
+        ];
+        $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
+        $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
+
+        $row = 2;
+        $no = 1;
+
+        foreach ($urgents as $urgent) {
+            $category = '-';
+            if ($urgent->mistake) {
+                $cat = strtolower($urgent->mistake->Category_Mistake);
+                $detail = strtolower($urgent->mistake->Manual_Category_Detail);
+
+                if ($cat == 'perubahan desain') {
+                    $category = 'DESIGN CHANGE';
+                } elseif ($cat == 'shipping') {
+                    $category = 'SHIPPING';
+                } elseif ($cat == 'lain-lain' && $detail == 'produksi') {
+                    $category = 'PRODUCTION';
+                } else {
+                    $category = strtoupper($cat);
+                }
+            }
+
+            $namePart = optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
+            $pic = $urgent->member ? $urgent->member->Name_Member : '-';
+            $reporter = empty($urgent->Id_Type_User) 
+                ? (optional($urgent->reporterMember)->Name_Member ?? '-') 
+                : (optional($urgent->user)->Username_User ?? '-');
+            
+            $codeItem = $urgent->requestModel ? $urgent->requestModel->Code_Item_Rack : '-';
+            $sumReq = $urgent->requestModel ? $urgent->requestModel->Sum_Request : '-';
+            $timeReq = $urgent->requestModel ? ($urgent->requestModel->Day_Request . ' ' . $urgent->requestModel->Time_Request) : '-';
+
+            $sheet->fromArray([
+                $no,
+                $urgent->Time_Urgent,
+                $category,
+                $urgent->Code_Rack,
+                $namePart,
+                $pic,
+                $reporter,
+                $codeItem,
+                $sumReq,
+                $timeReq
+            ], null, 'A' . $row);
+
+            $no++;
+            $row++;
+        }
+
+        foreach (range('A', $sheet->getHighestColumn()) as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = "Urgent_Unrecorded_" . $date . ".xlsx";
+        $filePath = storage_path('app/public/' . $fileName);
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filePath);
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
     }
 }

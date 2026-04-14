@@ -37,10 +37,10 @@
     @endif
 
     <!-- Page Heading -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Urgent List</h1>
-        <a href="{{ route('urgents.unrecorded') }}" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm">
-            <i class="fas fa-list fa-sm text-white-50"></i> View Unrecorded List
+    <div class="d-sm-flex align-items-center justify-content-between mb-2">
+        <h1 class="h3 mb-0 text-gray-800">Unrecorded Urgent List</h1>
+        <a href="javascript:history.back()" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Urgent List
         </a>
     </div>
 
@@ -51,25 +51,21 @@
         </div>
         <div class="card-body">
             <div class="form-row">
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                     <label for="filter_code_rack">Code Rack</label>
                     <input type="text" class="form-control" id="filter_code_rack" placeholder="Code Rack...">
                 </div>
-                <div class="form-group col-md-4">
+                <div class="form-group col-md-3">
                     <label for="filter_date_urgent">Date Urgent</label>
-                    <input type="date" class="form-control" id="filter_date_urgent" value="{{ \Carbon\Carbon::today()->format('Y-m-d') }}">
+                    <input type="date" class="form-control" id="filter_date_urgent" value="">
                 </div>
-                <div class="form-group col-md-4 d-flex align-items-end">
+                <div class="form-group col-md-6 d-flex align-items-end">
                     <button id="btn-filter" class="btn btn-primary mr-2">Filter</button>
-                    <button class="btn btn-secondary" id="btn-reset">Reset</button>
+                    <button class="btn btn-secondary mr-2" id="btn-reset">Reset</button>
+                    <button id="btn-export" class="btn btn-success"><i class="fas fa-file-excel mr-1"></i> Export Excel</button>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Daily Recap -->
-    <div class="row" id="daily-recap-container">
-        <!-- populated by JS -->
     </div>
 
     <!-- DataTales Example -->
@@ -103,8 +99,7 @@
                             <th>PIC</th>
                             <th>Reporter</th>
                             <th>Request Details</th>
-                            <th>Request</th>
-                            <th>Record</th>
+                            <th>Request Time</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,14 +111,6 @@
 
 </div>
 <!-- /.container-fluid -->
-
-<!-- Monthly Recap -->
-<div class="container-fluid">
-    <div class="row mt-2" id="monthly-recap-container">
-        <!-- populated by JS -->
-    </div>
-</div>
-
 @endsection
 
 @section('script')
@@ -140,7 +127,7 @@
             pageLength: 100,
             lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             ajax: {
-                url: "{{ route('urgents.data') }}",
+                url: "{{ route('urgents.unrecorded.data') }}",
                 data: function (d) {
                     d.codeRack = $('#filter_code_rack').val();
                     d.dateUrgent = $('#filter_date_urgent').val();
@@ -180,7 +167,6 @@
                 { data: 'Reporter', name: 'Reporter', searchable: false },
                 { data: 'Request_Details', name: 'Request_Details', searchable: false },
                 { data: 'Request_Time', name: 'Request_Time', searchable: false },
-                { data: 'Record_Time', name: 'Record_Time', searchable: false },
             ],
             order: [[1, 'desc']], // Order by time by default (newest first)
             searching: false, // Turn off default global search
@@ -189,23 +175,29 @@
         // Filter button
         $('#btn-filter').click(function () {
             table.draw();
-            fetchRecap();
         });
 
         // Reset button
         $('#btn-reset').click(function () {
             $('#filter_code_rack').val('');
-            $('#filter_date_urgent').val('{{ \Carbon\Carbon::today()->format("Y-m-d") }}');
+            $('#filter_date_urgent').val('');
             $('#table_search_keyword').val('');
             table.draw();
-            fetchRecap();
+        });
+
+        $('#btn-export').click(function(e) {
+            e.preventDefault();
+            let codeRack = $('#filter_code_rack').val();
+            let dateUrgent = $('#filter_date_urgent').val();
+            
+            let exportUrl = "{{ route('urgents.unrecorded.export') }}?codeRack=" + encodeURIComponent(codeRack) + "&dateUrgent=" + encodeURIComponent(dateUrgent);
+            window.location.href = exportUrl;
         });
 
         // Enter on inputs
         $('#filter_code_rack, #filter_date_urgent').on('keypress', function(e) {
             if(e.which == 13) {
                 table.draw();
-                fetchRecap();
             }
         });
 
@@ -217,73 +209,6 @@
                 table.draw();
             }, 500);
         });
-
-        function fetchRecap() {
-            var dateInput = $('#filter_date_urgent').val();
-            $.ajax({
-                url: '{{ route("urgents.recap") }}',
-                data: { dateUrgent: dateInput },
-                success: function(res) {
-                    renderRecapCard('#daily-recap-container', 'Daily Recap: ' + res.date_formatted, res.daily);
-                    renderRecapCard('#monthly-recap-container', 'Monthly Recap: ' + res.month_formatted, res.monthly);
-                }
-            });
-        }
-
-        function renderRecapCard(containerId, title, data) {
-            $(containerId).empty();
-            var bossMcHtml = generateCardHtml('Boss MC', data.boss_mc, 'warning');
-            var dstHtml = generateCardHtml('DST', data.dst, 'info');
-
-            var html = `
-                <div class="col-12 mb-2">
-                    <h5 class="text-gray-800 font-weight-bold">${title}</h5>
-                </div>
-                ${bossMcHtml}
-                ${dstHtml}
-            `;
-            $(containerId).html(html);
-        }
-
-        function generateCardHtml(title, dat, colorClass) {
-            var catHtml = '';
-            for(var key in dat.categories) {
-                catHtml += `<div class="d-flex justify-content-between mb-1">
-                                <span class="small font-weight-bold text-gray-800">${key}</span>
-                                <span class="small text-gray-800">${dat.categories[key]}</span>
-                            </div>`;
-            }
-            if(Object.keys(dat.categories).length === 0) {
-                catHtml = '<span class="small text-muted">Blank (0 Items)</span>';
-            }
-
-            return `
-                <div class="col-xl-6 col-md-6 mb-4">
-                    <div class="card border-left-${colorClass} shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center mb-3">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-${colorClass} text-uppercase mb-1">
-                                        PIC: ${title}
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        Total: ${dat.total}
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                            <hr>
-                            ${catHtml}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Initial fetch
-        fetchRecap();
     });
 </script>
 @endsection
