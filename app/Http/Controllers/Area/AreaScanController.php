@@ -250,12 +250,15 @@ class AreaScanController extends Controller
 
             // "lalu insert ke tabel urgents, requests dan mistakes, PIC = Name_Member, Category telat request"
             // request first to get Id_Request
+            $systemMember = Member::where('Name_Member', 'system')->first();
+            $idSystem = $systemMember ? $systemMember->Id_Member : 35;
+
             $newReq = new RequestModel;
             $newReq->Day_Request = $nowDate;
             $newReq->Time_Request = $nowTime;
             $newReq->Code_Item_Rack = $codeItemRack;
             $newReq->Code_Rack = $codeRack;
-            $newReq->Id_User = $idMemberTarget; // Member ID who made requests
+            $newReq->Id_User = $idSystem; // System ID
             $newReq->Status_Request = 'Waiting';
             $newReq->Sum_Request = $sumRequest;
             $newReq->Urgent_Request = 1;

@@ -455,12 +455,15 @@ class UrgentController extends Controller
                 return redirect()->back()->with('error', 'Kode Rack "'.$codeRack.'" tidak ditemukan di Data Rack.');
             }
 
+            $systemMember = Member::where('Name_Member', 'system')->first();
+            $idSystem = $systemMember ? $systemMember->Id_Member : 35;
+
             $newReq = new RequestModel;
             $newReq->Day_Request = $nowDate;
             $newReq->Time_Request = $nowTime;
             $newReq->Code_Item_Rack = $codeItemRack;
             $newReq->Code_Rack = $codeRack;
-            $newReq->Id_User = $idMemberTarget;
+            $newReq->Id_User = $idSystem;
             $newReq->Status_Request = 'Waiting';
             $newReq->Sum_Request = $sumRequest;
             $newReq->Urgent_Request = 1;
