@@ -24,6 +24,27 @@
 
     @yield('style')
 
+    <style>
+        /* Jadikan submenu dua kolom */
+        #collapseRequesting .collapse-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.25rem 0.5rem;
+        }
+
+        #collapseRequesting .collapse-item {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        #collapseRequesting .collapse-header {
+            grid-column: span 2;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+        }
+    </style>
 
     <!-- Dynamic Favicon -->
     <script src="/iseki_pro_app/js/dynamic-favicon.js"></script>
@@ -59,6 +80,71 @@
                 <a class="nav-link" href="{{ route('dashboard') }}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Action
+            </div>
+
+            <!-- Nav Item - Requesting (with area submenu) -->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseRequesting"
+                    aria-expanded="true" aria-controls="collapseRequesting">
+                    <i class="fas fa-fw fa-bullhorn"></i>
+                    <span>Requesting</span>
+                </a>
+                <div id="collapseRequesting" class="collapse" aria-labelledby="headingRequesting"
+                    data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Request Menu:</h6>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}">Normal</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Main-1">Main-1</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=AGV">AGV</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Main-2">Main-2</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Main">Main</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Main-3">Main-3</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=LO">LO</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Main-4">Main-4</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-0">Sub-0</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-Front-MK">Sub-Front-MK</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-1">Sub-1</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-Front-HST">Sub-Front-HST</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-2">Sub-2</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-Arm-MK">Sub-Arm-MK</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-3">Sub-3</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-Arm-HST">Sub-Arm-HST</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-4">Sub-4</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-Mid-HST">Sub-Mid-HST</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-5">Sub-5</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-Gear-MK">Sub-Gear-MK</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-6">Sub-6</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-Gear-HST">Sub-Gear-HST</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-7">Sub-7</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-Cylinder-1">Sub-Cylinder-1</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-8">Sub-8</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-Cylinder-2">Sub-Cylinder-2</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-9">Sub-9</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Cucian-Cylinder">Cucian-Cylinder</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-10">Sub-10</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Cucian-Houshing">Cucian-Houshing</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Sub-Houshing">Sub-Houshing</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=SXG-3">SXG-3</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Painting-A">Painting-A</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Painting-B">Painting-B</a>
+                        <a class="collapse-item" href="{{ route('admin.requesting') }}?area=Palletina">Palletina</a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- Nav Item - Recording -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.recording') }}">
+                    <i class="fas fa-fw fa-qrcode"></i>
+                    <span>Recording</span></a>
             </li>
 
             <!-- Divider -->

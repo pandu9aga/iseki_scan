@@ -28,34 +28,31 @@ class MissingController extends Controller
             }
         }
 
-        $requests = RequestModel::with('member', 'record')
+        $allRequests = RequestModel::with('member', 'record')
             ->where('Status_Request', '!=', 'Done')
-            ->where(function ($query) use ($workdaysAgo) {
-                $query->where(function ($q) use ($workdaysAgo) {
-                    $q->whereNotNull('Ready_Request')
-                    ->where('Ready_Request', '<', $workdaysAgo);
-                });
-                // ->orWhere(function ($q) use ($workdaysAgo) {
-                //     $q->whereNotNull('Shipping_Request')
-                //     ->where('Shipping_Request', '<', $workdaysAgo);
-                // })
-                // ->orWhere(function ($q) use ($workdaysAgo) {
-                //     $q->whereNotNull('Production_Area_Request')
-                //     ->where('Production_Area_Request', '<', $workdaysAgo);
-                // })
-                // ->orWhere(function ($q) use ($workdaysAgo) {
-                //     $q->whereNotNull('Design_Changes_Request')
-                //     ->where('Design_Changes_Request', '<', $workdaysAgo);
-                // });
-            })
-            ->orderBy('Day_Request', 'desc')
+            ->whereNotNull('Ready_Request')
             ->get();
+
+        $requests = $allRequests->filter(function ($request) use ($workdaysAgo) {
+            $latestStatusTime = null;
+            if ($request->Design_Changes_Request) {
+                $latestStatusTime = $request->Design_Changes_Request;
+            } elseif ($request->Production_Area_Request) {
+                $latestStatusTime = $request->Production_Area_Request;
+            } elseif ($request->Shipping_Request) {
+                $latestStatusTime = $request->Shipping_Request;
+            } elseif ($request->Ready_Request) {
+                $latestStatusTime = $request->Ready_Request;
+            }
+
+            if (!$latestStatusTime) return false;
+
+            $request->latest_status_time = Carbon::parse($latestStatusTime);
+            return $request->latest_status_time->lt($workdaysAgo);
+        })->sortByDesc('latest_status_time')->values();
 
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRequests = $requests->count();
-
-        // $correct = $requests->filter(fn($request) => $request->Correctness_Request == 1)->count();
-        // $incorrect = $totalRequests - $correct;
 
         return view('admins.missings.index', compact('requests', 'totalRequests', 'formattedDate', 'date'));
     }
@@ -75,28 +72,28 @@ class MissingController extends Controller
             }
         }
 
-        $requests = RequestModel::with('member', 'record')
+        $allRequests = RequestModel::with('member', 'record')
             ->where('Status_Request', '!=', 'Done')
-            ->where(function ($query) use ($workdaysAgo) {
-                $query->where(function ($q) use ($workdaysAgo) {
-                    $q->whereNotNull('Ready_Request')
-                    ->where('Ready_Request', '<', $workdaysAgo);
-                });
-                // ->orWhere(function ($q) use ($workdaysAgo) {
-                //     $q->whereNotNull('Shipping_Request')
-                //     ->where('Shipping_Request', '<', $workdaysAgo);
-                // })
-                // ->orWhere(function ($q) use ($workdaysAgo) {
-                //     $q->whereNotNull('Production_Area_Request')
-                //     ->where('Production_Area_Request', '<', $workdaysAgo);
-                // })
-                // ->orWhere(function ($q) use ($workdaysAgo) {
-                //     $q->whereNotNull('Design_Changes_Request')
-                //     ->where('Design_Changes_Request', '<', $workdaysAgo);
-                // });
-            })
-            ->orderBy('Day_Request', 'desc')
+            ->whereNotNull('Ready_Request')
             ->get();
+
+        $requests = $allRequests->filter(function ($request) use ($workdaysAgo) {
+            $latestStatusTime = null;
+            if ($request->Design_Changes_Request) {
+                $latestStatusTime = $request->Design_Changes_Request;
+            } elseif ($request->Production_Area_Request) {
+                $latestStatusTime = $request->Production_Area_Request;
+            } elseif ($request->Shipping_Request) {
+                $latestStatusTime = $request->Shipping_Request;
+            } elseif ($request->Ready_Request) {
+                $latestStatusTime = $request->Ready_Request;
+            }
+
+            if (!$latestStatusTime) return false;
+
+            $request->latest_status_time = Carbon::parse($latestStatusTime);
+            return $request->latest_status_time->lt($workdaysAgo);
+        })->sortByDesc('latest_status_time')->values();
         // Buat Spreadsheet
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();

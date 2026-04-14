@@ -95,7 +95,7 @@
                                     }
                                     @endphp
                             </td>
-                            <td>{{ $s->member->Name_Member ?? '' }}</td>
+                            <td>{{ $s->display_name ?? '' }}</td>
                             <td class="text-center">{{ $s->Stock_Shipping ?? '-' }}</td>
                         </tr>
                         @endforeach

@@ -185,8 +185,8 @@
                                         {{ optional($s->record)->Time_Record ?? '' }}
                                     </td>
                                     <td>{{ optional($s->record)->Sum_Record ?? '' }}</td>
-                                    <td>{{ $s->member->Name_Member ?? '' }}</td>
-                                    <td>{{ optional($s->record)->member->Name_Member ?? '' }}</td>
+                                    <td>{{ $s->display_name ?? '' }}</td>
+                                    <td>{{ optional($s->record)->display_name ?? '' }}</td>
                                     <td>{{ $s->Updated_At_Request ?? '' }}</td>
                                     {{-- <td>
                                         tombol delete

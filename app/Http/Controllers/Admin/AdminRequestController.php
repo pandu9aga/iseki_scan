@@ -237,8 +237,8 @@ class AdminRequestController extends Controller
                 $estimationDisplay,
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
-                $request->member->Name_Member ?? '',
-                optional($request->record)->member->Name_Member ?? '',
+                $request->Is_User == 1 ? (optional($request->user)->Name_User ?? 'Admin') : ($request->member->Name_Member ?? ''),
+                optional($request->record)->Is_User == 1 ? (optional($request->record->user)->Name_User ?? 'Admin') : (optional($request->record)->member->Name_Member ?? ''),
                 $request->Updated_At_Request,
             ], null, 'A' . $row);
 
@@ -402,8 +402,8 @@ class AdminRequestController extends Controller
                 $readyStockDisplay,
                 $timeRecord,
                 optional($req->record)->Sum_Record ?? '',
-                $req->member->Name_Member ?? '',
-                optional($req->record)->member->Name_Member ?? '',
+                $req->Is_User == 1 ? (optional($req->user)->Name_User ?? 'Admin') : ($req->member->Name_Member ?? ''),
+                optional($req->record)->Is_User == 1 ? (optional($req->record->user)->Name_User ?? 'Admin') : (optional($req->record)->member->Name_Member ?? ''),
                 $req->Updated_At_Request,
                 $req->Id_Request,
             ], null, 'A' . $row);
@@ -510,9 +510,15 @@ class AdminRequestController extends Controller
                     return optional($r->record)->Sum_Record ?? '';
                 })
                 ->addColumn('Member_Request', function ($r) {
+                    if ($r->Is_User == 1) {
+                        return optional($r->user)->Name_User ?? 'Admin';
+                    }
                     return optional($r->member)->Name_Member ?? '';
                 })
                 ->addColumn('Member_Record', function ($r) {
+                    if (optional($r->record)->Is_User == 1) {
+                        return optional($r->record->user)->Name_User ?? 'Admin';
+                    }
                     return optional($r->record)?->member?->Name_Member ?? '';
                 })
                 ->editColumn('Updated_At_Request', function ($r) {

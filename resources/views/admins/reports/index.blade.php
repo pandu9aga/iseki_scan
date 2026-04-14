@@ -156,8 +156,8 @@
                             <td>{{ optional($r->request)->Day_Request ?? '' }} {{ optional($r->request)->Time_Request ?? '' }}</td>
                             <td>{{ optional($r->request)->Sum_Request ?? '' }}</td>
                             <td>{{ optional($r->request)->Sum_Stock ?? '' }}</td>
-                            <td>{{ optional($r->request)->member->Name_Member ?? '' }}</td>
-                            <td>{{ $r->member->Name_Member ?? '' }}</td>
+                            <td>{{ optional($r->request)->display_name ?? '' }}</td>
+                            <td>{{ $r->display_name ?? '' }}</td>
                             <td>{{ $r->Updated_At_Record ?? '' }}</td>
                         </tr>
                         @endforeach

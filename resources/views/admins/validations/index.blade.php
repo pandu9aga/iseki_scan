@@ -98,7 +98,7 @@
                             <td>{{ optional($s->request)->Day_Request ?? '' }} {{ optional($s->request)->Time_Request ?? '' }}</td>
                             <td>{{ optional($s->request)->Sum_Request ?? '' }}</td>
                             <td class="text-center">{{ optional($s->request)->Urgent_Request == 1 ? '✓' : '' }}</td>
-                            <td>{{ optional($s->request)->member->Name_Member ?? '' }}</td>
+                            <td>{{ optional($s->request)->display_name ?? '' }}</td>
                         </tr>
                         @endforeach
                     </tbody>

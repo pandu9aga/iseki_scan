@@ -119,8 +119,8 @@ class UserReportController extends Controller
                 $timeRequest,
                 optional($record->request)->Sum_Request ?? '',
                 optional($record->request)->Sum_Stock ?? '',
-                optional($record->request)->member->Name_Member ?? '',
-                $record->member->Name_Member ?? '',
+                optional($record->request)->Is_User == 1 ? (optional($record->request->user)->Name_User ?? 'Admin') : (optional($record->request)->member->Name_Member ?? ''),
+                $record->Is_User == 1 ? (optional($record->user)->Name_User ?? 'Admin') : ($record->member->Name_Member ?? ''),
                 $record->Updated_At_Record ?? '',
             ], NULL, 'A' . $row);
 

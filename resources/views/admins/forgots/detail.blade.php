@@ -37,8 +37,8 @@
                                     <td class="font-weight-bold text-danger">{{ $f->PIC }}</td>
                                     <td>{{ $f->request ? $f->request->Code_Rack : '-' }}</td>
                                     <td>{{ ($f->request && $f->request->rack) ? $f->request->rack->Name_Item_Rack : '-' }}</td>
-                                    <td>{{ ($f->request && $f->request->member) ? $f->request->member->Name_Member : '-' }}</td>
-                                    <td>{{ ($f->request && $f->request->record && $f->request->record->member) ? $f->request->record->member->Name_Member : '-' }}
+                                    <td>{{ ($f->request && $f->request->member) ? $f->request->display_name : '-' }}</td>
+                                    <td>{{ ($f->request && $f->request->record && $f->request->record->member) ? $f->request->record->display_name : '-' }}
                                     </td>
                                     <td>{{ $f->request ? $f->request->Time_Request : '-' }}</td>
                                     <td>{{ ($f->request && $f->request->record) ? $f->request->record->Time_Record : '-' }}</td>

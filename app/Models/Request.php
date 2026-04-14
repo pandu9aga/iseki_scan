@@ -31,12 +31,28 @@ class Request extends Model
         'Sum_Stock',
         'Stock_Shipping',
         'Updated_At_Request',
+        'Is_User',
     ];
 
     // Relasi ke Member
     public function member()
     {
         return $this->belongsTo(Member::class, 'Id_User', 'Id_Member');
+    }
+
+    // Relasi ke User (admin)
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'Id_User', 'Id_User');
+    }
+
+    // Helper attribute for display name
+    public function getDisplayNameAttribute()
+    {
+        if ($this->Is_User == 1) {
+            return optional($this->user)->Name_User ?? 'Admin';
+        }
+        return optional($this->member)->Name_Member ?? '';
     }
 
     public function record()

@@ -105,7 +105,7 @@
                                             }
                                         @endphp
                                     </td>
-                                    <td>{{ $s->member->Name_Member ?? '' }}</td>
+                                    <td>{{ $s->display_name ?? '' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

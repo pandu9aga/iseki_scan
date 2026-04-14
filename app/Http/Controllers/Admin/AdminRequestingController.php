@@ -1,28 +1,33 @@
 <?php
 
-namespace App\Http\Controllers\User;
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use App\Models\Request as RequestModel; // alias supaya tidak bentrok
+use App\Models\Request as RequestModel;
 
-class RequestController extends Controller
+class AdminRequestingController extends Controller
 {
     public function index(Request $request)
     {
         $area = $request->query('area');
 
-        return view('users.requests.index', compact('area'));
+        return view('admins.requesting.index', compact('area'));
     }
-
-
 
     public function create(Request $request)
     {
         $date = Carbon::today()->format('Y-m-d');
         $timeNow = Carbon::now()->format('H:i:s');
-        $Id_User = session('Id_Member');
+
+        // Ambil ID admin dari session (dari tabel users)
+        $adminId = session('Id_User');
+
+        // Validasi: ID admin harus ada, tidak boleh null
+        if (!$adminId) {
+            return redirect()->back()->with('error', 'Session admin tidak ditemukan. Silakan login ulang.');
+        }
 
         $request->validate([
             'Code_Item' => 'required',
@@ -40,14 +45,13 @@ class RequestController extends Controller
         $codeItem = substr($request->input('Code_Item'), 0, 12);
 
         // Cek apakah sudah ada request dengan status Waiting
-        $existing = RequestModel::where('Code_Rack', $request->input('Code_Rack')) //where('Id_User', $Id_User)
+        $existing = RequestModel::where('Code_Rack', $request->input('Code_Rack'))
             ->where('Code_Item_Rack', $codeItem)
             ->where('Status_Request', 'Waiting')
             ->where('Area_Request', $request->input('Area_Request'))
             ->first();
 
         if ($existing) {
-            // return redirect()->route('submission')->with('error', 'Item ini sudah pernah direquest dan masih menunggu.');
             return redirect()->back()->with('error', 'Item ini sudah pernah direquest dan masih menunggu.');
         }
 
@@ -56,7 +60,8 @@ class RequestController extends Controller
         $newRequest->Time_Request = $timeNow;
         $newRequest->Code_Item_Rack = $codeItem;
         $newRequest->Code_Rack = $request->input('Code_Rack');
-        $newRequest->Id_User = $Id_User;
+        $newRequest->Id_User = $adminId;    // ID admin dari tabel users
+        $newRequest->Is_User = 1;           // Flag: ini dari admin
         $newRequest->Status_Request = 'Waiting';
         $newRequest->Sum_Request = $request->input('Sum_Request');
 
@@ -73,7 +78,6 @@ class RequestController extends Controller
 
         $newRequest->save();
 
-        // return redirect()->route('submission')->with('success', 'Request berhasil dibuat.');
         return redirect()->back()->with('success', 'Request berhasil dibuat.');
     }
 
@@ -101,9 +105,17 @@ class RequestController extends Controller
             ->first();
 
         if ($existing) {
+            // Jika Is_User = 1 → langsung tampilkan "Admin", tidak perlu lookup member
+            $name = 'Unknown';
+            if ($existing->Is_User == 1) {
+                $name = 'Admin';
+            } else {
+                $name = optional($existing->member)->Name_Member ?? 'Unknown';
+            }
+
             return response()->json([
                 'exists' => true,
-                'name' => $existing->member->Name_Member ?? 'Unknown',
+                'name' => $name,
                 'day' => $existing->Day_Request,
                 'time' => $existing->Time_Request,
             ]);

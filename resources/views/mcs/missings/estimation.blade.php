@@ -96,7 +96,7 @@
                                     }
                                     @endphp
                             </td>
-                            <td>{{ $s->member->Name_Member ?? '' }}</td>
+                            <td>{{ $s->display_name ?? '' }}</td>
                             <td class="text-center" style="min-width: 90px;">
                                 <input type="number" class="form-control form-control-sm stock-shipping-input" 
                                        data-id="{{ $s->Id_Request }}" 

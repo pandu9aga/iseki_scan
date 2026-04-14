@@ -24,12 +24,28 @@ class Record extends Model
         'Sum_Record',
         'Id_Request',
         'Updated_At_Record',
+        'Is_User',
     ];
 
     // Relasi ke model User
     public function member()
     {
         return $this->belongsTo(Member::class, 'Id_User', 'Id_Member');
+    }
+
+    // Relasi ke User (admin)
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'Id_User', 'Id_User');
+    }
+
+    // Helper attribute for display name
+    public function getDisplayNameAttribute()
+    {
+        if ($this->Is_User == 1) {
+            return optional($this->user)->Name_User ?? 'Admin';
+        }
+        return optional($this->member)->Name_Member ?? '';
     }
 
     public function request()

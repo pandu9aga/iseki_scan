@@ -36,10 +36,18 @@ class McRequestController extends Controller
             $query->where(function ($q) use ($statusFilters) {
                 foreach ($statusFilters as $sf) {
                     switch ($sf) {
-                        case '1': $q->orWhereNotNull('Ready_Request'); break;
-                        case '2': $q->orWhereNotNull('Shipping_Request'); break;
-                        case '3': $q->orWhereNotNull('Production_Area_Request'); break;
-                        case '4': $q->orWhereNotNull('Design_Changes_Request'); break;
+                        case '1':
+                            $q->orWhereNotNull('Ready_Request');
+                            break;
+                        case '2':
+                            $q->orWhereNotNull('Shipping_Request');
+                            break;
+                        case '3':
+                            $q->orWhereNotNull('Production_Area_Request');
+                            break;
+                        case '4':
+                            $q->orWhereNotNull('Design_Changes_Request');
+                            break;
                     }
                 }
             });
@@ -85,10 +93,18 @@ class McRequestController extends Controller
             $query->where(function ($q) use ($statusFilters) {
                 foreach ($statusFilters as $sf) {
                     switch ($sf) {
-                        case '1': $q->orWhereNotNull('Ready_Request'); break;
-                        case '2': $q->orWhereNotNull('Shipping_Request'); break;
-                        case '3': $q->orWhereNotNull('Production_Area_Request'); break;
-                        case '4': $q->orWhereNotNull('Design_Changes_Request'); break;
+                        case '1':
+                            $q->orWhereNotNull('Ready_Request');
+                            break;
+                        case '2':
+                            $q->orWhereNotNull('Shipping_Request');
+                            break;
+                        case '3':
+                            $q->orWhereNotNull('Production_Area_Request');
+                            break;
+                        case '4':
+                            $q->orWhereNotNull('Design_Changes_Request');
+                            break;
                     }
                 }
             });
@@ -136,10 +152,18 @@ class McRequestController extends Controller
             $query->where(function ($q) use ($statusFilters) {
                 foreach ($statusFilters as $sf) {
                     switch ($sf) {
-                        case '1': $q->orWhereNotNull('Ready_Request'); break;
-                        case '2': $q->orWhereNotNull('Shipping_Request'); break;
-                        case '3': $q->orWhereNotNull('Production_Area_Request'); break;
-                        case '4': $q->orWhereNotNull('Design_Changes_Request'); break;
+                        case '1':
+                            $q->orWhereNotNull('Ready_Request');
+                            break;
+                        case '2':
+                            $q->orWhereNotNull('Shipping_Request');
+                            break;
+                        case '3':
+                            $q->orWhereNotNull('Production_Area_Request');
+                            break;
+                        case '4':
+                            $q->orWhereNotNull('Design_Changes_Request');
+                            break;
                     }
                 }
             });
@@ -235,6 +259,14 @@ class McRequestController extends Controller
                 $statusCode = '4';
             }
 
+            // Determine Sum Stock display value
+            $sumStockDisplay = '';
+            if ($statusCode == '2' || $statusCode == '4') {
+                $sumStockDisplay = $request->Stock_Shipping ?? '';
+            } else {
+                $sumStockDisplay = $request->Sum_Stock ?? '';
+            }
+
             // Format Estimation Date to Excel serial date for date picker
             $estimationDisplay = '';
             if ($request->Estimation_Stock) {
@@ -253,17 +285,39 @@ class McRequestController extends Controller
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
                 $statusCode,
-                $request->Sum_Stock ?? '',
+                $sumStockDisplay,
                 $estimationDisplay,
                 $readyStockDisplay,
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
-                $request->member->Name_Member ?? '',
-                optional($request->record)->member->Name_Member ?? '',
+                $request->Is_User == 1 ? (optional($request->user)->Name_User ?? 'Admin') : ($request->member->Name_Member ?? ''),
+                optional($request->record)->Is_User == 1 ? (optional($request->record->user)->Name_User ?? 'Admin') : (optional($request->record)->member->Name_Member ?? ''),
                 $request->Updated_At_Request,
                 $request->Id_Request,
             ], null, 'A' . $row);
 
+            // Set background color for readonly Sum Stock based on status
+            if ($statusCode == '2') {
+                $sheet->getStyle('J' . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'ADD8E6'] // Light Blue
+                    ],
+                    'font' => [
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]);
+            } elseif ($statusCode == '4') {
+                $sheet->getStyle('J' . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'FFFFE0'] // Light Yellow
+                    ],
+                    'font' => [
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]);
+            }
 
             $lastUser = $request->Id_User;
             $no++;
@@ -410,8 +464,8 @@ class McRequestController extends Controller
 
             $changed = false;
 
-            // Update Sum Stock (jika ada)
-            if ($hasStock) {
+            // Update Sum Stock (jika ada) hanya untuk status 1 dan 3
+            if ($hasStock && in_array($readyStatus, ['1', '3'])) {
                 $requestModel->Sum_Stock = intval($rawStock);
                 $changed = true;
             }
@@ -421,7 +475,7 @@ class McRequestController extends Controller
                 // Konversi keduanya ke format Y-m-d untuk perbandingan agar akurat
                 $oldEst = $requestModel->Estimation_Stock ? Carbon::parse($requestModel->Estimation_Stock)->format('Y-m-d') : null;
                 $newEst = $parsedEstimation->format('Y-m-d');
-                
+
                 if ($oldEst !== $newEst) {
                     $requestModel->Estimation_Stock = $parsedEstimation;
                     // Reset Ok_Stock jika tanggal estimation berubah agar butuh validasi ulang
@@ -558,9 +612,9 @@ class McRequestController extends Controller
         switch ($statusFilter) {
             case 'no_status':
                 $query->whereNull('Ready_Request')
-                      ->whereNull('Shipping_Request')
-                      ->whereNull('Production_Area_Request')
-                      ->whereNull('Design_Changes_Request');
+                    ->whereNull('Shipping_Request')
+                    ->whereNull('Production_Area_Request')
+                    ->whereNull('Design_Changes_Request');
                 break;
             case 'ready':
                 $query->whereNotNull('Ready_Request');
@@ -639,6 +693,14 @@ class McRequestController extends Controller
             elseif ($req->Production_Area_Request !== null) $statusCode = '3';
             elseif ($req->Design_Changes_Request !== null) $statusCode = '4';
 
+            // Determine Sum Stock display value
+            $sumStockDisplay = '';
+            if ($statusCode == '2' || $statusCode == '4') {
+                $sumStockDisplay = $req->Stock_Shipping ?? '';
+            } else {
+                $sumStockDisplay = $req->Sum_Stock ?? '';
+            }
+
             $estimationDisplay = '';
             if ($req->Estimation_Stock) {
                 $estimationDisplay = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
@@ -656,16 +718,39 @@ class McRequestController extends Controller
                 $req->Code_Item_Rack,
                 $req->rack->Name_Item_Rack ?? '',
                 $statusCode,
-                $req->Sum_Stock ?? '',
+                $sumStockDisplay,
                 $estimationDisplay,
                 $readyStockDisplay,
                 $timeRecord,
                 optional($req->record)->Sum_Record ?? '',
-                $req->member->Name_Member ?? '',
-                optional($req->record)->member->Name_Member ?? '',
+                $req->Is_User == 1 ? (optional($req->user)->Name_User ?? 'Admin') : ($req->member->Name_Member ?? ''),
+                optional($req->record)->Is_User == 1 ? (optional($req->record->user)->Name_User ?? 'Admin') : (optional($req->record)->member->Name_Member ?? ''),
                 $req->Updated_At_Request,
                 $req->Id_Request,
             ], null, 'A' . $row);
+
+            // Set background color for readonly Sum Stock based on status
+            if ($statusCode == '2') {
+                $sheet->getStyle('J' . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'ADD8E6'] // Light Blue
+                    ],
+                    'font' => [
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]);
+            } elseif ($statusCode == '4') {
+                $sheet->getStyle('J' . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'FFFFE0'] // Light Yellow
+                    ],
+                    'font' => [
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]);
+            }
 
             $lastUser = $req->Id_User;
             $no++;
@@ -677,8 +762,8 @@ class McRequestController extends Controller
             $columnsToCenter = ['E', 'F', 'I', 'J', 'K', 'N'];
             foreach ($columnsToCenter as $col) {
                 $sheet->getStyle($col . '2:' . $col . $lastRow)
-                      ->getAlignment()
-                      ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                    ->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
             }
         }
 
@@ -769,9 +854,15 @@ class McRequestController extends Controller
                     return optional($r->record)->Sum_Record ?? '';
                 })
                 ->addColumn('Member_Request', function ($r) {
+                    if ($r->Is_User == 1) {
+                        return optional($r->user)->Name_User ?? 'Admin';
+                    }
                     return optional($r->member)->Name_Member ?? '';
                 })
                 ->addColumn('Member_Record', function ($r) {
+                    if (optional($r->record)->Is_User == 1) {
+                        return optional($r->record->user)->Name_User ?? 'Admin';
+                    }
                     return optional($r->record)?->member?->Name_Member ?? '';
                 })
                 ->editColumn('Updated_At_Request', function ($r) {
@@ -804,7 +895,40 @@ class McRequestController extends Controller
                 ->orderColumn('ready_status_display', function ($query, $order) {
                     $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01")) ' . $order);
                 })
-                ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display', 'Type_Tractor_Rack'])
+                ->addColumn('Estimation_Stock', function ($r) {
+                    if ($r->Estimation_Stock) {
+                        return \Carbon\Carbon::parse($r->Estimation_Stock)->format('d/m/Y');
+                    }
+                    return '';
+                })
+                ->addColumn('Ok_Stock', function ($r) {
+                    if ($r->Shipping_Request || $r->Design_Changes_Request) {
+                        $checked = $r->Ok_Stock == 1 ? 'checked' : '';
+                        $disabled = empty($r->Stock_Shipping) ? 'disabled' : '';
+                        $html = '<div class="custom-control custom-switch d-inline-block" title="Toggle OK Stock">
+                                    <input type="checkbox" class="custom-control-input ok-stock-switch" 
+                                           id="okSwitch_' . $r->Id_Request . '" 
+                                           data-id="' . $r->Id_Request . '" 
+                                           ' . $checked . ' ' . $disabled . '>
+                                    <label class="custom-control-label" for="okSwitch_' . $r->Id_Request . '"></label>
+                                </div>';
+                        if (empty($r->Stock_Shipping)) {
+                            $html .= '<small class="text-muted d-block" style="font-size:10px;">Isi Stock Shipping</small>';
+                        }
+                        return $html;
+                    }
+                    return '';
+                })
+                ->addColumn('Stock_Shipping', function ($r) {
+                    if ($r->Shipping_Request || $r->Design_Changes_Request) {
+                        return '<input type="number" class="form-control form-control-sm stock-shipping-input" 
+                                       data-id="' . $r->Id_Request . '" 
+                                       value="' . $r->Stock_Shipping . '" 
+                                       placeholder="0" style="width:80px; display:inline-block;">';
+                    }
+                    return '';
+                })
+                ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display', 'Type_Tractor_Rack', 'Ok_Stock', 'Stock_Shipping'])
                 ->make(true);
         }
 

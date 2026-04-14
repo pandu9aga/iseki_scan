@@ -29,6 +29,9 @@
                                 <th>Time Request</th>
                                 <th>Ready Stock</th>
                                 <th>Sum Stock</th>
+                                <th>Estimation Date</th>
+                                <th>OK Stock</th>
+                                <th>Stock Shipping</th>
                                 <th>Time Record</th>
                                 <th>Status Request</th>
                                 <th>Sum Request</th>
@@ -162,6 +165,9 @@
                     { data: 'Day_Request', name: 'Day_Request', searchable: true, orderable: true },
                     { data: 'ready_status_display', name: 'ready_status_display', searchable: true, orderable: true },
                     { data: 'Sum_Stock', name: 'Sum_Stock', searchable: false },
+                    { data: 'Estimation_Stock', name: 'Estimation_Stock', searchable: false },
+                    { data: 'Ok_Stock', name: 'Ok_Stock', searchable: false, className: 'text-center' },
+                    { data: 'Stock_Shipping', name: 'Stock_Shipping', searchable: false, className: 'text-center' },
                     { data: 'Time_Record', name: 'Time_Record', searchable: false },
                     { data: 'Status_Request_Display', name: 'Status_Request_Display', searchable: false },
                     { data: 'Sum_Request', name: 'Sum_Request', searchable: false },
@@ -195,7 +201,7 @@
                     var filterRow = header.find('tr.filter-row');
                     filterRow.empty();
 
-                    const filterable = [1, 3, 4, 7, 13];
+                    const filterable = [1, 3, 4, 7, 16];
 
                     api.columns().every(function (index) {
                         var column = this;
@@ -205,7 +211,7 @@
                             return;
                         }
 
-                        if (index === 13) {
+                        if (index === 16) {
                             // Kolom Member Request → dropdown
                             var select = $(`<select class="form-control form-control-sm member-filter"><option value="">All</option></select>`);
                             members.forEach(member => {
@@ -261,6 +267,67 @@
                     }
                     syncColumnWidths(); // tambahan
                 }, 100);
+            });
+            // OK Stock switch
+            $(document).on('change', '.ok-stock-switch', function() {
+                var input = $(this);
+                var requestId = input.data('id');
+                var isChecked = input.is(':checked') ? 1 : 0;
+                
+                $.ajax({
+                    url: '{{ url("mc_submission/ok-stock") }}/' + requestId,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        status: isChecked
+                    },
+                    success: function(response) {
+                        if(!response.success) {
+                            alert(response.message || 'Gagal update status!');
+                            input.prop('checked', !isChecked);
+                        }
+                    },
+                    error: function() {
+                        alert('Terjadi kesalahan saat menghubungi server!');
+                        input.prop('checked', !isChecked);
+                    }
+                });
+            });
+
+            // Stock Shipping inline save on blur
+            $(document).on('change', '.stock-shipping-input', function() {
+                var input = $(this);
+                var requestId = input.data('id');
+                var value = input.val();
+                
+                $.ajax({
+                    url: '{{ url("mc_submission/stock-shipping") }}/' + requestId,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        stock_shipping: value
+                    },
+                    success: function(response) {
+                        if(response.success) {
+                            // Enable/disable the OK switch based on stock shipping value
+                            var okSwitch = $('#okSwitch_' + requestId);
+                            var hintText = okSwitch.closest('td').find('small');
+                            if(value && parseInt(value) > 0) {
+                                okSwitch.prop('disabled', false);
+                                hintText.hide();
+                            } else {
+                                okSwitch.prop('disabled', true);
+                                okSwitch.prop('checked', false);
+                                hintText.show();
+                            }
+                        } else {
+                            alert('Gagal menyimpan Stock Shipping!');
+                        }
+                    },
+                    error: function() {
+                        alert('Terjadi kesalahan saat menghubungi server!');
+                    }
+                });
             });
         });
     </script>

@@ -230,8 +230,8 @@ class SubmissionController extends Controller
                 $estimationDisplay,
                 $timeRecord,
                 optional($submission->record)->Sum_Record ?? '',
-                $submission->member->Name_Member ?? '',
-                optional($submission->record)->member->Name_Member ?? '-',
+                $submission->Is_User == 1 ? (optional($submission->user)->Name_User ?? 'Admin') : ($submission->member->Name_Member ?? ''),
+                optional($submission->record)->Is_User == 1 ? (optional($submission->record->user)->Name_User ?? 'Admin') : (optional($submission->record)->member->Name_Member ?? '-'),
                 $submission->Updated_At_Request,
             ], null, 'A' . $row);
 
@@ -328,9 +328,15 @@ class SubmissionController extends Controller
                     return optional($r->record)->Sum_Record ?? '';
                 })
                 ->addColumn('Member_Request', function ($r) {
+                    if ($r->Is_User == 1) {
+                        return optional($r->user)->Name_User ?? 'Admin';
+                    }
                     return optional($r->member)->Name_Member ?? '';
                 })
                 ->addColumn('Member_Record', function ($r) {
+                    if (optional($r->record)->Is_User == 1) {
+                        return optional($r->record->user)->Name_User ?? 'Admin';
+                    }
                     return optional($r->record)?->member?->Name_Member ?? '';
                 })
                 ->editColumn('Updated_At_Request', function ($r) {

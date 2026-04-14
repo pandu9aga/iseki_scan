@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\AchievementController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminRequestController;
+use App\Http\Controllers\Admin\AdminRequestingController;
+use App\Http\Controllers\Admin\AdminRecordingController;
 use App\Http\Controllers\Admin\AdminSubmissionController;
 use App\Http\Controllers\Admin\ForgotController;
 use App\Http\Controllers\Admin\ItemController;
@@ -152,6 +154,18 @@ Route::middleware(AdminMiddleware::class)->group(function () {
 
     // WA Queue Monitoring
     Route::get('/wa-queue', [WaQueueController::class, 'index'])->name('wa.queue');
+
+    // Admin Requesting (scan barcode to create request)
+    Route::get('/admin_requesting', [AdminRequestingController::class, 'index'])->name('admin.requesting');
+    Route::post('/admin_requesting/create', [AdminRequestingController::class, 'create'])->name('admin.requesting.create');
+    Route::get('/admin_requesting/check', [AdminRequestingController::class, 'check'])->name('admin.requesting.check');
+    Route::post('/admin_requesting/check-duplicate', [AdminRequestingController::class, 'checkDuplicate'])->name('admin.requesting.checkDuplicate');
+
+    // Admin Recording (scan barcode to create record)
+    Route::get('/admin_recording', [AdminRecordingController::class, 'index'])->name('admin.recording');
+    Route::post('/admin_recording/create', [AdminRecordingController::class, 'create'])->name('admin.recording.create');
+    Route::get('/admin_recording/check', [AdminRecordingController::class, 'check'])->name('admin.recording.check');
+    Route::post('/admin_recording/check-multiple', [AdminRecordingController::class, 'checkMultiple'])->name('admin.recording.checkMultiple');
 });
 
 // WA Queue API (accessible without auth for cross-device JS calls)

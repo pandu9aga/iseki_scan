@@ -62,7 +62,7 @@
                                 {{ \Carbon\Carbon::parse($s->Time_Ok_Stock)->format('d/m/Y H:i') }}
                                 @endif
                             </td>
-                            <td>{{ $s->member->Name_Member ?? '' }}</td>
+                            <td>{{ $s->display_name ?? '' }}</td>
                         </tr>
                         @endforeach
                     </tbody>
