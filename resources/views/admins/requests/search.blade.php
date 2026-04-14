@@ -29,6 +29,7 @@
                                 <th>Time Request</th>
                                 <th>Ready Stock</th>
                                 <th>Sum Stock</th>
+                                <th>Estimation Date</th>
                                 <th>Time Record</th>
                                 <th>Status Request</th>
                                 <th>Sum Request</th>
@@ -172,6 +173,7 @@
                     { data: 'Day_Request', name: 'Day_Request', searchable: true, orderable: true },
                     { data: 'ready_status_display', name: 'ready_status_display', searchable: true, orderable: true },
                     { data: 'Sum_Stock', name: 'Sum_Stock', searchable: false },
+                    { data: 'Estimation_Stock', name: 'Estimation_Stock', searchable: false },
                     { data: 'Time_Record', name: 'Time_Record', searchable: false },
                     { data: 'Status_Request_Display', name: 'Status_Request_Display', searchable: false },
                     { data: 'Sum_Request', name: 'Sum_Request', searchable: false },

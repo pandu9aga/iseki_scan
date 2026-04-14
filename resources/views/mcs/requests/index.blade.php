@@ -194,7 +194,13 @@
                                 echo implode(' | ', $statuses);
                                 @endphp
                             </td>
-                            <td>{{ $s->Sum_Stock ?? '' }}</td>
+                            <td>
+                                @if($s->Shipping_Request || $s->Design_Changes_Request)
+                                    {{-- kosongan aja --}}
+                                @else
+                                    {{ $s->Sum_Stock ?? '' }}
+                                @endif
+                            </td>
                             <td class="text-center">
                                 @if($s->Estimation_Stock)
                                 {{ \Carbon\Carbon::parse($s->Estimation_Stock)->format('d/m/Y') }}

@@ -87,6 +87,7 @@ class UserReportController extends Controller
             'Time Request',
             'Sum Request',
             'Sum Stock',
+            'Estimation Date',
             'Member Request',
             'Member Record',
             'Updated'
@@ -98,7 +99,7 @@ class UserReportController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:N1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:O1')->applyFromArray($headerStyle);
 
         // Isi data
         $row = 2;
@@ -106,6 +107,31 @@ class UserReportController extends Controller
             $correctness = $record->Correctness_Record == 1 ? 'Correct' : 'Incorrect';
             $timeRecord = ($record->Day_Record ?? '') . " " . ($record->Time_Record ?? '');
             $timeRequest = ($record->request->Day_Request ?? '') . " " . ($record->request->Time_Request ?? '');
+
+            $statusCode = '';
+            if ($record->request && $record->request->Ready_Request !== null) {
+                $statusCode = '1';
+            } elseif ($record->request && $record->request->Shipping_Request !== null) {
+                $statusCode = '2';
+            } elseif ($record->request && $record->request->Production_Area_Request !== null) {
+                $statusCode = '3';
+            } elseif ($record->request && $record->request->Design_Changes_Request !== null) {
+                $statusCode = '4';
+            }
+
+            $sumStockDisplay = '';
+            if ($statusCode == '2' || $statusCode == '4') {
+                $sumStockDisplay = $record->request->Stock_Shipping ?? '';
+            } else {
+                $sumStockDisplay = optional($record->request)->Sum_Stock ?? '';
+            }
+
+            $estimationDisplay = '';
+            if ($record->request && $record->request->Estimation_Stock) {
+                $estimationDisplay = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
+                    Carbon::parse($record->request->Estimation_Stock)
+                );
+            }
 
             $sheet->fromArray([
                 $index + 1,
@@ -118,7 +144,8 @@ class UserReportController extends Controller
                 $correctness,
                 $timeRequest,
                 optional($record->request)->Sum_Request ?? '',
-                optional($record->request)->Sum_Stock ?? '',
+                $sumStockDisplay,
+                $estimationDisplay,
                 optional($record->request)->Is_User == 1 ? (optional($record->request->user)->Name_User ?? 'Admin') : (optional($record->request)->member->Name_Member ?? ''),
                 $record->Is_User == 1 ? (optional($record->user)->Name_User ?? 'Admin') : ($record->member->Name_Member ?? ''),
                 $record->Updated_At_Record ?? '',
@@ -138,9 +165,14 @@ class UserReportController extends Controller
 
             $row++;
         }
+        
+        $lastRow = $row - 1;
+        if ($lastRow >= 2) {
+            $sheet->getStyle('L2:L' . $lastRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        }
 
         // Auto-size kolom sesuai konten
-        foreach (range('A', 'N') as $col) {
+        foreach (range('A', 'O') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 

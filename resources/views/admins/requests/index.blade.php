@@ -141,9 +141,17 @@
                                 @php
                                     $statuses = [];
                                     if ($s->Ready_Request) $statuses[] = '<span class="badge badge-success">Ready</span>:' . $s->Ready_Request . '</span>';
-                                    if ($s->Shipping_Request) $statuses[] = '<span class="badge badge-info">Shipping</span>:' . $s->Shipping_Request;
-                                    if ($s->Production_Area_Request) $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
-                                    if ($s->Design_Changes_Request) $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
+                                    if ($s->Shipping_Request) {
+                                        $label = $s->Ok_Stock == 1 ? 'OK Shipping' : 'Shipping';
+                                        $statuses[] = '<span class="badge badge-info">' . $label . '</span>:' . $s->Shipping_Request;
+                                    }
+                                    if ($s->Production_Area_Request) {
+                                        $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
+                                    }
+                                    if ($s->Design_Changes_Request) {
+                                        $label = $s->Ok_Stock == 1 ? 'OK Design Change' : 'Design Change';
+                                        $statuses[] = '<span class="badge badge-warning">' . $label . '</span>:' . $s->Design_Changes_Request;
+                                    }
                                     echo implode(' | ', $statuses);
                                 @endphp
                             </td>

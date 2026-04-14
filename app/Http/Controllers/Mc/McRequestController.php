@@ -262,7 +262,7 @@ class McRequestController extends Controller
             // Determine Sum Stock display value
             $sumStockDisplay = '';
             if ($statusCode == '2' || $statusCode == '4') {
-                $sumStockDisplay = $request->Stock_Shipping ?? '';
+                $sumStockDisplay = ''; // kosongan aja
             } else {
                 $sumStockDisplay = $request->Sum_Stock ?? '';
             }
@@ -696,7 +696,7 @@ class McRequestController extends Controller
             // Determine Sum Stock display value
             $sumStockDisplay = '';
             if ($statusCode == '2' || $statusCode == '4') {
-                $sumStockDisplay = $req->Stock_Shipping ?? '';
+                $sumStockDisplay = ''; // kosongan aja
             } else {
                 $sumStockDisplay = $req->Sum_Stock ?? '';
             }
@@ -850,6 +850,12 @@ class McRequestController extends Controller
                             return '<span class="badge badge-secondary">' . e($status) . '</span>';
                     }
                 })
+                ->editColumn('Sum_Stock', function ($r) {
+                    if ($r->Shipping_Request || $r->Design_Changes_Request) {
+                        return ''; // kosongan aja
+                    }
+                    return $r->Sum_Stock ?? '';
+                })
                 ->addColumn('Sum_Record', function ($r) {
                     return optional($r->record)->Sum_Record ?? '';
                 })
@@ -894,6 +900,12 @@ class McRequestController extends Controller
                 })
                 ->orderColumn('ready_status_display', function ($query, $order) {
                     $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01")) ' . $order);
+                })
+                ->addColumn('Estimation_Date_Display', function ($r) {
+                    if ($r->Estimation_Stock) {
+                        return \Carbon\Carbon::parse($r->Estimation_Stock)->format('d/m/Y');
+                    }
+                    return '-';
                 })
                 ->addColumn('Estimation_Stock', function ($r) {
                     if ($r->Estimation_Stock) {

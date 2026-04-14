@@ -190,13 +190,15 @@ class AdminRequestController extends Controller
                 $readyDisplay[] = 'Ready: ' . $request->Ready_Request;
             }
             if ($request->Shipping_Request) {
-                $readyDisplay[] = 'Shipping: ' . $request->Shipping_Request;
+                $prefix = $request->Ok_Stock == 1 ? 'OK Shipping: ' : 'Shipping: ';
+                $readyDisplay[] = $prefix . $request->Shipping_Request;
             }
             if ($request->Production_Area_Request) {
                 $readyDisplay[] = 'Production: ' . $request->Production_Area_Request;
             }
             if ($request->Design_Changes_Request) {
-                $readyDisplay[] = 'Design: ' . $request->Design_Changes_Request;
+                $prefix = $request->Ok_Stock == 1 ? 'OK Design: ' : 'Design: ';
+                $readyDisplay[] = $prefix . $request->Design_Changes_Request;
             }
 
             $readyStockDisplay = implode(' | ', $readyDisplay);
@@ -213,6 +215,13 @@ class AdminRequestController extends Controller
                 $statusCode = '3';
             } elseif ($request->Design_Changes_Request !== null) {
                 $statusCode = '4';
+            }
+
+            $sumStockDisplay = '';
+            if ($statusCode == '2' || $statusCode == '4') {
+                $sumStockDisplay = $request->Stock_Shipping ?? '';
+            } else {
+                $sumStockDisplay = $request->Sum_Stock ?? '';
             }
 
             $estimationDisplay = '';
@@ -232,7 +241,7 @@ class AdminRequestController extends Controller
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
                 $statusCode,
-                $request->Sum_Stock ?? '',
+                $sumStockDisplay,
                 $readyStockDisplay,
                 $estimationDisplay,
                 $timeRecord,
@@ -366,9 +375,15 @@ class AdminRequestController extends Controller
 
             $readyDisplay = [];
             if ($req->Ready_Request) $readyDisplay[] = 'Ready: ' . $req->Ready_Request;
-            if ($req->Shipping_Request) $readyDisplay[] = 'Shipping: ' . $req->Shipping_Request;
+            if ($req->Shipping_Request) {
+                $prefix = $req->Ok_Stock == 1 ? 'OK Shipping: ' : 'Shipping: ';
+                $readyDisplay[] = $prefix . $req->Shipping_Request;
+            }
             if ($req->Production_Area_Request) $readyDisplay[] = 'Production: ' . $req->Production_Area_Request;
-            if ($req->Design_Changes_Request) $readyDisplay[] = 'Design: ' . $req->Design_Changes_Request;
+            if ($req->Design_Changes_Request) {
+                $prefix = $req->Ok_Stock == 1 ? 'OK Design: ' : 'Design: ';
+                $readyDisplay[] = $prefix . $req->Design_Changes_Request;
+            }
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
             $timeRequest = ($req->Day_Request ?? '') . ' ' . ($req->Time_Request ?? '');
@@ -379,6 +394,13 @@ class AdminRequestController extends Controller
             elseif ($req->Shipping_Request !== null) $statusCode = '2';
             elseif ($req->Production_Area_Request !== null) $statusCode = '3';
             elseif ($req->Design_Changes_Request !== null) $statusCode = '4';
+
+            $sumStockDisplay = '';
+            if ($statusCode == '2' || $statusCode == '4') {
+                $sumStockDisplay = $req->Stock_Shipping ?? '';
+            } else {
+                $sumStockDisplay = $req->Sum_Stock ?? '';
+            }
 
             $estimationDisplay = '';
             if ($req->Estimation_Stock) {
@@ -397,7 +419,7 @@ class AdminRequestController extends Controller
                 $req->Code_Item_Rack,
                 $req->rack->Name_Item_Rack ?? '',
                 $statusCode,
-                $req->Sum_Stock ?? '',
+                $sumStockDisplay,
                 $estimationDisplay,
                 $readyStockDisplay,
                 $timeRecord,
@@ -524,19 +546,33 @@ class AdminRequestController extends Controller
                 ->editColumn('Updated_At_Request', function ($r) {
                     return $r->Updated_At_Request ?? '';
                 })
+                ->editColumn('Sum_Stock', function ($r) {
+                    if ($r->Shipping_Request || $r->Design_Changes_Request) {
+                        return $r->Stock_Shipping ?? '';
+                    }
+                    return $r->Sum_Stock ?? '';
+                })
+                ->addColumn('Estimation_Stock', function ($r) {
+                    if ($r->Estimation_Stock) {
+                        return \Carbon\Carbon::parse($r->Estimation_Stock)->format('d/m/Y');
+                    }
+                    return '-';
+                })
                 ->addColumn('ready_status_display', function ($r) {
                     $statuses = [];
                     if ($r->Ready_Request) {
                         $statuses[] = '<span class="badge badge-success">Ready</span>: ' . $r->Ready_Request;
                     }
                     if ($r->Shipping_Request) {
-                        $statuses[] = '<span class="badge badge-info">Shipping</span>: ' . $r->Shipping_Request;
+                        $title = $r->Ok_Stock == 1 ? 'OK Shipping' : 'Shipping';
+                        $statuses[] = '<span class="badge badge-info">' . $title . '</span>: ' . $r->Shipping_Request;
                     }
                     if ($r->Production_Area_Request) {
                         $statuses[] = '<span class="badge badge-primary">Production</span>: ' . $r->Production_Area_Request;
                     }
                     if ($r->Design_Changes_Request) {
-                        $statuses[] = '<span class="badge badge-warning">Design Change</span>: ' . $r->Design_Changes_Request;
+                        $title = $r->Ok_Stock == 1 ? 'OK Design Change' : 'Design Change';
+                        $statuses[] = '<span class="badge badge-warning">' . $title . '</span>: ' . $r->Design_Changes_Request;
                     }
                     return implode(' | ', $statuses);
                 })
