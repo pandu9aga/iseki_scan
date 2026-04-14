@@ -94,6 +94,7 @@
                             <th>Name</th>
                             <th>Ready Stock</th>
                             <th>Sum Stock</th>
+                            <th>Estimation Date</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -114,6 +115,7 @@
                             <th>Name</th>
                             <th>Ready Stock</th>
                             <th>Sum Stock</th>
+                            <th>Estimation Date</th>
                             <th>Time Record</th>
                             <th>Sum Record</th>
                             <th>Member Request</th>
@@ -145,7 +147,14 @@
                                     echo implode(' | ', $statuses);
                                 @endphp
                             </td>
-                            <td>{{ $s->Sum_Stock }}</td>
+                            <td>
+                                @if($s->Shipping_Request || $s->Design_Changes_Request)
+                                    {{ $s->Stock_Shipping ?? '' }}
+                                @else
+                                    {{ $s->Sum_Stock ?? '' }}
+                                @endif
+                            </td>
+                            <td>{{ $s->Estimation_Stock ? \Carbon\Carbon::parse($s->Estimation_Stock)->format('d/m/Y') : '-' }}</td>
                             <td>{{ optional($s->record)->Day_Record ?? '' }} {{ optional($s->record)->Time_Record ?? '' }}</td>
                             <td>{{ optional($s->record)->Sum_Record ?? '' }}</td>
                             <td>{{ $s->display_name ?? '' }}</td>

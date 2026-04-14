@@ -208,6 +208,14 @@ class SubmissionController extends Controller
                 $statusCode = '4';
             }
 
+            // Determine Sum Stock display value
+            $sumStockDisplay = '';
+            if ($statusCode == '2' || $statusCode == '4') {
+                $sumStockDisplay = $submission->Stock_Shipping ?? '';
+            } else {
+                $sumStockDisplay = $submission->Sum_Stock ?? '';
+            }
+
             $estimationDisplay = '';
             if ($submission->Estimation_Stock) {
                 $estimationDisplay = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
@@ -225,7 +233,7 @@ class SubmissionController extends Controller
                 $submission->Code_Item_Rack,
                 $submission->rack->Name_Item_Rack ?? '',
                 $statusCode,
-                $submission->Sum_Stock ?? '',
+                $sumStockDisplay,
                 $readyStockDisplay,
                 $estimationDisplay,
                 $timeRecord,
@@ -234,6 +242,29 @@ class SubmissionController extends Controller
                 optional($submission->record)->Is_User == 1 ? (optional($submission->record->user)->Name_User ?? 'Admin') : (optional($submission->record)->member->Name_Member ?? '-'),
                 $submission->Updated_At_Request,
             ], null, 'A' . $row);
+
+            // Set background color for readonly Sum Stock based on status
+            if ($statusCode == '2') {
+                $sheet->getStyle('J' . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'ADD8E6'] // Light Blue
+                    ],
+                    'font' => [
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]);
+            } elseif ($statusCode == '4') {
+                $sheet->getStyle('J' . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'FFFFE0'] // Light Yellow
+                    ],
+                    'font' => [
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]);
+            }
 
             $lastUser = $submission->Id_User;
             $row++;
@@ -341,6 +372,18 @@ class SubmissionController extends Controller
                 })
                 ->editColumn('Updated_At_Request', function ($r) {
                     return $r->Updated_At_Request ?? '';
+                })
+                ->editColumn('Sum_Stock', function ($r) {
+                    if ($r->Shipping_Request !== null || $r->Design_Changes_Request !== null) {
+                        return $r->Stock_Shipping;
+                    }
+                    return $r->Sum_Stock;
+                })
+                ->addColumn('Estimation_Stock', function ($r) {
+                    if ($r->Estimation_Stock) {
+                        return \Carbon\Carbon::parse($r->Estimation_Stock)->format('d/m/Y');
+                    }
+                    return '';
                 })
                 ->addColumn('ready_status_display', function ($r) {
                     $statuses = [];

@@ -105,6 +105,7 @@
                             <th>Time Request</th>
                             <th>Sum Request</th>
                             <th>Sum Stock</th>
+                            <th>Estimation Date</th>
                             <th>Member Request</th>
                             <th>Member Record</th>
                             <th>Updated</th>
@@ -124,6 +125,7 @@
                             <th>Time Request</th>
                             <th>Sum Request</th>
                             <th>Sum Stock</th>
+                            <th>Estimation Date</th>
                             <th>Member Request</th>
                             <th>Member Record</th>
                             <th>Updated</th>
@@ -155,7 +157,14 @@
                             </td>
                             <td>{{ optional($r->request)->Day_Request ?? '' }} {{ optional($r->request)->Time_Request ?? '' }}</td>
                             <td>{{ optional($r->request)->Sum_Request ?? '' }}</td>
-                            <td>{{ optional($r->request)->Sum_Stock ?? '' }}</td>
+                            <td>
+                                @if(optional($r->request)->Shipping_Request || optional($r->request)->Design_Changes_Request)
+                                    {{ optional($r->request)->Stock_Shipping ?? '' }}
+                                @else
+                                    {{ optional($r->request)->Sum_Stock ?? '' }}
+                                @endif
+                            </td>
+                            <td>{{ optional($r->request)->Estimation_Stock ? \Carbon\Carbon::parse($r->request->Estimation_Stock)->format('d/m/Y') : '-' }}</td>
                             <td>{{ optional($r->request)->display_name ?? '' }}</td>
                             <td>{{ $r->display_name ?? '' }}</td>
                             <td>{{ $r->Updated_At_Record ?? '' }}</td>
