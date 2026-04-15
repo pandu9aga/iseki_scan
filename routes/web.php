@@ -33,6 +33,7 @@ use App\Http\Controllers\User\RecordController;
 use App\Http\Controllers\User\UserMissingController;
 use App\Http\Controllers\User\RequestController;
 use App\Http\Controllers\User\SubmissionController;
+use App\Http\Controllers\User\UserWithdrawalController;
 use App\Http\Controllers\User\UserAchievementController;
 use App\Http\Controllers\User\UserForgotController;
 use App\Http\Controllers\User\UserMistakeController;
@@ -41,8 +42,10 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AreaMiddleware;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\McMiddleware;
+use App\Http\Middleware\QcMiddleware;
 use App\Http\Middleware\TransitMiddleware;
 use App\Models\Rack;
+use App\Http\Controllers\Qc\WithdrawalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -218,6 +221,11 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/user_urgents', [UrgentController::class, 'index'])->name('user.urgents');
     Route::get('/user_urgents/scan', [UrgentController::class, 'scan'])->name('user.urgents.scan');
     Route::post('/user_urgents/scan/process', [UrgentController::class, 'processScan'])->name('user.urgents.process');
+
+    // Member Withdrawal
+    Route::get('/user_withdrawal', [UserWithdrawalController::class, 'index'])->name('user.withdrawal');
+    Route::post('/user_withdrawal/oke/{id}', [UserWithdrawalController::class, 'oke'])->name('user.withdrawal.oke');
+    Route::post('/user_withdrawal/return/{id}', [UserWithdrawalController::class, 'returnRack'])->name('user.withdrawal.return');
 });
 
 Route::middleware(McMiddleware::class)->group(function () {
@@ -299,4 +307,13 @@ Route::middleware(AreaMiddleware::class)->group(function () {
     Route::get('/area/scan', [AreaScanController::class, 'index'])->name('area.scan');
     Route::post('/area/scan/process', [AreaScanController::class, 'process'])->name('area.scan.process');
     Route::get('/area/urgents', [UrgentController::class, 'index'])->name('area.urgents');
+});
+
+Route::middleware(QcMiddleware::class)->group(function () {
+    Route::get('/qc/withdrawal', [WithdrawalController::class, 'index'])->name('qc.withdrawal');
+    Route::post('/qc/withdrawal/store', [WithdrawalController::class, 'store'])->name('qc.withdrawal.store');
+    Route::post('/qc/withdrawal/oke/{id}', [WithdrawalController::class, 'oke'])->name('qc.withdrawal.oke');
+    Route::post('/qc/withdrawal/receiving/{id}', [WithdrawalController::class, 'receiving'])->name('qc.withdrawal.receiving');
+    Route::post('/qc/withdrawal/finish/{id}', [WithdrawalController::class, 'finish'])->name('qc.withdrawal.finish');
+    Route::post('/qc/withdrawal/return/{id}', [WithdrawalController::class, 'returnRack'])->name('qc.withdrawal.return');
 });

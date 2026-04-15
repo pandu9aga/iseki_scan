@@ -170,6 +170,13 @@
                 </div>
             </li>
 
+            <!-- Nav Item - Withdrawal -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('user.withdrawal') }}">
+                    <i class="fas fa-fw fa-exchange-alt"></i>
+                    <span>Withdrawal</span></a>
+            </li>
+
             <!-- Divider -->
             <hr class="sidebar-divider">
 
