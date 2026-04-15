@@ -161,7 +161,7 @@
     <script src="{{asset('vendor/jquery-easing/jquery.easing.min.js')}}"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="{{asset('js/sb-admin-2.min.js')}}"></script>
+    <script src="{{asset('js/sb-admin-2.min.js?v=3')}}"></script>
 
     <script>
         $(document).ready(function() {
@@ -183,6 +183,43 @@
     </script>
 
     @yield('script')
+
+    <script>
+        // MOBILE SIDEBAR: Robust toggle — resize events won't close the sidebar
+        (function() {
+            var sidebarOpen = false;
+
+            function openSidebar() {
+                sidebarOpen = true;
+                $('body').removeClass('sidebar-toggled');
+                $('.sidebar').removeClass('toggled');
+            }
+
+            function closeSidebar() {
+                sidebarOpen = false;
+                $('body').addClass('sidebar-toggled');
+                $('.sidebar').addClass('toggled');
+            }
+
+            $(document).off('click', '#sidebarToggle, #sidebarToggleTop');
+            $(document).on('click', '#sidebarToggle, #sidebarToggleTop', function(e) {
+                e.stopPropagation();
+                if (sidebarOpen) { closeSidebar(); } else { openSidebar(); }
+            });
+
+            $(document).on('click', '#closeSidebarMobile', function(e) {
+                e.stopPropagation();
+                closeSidebar();
+            });
+
+            $(window).off('resize');
+            $(window).on('resize', function() {
+                if ($(window).width() < 768 && sidebarOpen) { /* keep open */ }
+            });
+
+            $('#navbarBackdrop').off('click touchstart');
+        })();
+    </script>
 
 </body>
 

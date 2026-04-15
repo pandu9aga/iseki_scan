@@ -103,6 +103,29 @@
             body:not(.sidebar-toggled) #navbarBackdrop {
                 display: block !important;
             }
+
+            /* Tombol Close di Sidebar Mobile */
+            #closeSidebarMobile {
+                display: block !important;
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                color: white;
+                background: rgba(0,0,0,0.2);
+                border-radius: 50%;
+                width: 30px;
+                height: 30px;
+                text-align: center;
+                line-height: 30px;
+                z-index: 1070;
+                cursor: pointer;
+            }
+        }
+
+        @media (min-width: 769px) {
+            #closeSidebarMobile {
+                display: none !important;
+            }
         }
     </style>
 
@@ -131,6 +154,11 @@
                 </div>
                 <div class="sidebar-brand-text mx-3">Iseki Scan</div>
             </a>
+
+            <!-- Mobile Close Button -->
+            <div id="closeSidebarMobile" onclick="$('#sidebarToggleTop').click();">
+                <i class="fas fa-times"></i>
+            </div>
 
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
@@ -472,7 +500,7 @@
     <script src="{{asset('vendor/jquery-easing/jquery.easing.min.js')}}"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="{{asset('js/sb-admin-2.min.js')}}"></script>
+    <script src="{{asset('js/sb-admin-2.min.js?v=3')}}"></script>
 
     @yield('script')
 
@@ -493,11 +521,44 @@
                 });
             }
 
-            // Close sidebar when clicking backdrop on mobile
-            $('#navbarBackdrop').on('click', function() {
-                $('#sidebarToggleTop').click();
-            });
         });
+    </script>
+
+    <script>
+        // MOBILE SIDEBAR: Robust toggle — resize events won't close the sidebar
+        (function() {
+            var sidebarOpen = false;
+
+            function openSidebar() {
+                sidebarOpen = true;
+                $('body').removeClass('sidebar-toggled');
+                $('.sidebar').removeClass('toggled');
+            }
+
+            function closeSidebar() {
+                sidebarOpen = false;
+                $('body').addClass('sidebar-toggled');
+                $('.sidebar').addClass('toggled');
+            }
+
+            $(document).off('click', '#sidebarToggle, #sidebarToggleTop');
+            $(document).on('click', '#sidebarToggle, #sidebarToggleTop', function(e) {
+                e.stopPropagation();
+                if (sidebarOpen) { closeSidebar(); } else { openSidebar(); }
+            });
+
+            $(document).on('click', '#closeSidebarMobile', function(e) {
+                e.stopPropagation();
+                closeSidebar();
+            });
+
+            $(window).off('resize');
+            $(window).on('resize', function() {
+                if ($(window).width() < 768 && sidebarOpen) { /* keep open */ }
+            });
+
+            $('#navbarBackdrop').off('click touchstart');
+        })();
     </script>
 
     <div id="navbarBackdrop"></div>

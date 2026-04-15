@@ -109,6 +109,29 @@
             body:not(.sidebar-toggled) #navbarBackdrop {
                 display: block !important;
             }
+
+            /* Tombol Close di Sidebar Mobile */
+            #closeSidebarMobile {
+                display: block !important;
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                color: white;
+                background: rgba(0,0,0,0.2);
+                border-radius: 50%;
+                width: 30px;
+                height: 30px;
+                text-align: center;
+                line-height: 30px;
+                z-index: 1070;
+                cursor: pointer;
+            }
+        }
+
+        @media (min-width: 769px) {
+            #closeSidebarMobile {
+                display: none !important;
+            }
         }
     </style>
 
@@ -138,6 +161,11 @@
                 </div>
                 <div class="sidebar-brand-text mx-3">Iseki Scan</div>
             </a>
+
+            <!-- Mobile Close Button -->
+            <div id="closeSidebarMobile" onclick="$('#sidebarToggleTop').click();">
+                <i class="fas fa-times"></i>
+            </div>
 
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
@@ -231,11 +259,11 @@
             </li>
 
             <!-- Nav Item - Withdrawal -->
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('user.withdrawal') }}">
                     <i class="fas fa-fw fa-exchange-alt"></i>
                     <span>Withdrawal</span></a>
-            </li>
+            </li> --}}
 
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -409,7 +437,7 @@
     <script src="{{asset('vendor/jquery-easing/jquery.easing.min.js')}}"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="{{asset('js/sb-admin-2.min.js')}}"></script>
+    <script src="{{asset('js/sb-admin-2.min.js?v=3')}}"></script>
 
     @yield('script')
 
@@ -421,12 +449,57 @@
                     lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
                 });
             }
-
-            // Close sidebar when clicking backdrop on mobile
-            $('#navbarBackdrop').on('click', function() {
-                $('#sidebarToggleTop').click();
-            });
         });
+    </script>
+
+    <script>
+        // =====================================================================
+        // MOBILE SIDEBAR: Custom robust toggle — independent of resize events
+        // =====================================================================
+        (function() {
+            var sidebarOpen = false;
+
+            function openSidebar() {
+                sidebarOpen = true;
+                $('body').removeClass('sidebar-toggled');
+                $('.sidebar').removeClass('toggled');
+            }
+
+            function closeSidebar() {
+                sidebarOpen = false;
+                $('body').addClass('sidebar-toggled');
+                $('.sidebar').addClass('toggled');
+            }
+
+            // Override the SB Admin 2 toggle — intercept clicks on burger buttons
+            $(document).off('click', '#sidebarToggle, #sidebarToggleTop');
+            $(document).on('click', '#sidebarToggle, #sidebarToggleTop', function(e) {
+                e.stopPropagation();
+                if (sidebarOpen) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+
+            // Close button inside sidebar
+            $(document).on('click', '#closeSidebarMobile', function(e) {
+                e.stopPropagation();
+                closeSidebar();
+            });
+
+            // Neutralize resize — NEVER close sidebar on resize/scroll-triggered resize
+            $(window).off('resize');
+            $(window).on('resize', function() {
+                // Only collapse sub-menus on narrow screens, never the sidebar itself
+                if ($(window).width() < 768 && sidebarOpen) {
+                    // Do NOT close sidebar; only flag to ensure state is consistent
+                }
+            });
+
+            // Prevent backdrop from closing sidebar (only close button works)
+            $('#navbarBackdrop').off('click touchstart');
+        })();
     </script>
 
     <div id="navbarBackdrop"></div>

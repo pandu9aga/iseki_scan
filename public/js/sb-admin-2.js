@@ -11,15 +11,12 @@
   });
 
   // Close any open menu accordions when window is resized below 768px
+  // NOTE: We intentionally do NOT close the sidebar here.
+  // Mobile browsers trigger resize when the address bar shows/hides during scroll,
+  // which used to cause the sidebar to close unexpectedly.
   $(window).resize(function() {
     if ($(window).width() < 768) {
-      $('.sidebar .collapse').collapse('hide');
-    };
-    
-    // Toggle the side navigation when window is resized below 480px
-    if ($(window).width() < 480 && !$(".sidebar").hasClass("toggled")) {
-      $("body").addClass("sidebar-toggled");
-      $(".sidebar").addClass("toggled");
+      // Only collapse sub-menus, do NOT toggle the sidebar itself
       $('.sidebar .collapse').collapse('hide');
     };
   });
