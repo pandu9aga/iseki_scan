@@ -93,6 +93,22 @@
                 border: 1px solid #e3e6f0;
                 padding-bottom: 1rem !important;
             }
+
+            /* Backdrop untuk menutup navbar saat klik di luar */
+            #navbarBackdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1050;
+            }
+
+            body:not(.sidebar-toggled) #navbarBackdrop {
+                display: block !important;
+            }
         }
     </style>
 
@@ -405,9 +421,15 @@
                     lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
                 });
             }
+
+            // Close sidebar when clicking backdrop on mobile
+            $('#navbarBackdrop').on('click', function() {
+                $('#sidebarToggleTop').click();
+            });
         });
     </script>
 
+    <div id="navbarBackdrop"></div>
 </body>
 
 </html>
