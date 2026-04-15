@@ -50,6 +50,50 @@
             font-size: 0.7rem;
             padding: 0.25rem 0.5rem;
         }
+
+        /* Fix Navbar Mobile agar tampil rapi dan sub-menu tidak terpotong */
+        @media (max-width: 768px) {
+            /* Sembunyikan sidebar secara default di mobile */
+            #accordionSidebar {
+                display: none;
+                width: 6.5rem !important;
+                z-index: 1060;
+            }
+
+            /* Munculkan sidebar saat burger button diklik (class sidebar-toggled dihapus) */
+            body:not(.sidebar-toggled) #accordionSidebar {
+                display: block !important;
+                position: absolute !important; /* Gunakan absolute agar tidak memotong popup dan bisa discroll halaman */
+                top: 0;
+                left: 0;
+                height: auto !important;
+                min-height: 100vh;
+                overflow: visible !important; /* Agar popup/fly-out tidak terpotong */
+            }
+
+            /* Sub-menu (collapse) jadi popup ke samping kanan */
+            .sidebar .nav-item .collapse {
+                position: absolute !important;
+                left: 6.5rem !important;
+                top: 0 !important;
+                z-index: 1070 !important;
+                width: max-content !important;
+                display: none;
+            }
+
+            .sidebar .nav-item .collapse.show {
+                display: block !important;
+            }
+
+            .sidebar .nav-item .collapse .collapse-inner {
+                width: max-content !important;
+                min-width: 14rem;
+                box-shadow: 0 0.15rem 1.75rem 0 rgba(0, 0, 0, 0.15);
+                background: white;
+                border: 1px solid #e3e6f0;
+                padding-bottom: 1rem !important;
+            }
+        }
     </style>
 
 
