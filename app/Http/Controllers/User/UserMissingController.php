@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Carbon\Carbon;
 use App\Models\Request as RequestModel;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class UserMissingController extends Controller
 {
@@ -19,9 +19,10 @@ class UserMissingController extends Controller
 
         // Request yang sudah di-OK (Ok_Stock == 1) dan bertipe Shipping/Design Change
         $requests = RequestModel::with('member', 'record', 'rack')
+            ->where('Status_Request', '!=', 'Done')
             ->where(function ($query) {
                 $query->whereNotNull('Shipping_Request')
-                      ->orWhereNotNull('Design_Changes_Request');
+                    ->orWhereNotNull('Design_Changes_Request');
             })
             ->whereNotNull('Estimation_Stock')
             ->where('Ok_Stock', 1)
@@ -40,28 +41,29 @@ class UserMissingController extends Controller
         $date = Carbon::parse($date)->format('Y-m-d');
 
         $requests = RequestModel::with('member', 'record', 'rack')
+            ->where('Status_Request', '!=', 'Done')
             ->where(function ($query) {
                 $query->whereNotNull('Shipping_Request')
-                      ->orWhereNotNull('Design_Changes_Request');
+                    ->orWhereNotNull('Design_Changes_Request');
             })
             ->whereNotNull('Estimation_Stock')
             ->where('Ok_Stock', 1)
             ->orderBy('Time_Ok_Stock', 'desc')
             ->get();
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         $headers = [
             'No', 'Rack', 'Item', 'Name', 'Sum', 'Status OK',
             'Time Request', 'Estimation Date', 'Stock Shipping',
-            'Time OK', 'PIC'
+            'Time OK', 'PIC',
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
         $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
@@ -75,7 +77,7 @@ class UserMissingController extends Controller
                 $statusLabel = 'Oke Shipping';
             }
 
-            $timeRequest = ($req->Day_Request ?? '') . " " . ($req->Time_Request ?? '');
+            $timeRequest = ($req->Day_Request ?? '').' '.($req->Time_Request ?? '');
             $estimationDate = '';
             if ($req->Estimation_Stock) {
                 $estimationDate = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
@@ -97,7 +99,7 @@ class UserMissingController extends Controller
                 $req->Stock_Shipping ?? '',
                 $timeOk,
                 $req->member->Name_Member ?? '-',
-            ], null, 'A' . $row);
+            ], null, 'A'.$row);
 
             $row++;
         }
@@ -108,9 +110,9 @@ class UserMissingController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $fileName = "Oke_Estimation_" . $date . ".xlsx";
+        $fileName = 'Oke_Estimation_'.$date.'.xlsx';
         $writer = new Xlsx($spreadsheet);
-        $filePath = storage_path('app/public/' . $fileName);
+        $filePath = storage_path('app/public/'.$fileName);
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);

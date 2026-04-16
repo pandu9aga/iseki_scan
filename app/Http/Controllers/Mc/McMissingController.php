@@ -3,18 +3,18 @@
 namespace App\Http\Controllers\Mc;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;           // untuk HTTP Request
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
-use App\Models\Request as RequestModel; // alias model Request supaya gak bentrok
+use App\Models\Request as RequestModel;           // untuk HTTP Request
 use App\Models\User;
+use Carbon\Carbon; // alias model Request supaya gak bentrok
+use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class McMissingController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         $date = Carbon::today()->format('Y-m-d');
         $now = Carbon::now();
         // Hitung waktu 2 hari kerja lalu (tanpa Sabtu dan Minggu)
@@ -23,7 +23,7 @@ class McMissingController extends Controller
         while ($daysCounted < 2) {
             $workdaysAgo->subDay();
             // Lewati Sabtu (6) dan Minggu (0)
-            if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
+            if (! in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
                 $daysCounted++;
             }
         }
@@ -45,9 +45,12 @@ class McMissingController extends Controller
                 $latestStatusTime = $request->Ready_Request;
             }
 
-            if (!$latestStatusTime) return false;
+            if (! $latestStatusTime) {
+                return false;
+            }
 
             $request->latest_status_time = Carbon::parse($latestStatusTime);
+
             return $request->latest_status_time->lt($workdaysAgo);
         })->sortByDesc('latest_status_time')->values();
 
@@ -57,7 +60,8 @@ class McMissingController extends Controller
         return view('mcs.missings.index', compact('requests', 'totalRequests', 'formattedDate', 'date'));
     }
 
-    public function export(Request $request) {
+    public function export(Request $request)
+    {
         $date = $request->input('Day_Request_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
         $now = Carbon::now();
@@ -67,7 +71,7 @@ class McMissingController extends Controller
         while ($daysCounted < 2) {
             $workdaysAgo->subDay();
             // Lewati Sabtu (6) dan Minggu (0)
-            if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
+            if (! in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
                 $daysCounted++;
             }
         }
@@ -89,24 +93,27 @@ class McMissingController extends Controller
                 $latestStatusTime = $request->Ready_Request;
             }
 
-            if (!$latestStatusTime) return false;
+            if (! $latestStatusTime) {
+                return false;
+            }
 
             $request->latest_status_time = Carbon::parse($latestStatusTime);
+
             return $request->latest_status_time->lt($workdaysAgo);
         })->sortByDesc('latest_status_time')->values();
 
         // Buat Spreadsheet
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
         $headers = ['No', 'Rack', 'Item', 'Name', 'Sum', 'Time Request', 'Ready Stock', 'Day(s)', 'Hour(s) Minute(s)', 'PIC'];
-        $sheet->fromArray([$headers], NULL, 'A1');
+        $sheet->fromArray([$headers], null, 'A1');
 
         // Style header (tebal & background abu-abu)
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
         $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
 
@@ -118,14 +125,22 @@ class McMissingController extends Controller
         $row = 2;
         foreach ($requests as $index => $request) {
             // === 1. Time Request ===
-            $timeRequest = ($request->Day_Request ?? '') . " " . ($request->Time_Request ?? '');
+            $timeRequest = ($request->Day_Request ?? '').' '.($request->Time_Request ?? '');
 
             // === 2. Ready Stock (sama seperti di view) ===
             $statuses = [];
-            if ($request->Ready_Request) $statuses[] = 'Ready: ' . $request->Ready_Request;
-            if ($request->Shipping_Request) $statuses[] = 'Shipping: ' . $request->Shipping_Request;
-            if ($request->Production_Area_Request) $statuses[] = 'Production: ' . $request->Production_Area_Request;
-            if ($request->Design_Changes_Request) $statuses[] = 'Design Change: ' . $request->Design_Changes_Request;
+            if ($request->Ready_Request) {
+                $statuses[] = 'Ready: '.$request->Ready_Request;
+            }
+            if ($request->Shipping_Request) {
+                $statuses[] = 'Shipping: '.$request->Shipping_Request;
+            }
+            if ($request->Production_Area_Request) {
+                $statuses[] = 'Production: '.$request->Production_Area_Request;
+            }
+            if ($request->Design_Changes_Request) {
+                $statuses[] = 'Design Change: '.$request->Design_Changes_Request;
+            }
             $readyStockDisplay = implode(' | ', $statuses);
 
             // === 3. Overdue (sama seperti di view) ===
@@ -153,14 +168,20 @@ class McMissingController extends Controller
                     $hours = floor(($totalSeconds % 86400) / 3600);
                     $minutes = floor(($totalSeconds % 3600) / 60);
 
-                    $overdueDay = $days . ' day(s)';
+                    $overdueDay = $days.' day(s)';
 
                     $hmParts = [];
-                    if ($hours > 0) $hmParts[] = $hours . ' hour(s)';
-                    if ($minutes > 0) $hmParts[] = $minutes . ' minute(s)';
-                    
+                    if ($hours > 0) {
+                        $hmParts[] = $hours.' hour(s)';
+                    }
+                    if ($minutes > 0) {
+                        $hmParts[] = $minutes.' minute(s)';
+                    }
+
                     $overdueHM = implode(' ', $hmParts);
-                    if (empty($overdueHM)) $overdueHM = '0 minute(s)';
+                    if (empty($overdueHM)) {
+                        $overdueHM = '0 minute(s)';
+                    }
                 }
             } else {
                 $overdueDay = '-';
@@ -179,7 +200,7 @@ class McMissingController extends Controller
                 $overdueDay,             // ← Day(s)
                 $overdueHM,              // ← Hour(s) Minute(s)
                 $request->member->Name_Member ?? '-',
-            ], null, 'A' . $row);
+            ], null, 'A'.$row);
 
             $row++;
         }
@@ -190,8 +211,8 @@ class McMissingController extends Controller
         }
 
         // Simpan ke file di storage/app/public
-        $fileName = "Missing_List_DST_" . $date . ".xlsx";
-        $filePath = storage_path('app/public/' . $fileName);
+        $fileName = 'Missing_List_DST_'.$date.'.xlsx';
+        $filePath = storage_path('app/public/'.$fileName);
 
         $writer = new Xlsx($spreadsheet);
         $writer->save($filePath);
@@ -214,7 +235,7 @@ class McMissingController extends Controller
             ->get();
 
         $missingRequests = $requests->filter(function ($request) use ($now) {
-            $requestTime = Carbon::parse($request->Day_Request . ' ' . $request->Time_Request);
+            $requestTime = Carbon::parse($request->Day_Request.' '.$request->Time_Request);
 
             // Jika request di masa depan, skip
             if ($requestTime->gt($now)) {
@@ -227,7 +248,7 @@ class McMissingController extends Controller
             // Loop per jam sampai mencapai now
             while ($current->lt($now)) {
                 // Lewati Sabtu (6) dan Minggu (0)
-                if (!in_array($current->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
+                if (! in_array($current->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
                     $workingHours++;
                 }
                 $current->addHour();
@@ -243,7 +264,8 @@ class McMissingController extends Controller
         return view('mcs.missings.mc', compact('missingRequests', 'totalRequests', 'formattedDate', 'date'));
     }
 
-    public function missing_mc_export(Request $request) {
+    public function missing_mc_export(Request $request)
+    {
         $date = $request->input('Day_Request_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
         $now = Carbon::now();
@@ -257,7 +279,7 @@ class McMissingController extends Controller
             ->get();
 
         $missingRequests = $requests->filter(function ($request) use ($now) {
-            $requestTime = Carbon::parse($request->Day_Request . ' ' . $request->Time_Request);
+            $requestTime = Carbon::parse($request->Day_Request.' '.$request->Time_Request);
 
             // Jika request di masa depan, skip
             if ($requestTime->gt($now)) {
@@ -270,7 +292,7 @@ class McMissingController extends Controller
             // Loop per jam sampai mencapai now
             while ($current->lt($now)) {
                 // Lewati Sabtu (6) dan Minggu (0)
-                if (!in_array($current->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
+                if (! in_array($current->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
                     $workingHours++;
                 }
                 $current->addHour();
@@ -282,22 +304,22 @@ class McMissingController extends Controller
 
         // Buat Spreadsheet
         // Buat Spreadsheet
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
             "1=Ready,2=Ship,\n3=Prod,4=Design", // ← \n = line break
-            'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 
-            'Member Record', 'Updated', 'Id'
+            'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request',
+            'Member Record', 'Updated', 'Id',
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Style header (tebal & background abu-abu)
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
         $sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
         $sheet->getStyle('A1:R1')->getAlignment()->setWrapText(true);
@@ -317,7 +339,7 @@ class McMissingController extends Controller
                 $sheet->fromArray(
                     array_fill(0, 18, '-'), // 18 kolom sesuai header
                     null,
-                    'A' . $row
+                    'A'.$row
                 );
                 $row++;
                 $no = 1; // reset nomor
@@ -327,22 +349,22 @@ class McMissingController extends Controller
             $readyDisplay = [];
 
             if ($request->Ready_Request) {
-                $readyDisplay[] = 'Ready: ' . $request->Ready_Request;
+                $readyDisplay[] = 'Ready: '.$request->Ready_Request;
             }
             if ($request->Shipping_Request) {
-                $readyDisplay[] = 'Shipping: ' . $request->Shipping_Request;
+                $readyDisplay[] = 'Shipping: '.$request->Shipping_Request;
             }
             if ($request->Production_Area_Request) {
-                $readyDisplay[] = 'Production: ' . $request->Production_Area_Request;
+                $readyDisplay[] = 'Production: '.$request->Production_Area_Request;
             }
             if ($request->Design_Changes_Request) {
-                $readyDisplay[] = 'Design: ' . $request->Design_Changes_Request;
+                $readyDisplay[] = 'Design: '.$request->Design_Changes_Request;
             }
 
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
-            $timeRequest = ($request->Day_Request ?? '') . " " . ($request->Time_Request ?? '');
-            $timeRecord = ($request->record->Day_Record ?? '') . " " . ($request->record->Time_Record ?? '');
+            $timeRequest = ($request->Day_Request ?? '').' '.($request->Time_Request ?? '');
+            $timeRecord = ($request->record->Day_Record ?? '').' '.($request->record->Time_Record ?? '');
 
             $statusCode = '';
             if ($request->Ready_Request !== null) {
@@ -381,7 +403,7 @@ class McMissingController extends Controller
                 optional($request->record)->member->Name_Member ?? '',
                 $request->Updated_At_Request,
                 $request->Id_Request,
-            ], null, 'A' . $row);
+            ], null, 'A'.$row);
 
             $lastUser = $request->Id_User;
             $no++;
@@ -392,7 +414,7 @@ class McMissingController extends Controller
         if ($lastRow >= 2) {
             $columnsToCenter = ['E', 'F', 'I', 'J', 'L', 'N'];
             foreach ($columnsToCenter as $col) {
-                $range = $col . '2:' . $col . $lastRow;
+                $range = $col.'2:'.$col.$lastRow;
                 $sheet->getStyle($range)->getAlignment()
                     ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
             }
@@ -419,9 +441,9 @@ class McMissingController extends Controller
         }
 
         // Simpan ke file
-        $fileName = "Missing_List_MC_" . $date . ".xlsx";
+        $fileName = 'Missing_List_MC_'.$date.'.xlsx';
         $writer = new Xlsx($spreadsheet);
-        $filePath = storage_path('app/public/' . $fileName);
+        $filePath = storage_path('app/public/'.$fileName);
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
@@ -439,13 +461,13 @@ class McMissingController extends Controller
             ->where('Status_Request', '!=', 'Done')
             ->where(function ($query) {
                 $query->whereNotNull('Shipping_Request')
-                      ->orWhereNotNull('Design_Changes_Request');
+                    ->orWhereNotNull('Design_Changes_Request');
             })
             ->whereNotNull('Estimation_Stock')
             ->where('Estimation_Stock', '<', $now->copy()->subHours(48))
             ->where(function ($query) {
                 $query->whereNull('Ok_Stock')
-                      ->orWhere('Ok_Stock', '!=', 1);
+                    ->orWhere('Ok_Stock', '!=', 1);
             })
             ->orderBy('Estimation_Stock', 'desc')
             ->get();
@@ -466,30 +488,30 @@ class McMissingController extends Controller
             ->where('Status_Request', '!=', 'Done')
             ->where(function ($query) {
                 $query->whereNotNull('Shipping_Request')
-                      ->orWhereNotNull('Design_Changes_Request');
+                    ->orWhereNotNull('Design_Changes_Request');
             })
             ->whereNotNull('Estimation_Stock')
             ->where('Estimation_Stock', '<', $now->copy()->subHours(48))
             ->where(function ($query) {
                 $query->whereNull('Ok_Stock')
-                      ->orWhere('Ok_Stock', '!=', 1);
+                    ->orWhere('Ok_Stock', '!=', 1);
             })
             ->orderBy('Estimation_Stock', 'desc')
             ->get();
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         $headers = [
             'No', 'Rack', 'Item', 'Name', 'Sum', 'Status',
             'Time Request', 'Estimation Date', 'Overdue Day(s)',
-            'Overdue Hour(s) Minute(s)', 'PIC'
+            'Overdue Hour(s) Minute(s)', 'PIC',
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
         $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
@@ -504,7 +526,7 @@ class McMissingController extends Controller
                 $statusLabel = 'Shipping';
             }
 
-            $timeRequest = ($req->Day_Request ?? '') . " " . ($req->Time_Request ?? '');
+            $timeRequest = ($req->Day_Request ?? '').' '.($req->Time_Request ?? '');
             $estimationDate = '';
             if ($req->Estimation_Stock) {
                 $estimationDate = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
@@ -524,10 +546,14 @@ class McMissingController extends Controller
                     $hours = floor(($totalSeconds % 86400) / 3600);
                     $minutes = floor(($totalSeconds % 3600) / 60);
 
-                    $overdueDay = $days . ' day(s)';
+                    $overdueDay = $days.' day(s)';
                     $hmParts = [];
-                    if ($hours > 0) $hmParts[] = $hours . ' hour(s)';
-                    if ($minutes > 0) $hmParts[] = $minutes . ' minute(s)';
+                    if ($hours > 0) {
+                        $hmParts[] = $hours.' hour(s)';
+                    }
+                    if ($minutes > 0) {
+                        $hmParts[] = $minutes.' minute(s)';
+                    }
                     $overdueHM = implode(' ', $hmParts) ?: '0 minute(s)';
                 }
             }
@@ -544,7 +570,7 @@ class McMissingController extends Controller
                 $overdueDay,
                 $overdueHM,
                 $req->member->Name_Member ?? '-',
-            ], null, 'A' . $row);
+            ], null, 'A'.$row);
 
             $row++;
         }
@@ -568,9 +594,9 @@ class McMissingController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $fileName = "Missing_Estimation_" . $date . ".xlsx";
+        $fileName = 'Missing_Estimation_'.$date.'.xlsx';
         $writer = new Xlsx($spreadsheet);
-        $filePath = storage_path('app/public/' . $fileName);
+        $filePath = storage_path('app/public/'.$fileName);
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
@@ -583,9 +609,10 @@ class McMissingController extends Controller
 
         // Request yang sudah di-OK (Ok_Stock == 1) dan bertipe Shipping/Design Change
         $requests = RequestModel::with('member', 'record', 'rack')
+            ->where('Status_Request', '!=', 'Done')
             ->where(function ($query) {
                 $query->whereNotNull('Shipping_Request')
-                      ->orWhereNotNull('Design_Changes_Request');
+                    ->orWhereNotNull('Design_Changes_Request');
             })
             ->whereNotNull('Estimation_Stock')
             ->where('Ok_Stock', 1)
@@ -605,28 +632,29 @@ class McMissingController extends Controller
         $now = Carbon::now();
 
         $requests = RequestModel::with('member', 'record', 'rack')
+            ->where('Status_Request', '!=', 'Done')
             ->where(function ($query) {
                 $query->whereNotNull('Shipping_Request')
-                      ->orWhereNotNull('Design_Changes_Request');
+                    ->orWhereNotNull('Design_Changes_Request');
             })
             ->whereNotNull('Estimation_Stock')
             ->where('Ok_Stock', 1)
             ->orderBy('Time_Ok_Stock', 'desc')
             ->get();
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         $headers = [
             'No', 'Rack', 'Item', 'Name', 'Sum', 'Status OK',
             'Time Request', 'Estimation Date', 'Stock Shipping',
-            'Time OK', 'PIC'
+            'Time OK', 'PIC',
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
         $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
@@ -640,7 +668,7 @@ class McMissingController extends Controller
                 $statusLabel = 'Oke Shipping';
             }
 
-            $timeRequest = ($req->Day_Request ?? '') . " " . ($req->Time_Request ?? '');
+            $timeRequest = ($req->Day_Request ?? '').' '.($req->Time_Request ?? '');
             $estimationDate = '';
             if ($req->Estimation_Stock) {
                 $estimationDate = \PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(
@@ -662,7 +690,7 @@ class McMissingController extends Controller
                 $req->Stock_Shipping ?? '',
                 $timeOk,
                 $req->member->Name_Member ?? '-',
-            ], null, 'A' . $row);
+            ], null, 'A'.$row);
 
             $row++;
         }
@@ -673,9 +701,9 @@ class McMissingController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $fileName = "Oke_Estimation_" . $date . ".xlsx";
+        $fileName = 'Oke_Estimation_'.$date.'.xlsx';
         $writer = new Xlsx($spreadsheet);
-        $filePath = storage_path('app/public/' . $fileName);
+        $filePath = storage_path('app/public/'.$fileName);
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
