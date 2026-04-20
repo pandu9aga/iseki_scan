@@ -313,7 +313,7 @@
 
                         @empty
                         <tr>
-                            <td colspan="16" class="text-center text-muted py-4">
+                            <td colspan="9" class="text-center text-muted py-4">
                                 <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                                 Belum ada data withdrawal.
                             </td>
