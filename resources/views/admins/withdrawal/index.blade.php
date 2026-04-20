@@ -118,39 +118,20 @@
             <div class="table-responsive">
                 <table class="table table-bordered table-hover mb-0" id="withdrawalTable" width="100%">
                     <thead>
-                        {{-- Group Header Row --}}
-                        <tr>
-                            <th rowspan="2" class="th-group-wd" style="min-width:30px;">No</th>
-                            {{-- WITHDRAWAL QC --}}
-                            <th colspan="5" class="th-group-wd">WITHDRAWAL QC</th>
-                            {{-- PREPARE BY DST --}}
-                            <th colspan="3" class="th-group-dst">PREPARE BY DST</th>
-                            {{-- RECEIVED BY QC --}}
-                            <th colspan="4" class="th-group-rcv">RECEIVED BY QC</th>
-                            {{-- RETURN TO RACK --}}
-                            <th colspan="3" class="th-group-ret">RETURN TO RACK</th>
-                        </tr>
                         {{-- Column Header Row --}}
                         <tr>
-                            {{-- WD cols --}}
-                            <th class="th-group-wd" style="min-width:100px;">Date</th>
-                            <th class="th-group-wd" style="min-width:90px;">Name</th>
-                            <th class="th-group-wd" style="min-width:90px;">Item Code</th>
-                            <th class="th-group-wd" style="min-width:110px;">Name Item</th>
-                            <th class="th-group-wd" style="min-width:80px;">No Rack</th>
-                            {{-- DST cols --}}
-                            <th class="th-group-dst" style="min-width:90px;">Oke DST</th>
-                            <th class="th-group-dst" style="min-width:110px;">Name Member</th>
-                            <th class="th-group-dst" style="min-width:100px;">Date Oke</th>
-                            {{-- RCV cols --}}
-                            <th class="th-group-rcv" style="min-width:90px;">Received</th>
-                            <th class="th-group-rcv" style="min-width:100px;">Date Received</th>
-                            <th class="th-group-rcv" style="min-width:90px;">Finish</th>
-                            <th class="th-group-rcv" style="min-width:100px;">Date Finish</th>
-                            {{-- RET cols --}}
-                            <th class="th-group-ret" style="min-width:110px;">PIC Return</th>
-                            <th class="th-group-ret" style="min-width:80px;">No Rack</th>
-                            <th class="th-group-ret" style="min-width:100px;">Date Return</th>
+                            <th class="th-group-wd" style="min-width:30px;">No</th>
+                            <th class="th-group-wd" style="min-width:140px;">PIC Withdrawal</th>
+                            <th class="th-group-wd" style="min-width:140px;">Item Code</th>
+                            
+                            <th class="th-group-dst" style="min-width:110px;">Oke DST</th>
+                            <th class="th-group-dst" style="min-width:110px;">PIC DST</th>
+                            
+                            <th class="th-group-rcv" style="min-width:110px;">Received</th>
+                            <th class="th-group-rcv" style="min-width:110px;">Finish</th>
+                            
+                            <th class="th-group-ret" style="min-width:120px;">PIC Return</th>
+                            <th class="th-group-ret" style="min-width:100px;">No Rack Return</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -160,17 +141,24 @@
 
                             {{-- WITHDRAWAL QC (Read Only) --}}
                             <td class="td-wd">
-                                {{ $w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') : '-' }}
+                                <span class="font-weight-bold">{{ $w->Name_Withdrawal ?? '-' }}</span><br>
+                                <small class="text-muted d-block mt-1">
+                                    {{ $w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') : '-' }}
+                                </small>
                             </td>
-                            <td class="td-wd text-left">{{ $w->Name_Withdrawal ?? '-' }}</td>
-                            <td class="td-wd"><strong>{{ $w->Code_Item_Withdrawal }}</strong></td>
-                            <td class="td-wd text-left">{{ $w->rack_name }}</td>
-                            <td class="td-wd"><code>{{ $w->rack_no }}</code></td>
+                            <td class="td-wd">
+                                <span class="font-weight-bold d-block">{{ $w->Code_Item_Withdrawal }}</span>
+                                <span class="badge badge-dark mt-1">{{ $w->rack_name }}</span><br>
+                                <span class="badge badge-secondary mt-1">{{ $w->rack_no }}</span>
+                            </td>
 
                             {{-- PREPARE BY DST (Action for Admin) --}}
                             <td class="td-dst">
                                 @if($w->Oke_Withdrawal)
-                                    <span class="chip chip-active"><i class="fas fa-check mr-1"></i>OK</span>
+                                    <span class="chip chip-active"><i class="fas fa-check mr-1"></i>OK</span><br>
+                                    <small class="text-muted d-block mt-1">
+                                        {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
+                                    </small>
                                 @else
                                     <button class="btn btn-warning btn-action font-weight-bold" data-toggle="modal" data-target="#modalOke{{ $w->Id_Withdrawal }}">
                                         <i class="fas fa-hand-pointer mr-1"></i>OK Siapkan
@@ -178,38 +166,36 @@
                                 @endif
                             </td>
                             <td class="td-dst">{{ $w->name_disiapkan ?? '-' }}</td>
-                            <td class="td-dst">
-                                {{ $w->Oke_Withdrawal && $w->Date_Withdrawal
-                                    ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i')
-                                    : '-' }}
-                            </td>
 
                             {{-- RECEIVED BY QC (Read Only for Admin) --}}
                             <td class="td-rcv">
                                 @if($w->Oke_Receiving)
-                                    <span class="chip chip-done"><i class="fas fa-check mr-1"></i>Diterima QC</span>
+                                    <span class="chip chip-done"><i class="fas fa-check mr-1"></i>Diterima QC</span><br>
+                                    <small class="text-muted d-block mt-1">
+                                        {{ \Carbon\Carbon::parse($w->Date_Receiving)->format('d/m/y H:i') }}
+                                    </small>
                                 @else
                                     <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Diterima</span>
                                 @endif
                             </td>
                             <td class="td-rcv">
-                                {{ $w->Date_Receiving ? \Carbon\Carbon::parse($w->Date_Receiving)->format('d/m/y H:i') : '-' }}
-                            </td>
-                            <td class="td-rcv">
                                 @if($w->Finish_Receiving)
-                                    <span class="chip chip-done"><i class="fas fa-check-double mr-1"></i>Selesai QC</span>
+                                    <span class="chip chip-done"><i class="fas fa-check-double mr-1"></i>Selesai QC</span><br>
+                                    <small class="text-muted d-block mt-1">
+                                        {{ \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') }}
+                                    </small>
                                 @else
                                     <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Selesai</span>
                                 @endif
-                            </td>
-                            <td class="td-rcv">
-                                {{ $w->Date_Finish_Receiving ? \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') : '-' }}
                             </td>
 
                             {{-- RETURN TO RACK (Action for Admin) --}}
                             <td class="td-ret">
                                 @if($w->Date_Return)
-                                    <span class="font-weight-bold">{{ $w->name_return ?? $w->NIK_Return }}</span>
+                                    <span class="font-weight-bold">{{ $w->name_return ?? $w->NIK_Return }}</span><br>
+                                    <small class="text-muted d-block mt-1">
+                                        {{ \Carbon\Carbon::parse($w->Date_Return)->format('d/m/y H:i') }}
+                                    </small>
                                 @elseif($w->Finish_Receiving)
                                     <button class="btn btn-primary btn-action font-weight-bold" data-toggle="modal" data-target="#modalReturn{{ $w->Id_Withdrawal }}">
                                         <i class="fas fa-undo mr-1"></i>Masuk Rak
@@ -220,9 +206,6 @@
                             </td>
                             <td class="td-ret">
                                 {{ $w->Code_Rack_Return ?? '-' }}
-                            </td>
-                            <td class="td-ret">
-                                {{ $w->Date_Return ? \Carbon\Carbon::parse($w->Date_Return)->format('d/m/y H:i') : '-' }}
                             </td>
                         </tr>
 

@@ -121,18 +121,13 @@
                         {{-- Column Header Row --}}
                         <tr>
                             <th class="th-group-wd" style="min-width:30px;">No</th>
-                            <th class="th-group-wd" style="min-width:100px;">Date WD</th>
-                            <th class="th-group-wd" style="min-width:110px;">Name PIC</th>
-                            <th class="th-group-wd" style="min-width:140px;">Item Code</th>
+                            <th class="th-group-wd" style="min-width:180px;">Withdrawal</th>
                             
-                            <th class="th-group-dst" style="min-width:110px;">Oke DST</th>
-                            <th class="th-group-dst" style="min-width:110px;">PIC DST</th>
+                            <th class="th-group-dst" style="min-width:140px;">Oke DST</th>
                             
-                            <th class="th-group-rcv" style="min-width:110px;">Received</th>
-                            <th class="th-group-rcv" style="min-width:110px;">Finish</th>
+                            <th class="th-group-rcv" style="min-width:140px;">Status Withdrawal</th>
                             
-                            <th class="th-group-ret" style="min-width:120px;">PIC Return</th>
-                            <th class="th-group-ret" style="min-width:100px;">No Rack Return</th>
+                            <th class="th-group-ret" style="min-width:140px;">Return to Rack</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -142,20 +137,21 @@
 
                             {{-- WITHDRAWAL QC (Read Only) --}}
                             <td class="td-wd">
-                                {{ $w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') : '-' }}
-                            </td>
-                            <td class="td-wd text-left">{{ $w->Name_Withdrawal ?? '-' }}</td>
-                            <td class="td-wd">
-                                <span class="font-weight-bold d-block">{{ $w->Code_Item_Withdrawal }}</span>
-                                <span class="badge badge-dark mt-1">{{ $w->rack_name }}</span><br>
-                                <span class="badge badge-secondary mt-1">{{ $w->rack_no }}</span>
+                                <span class="font-weight-bold">{{ $w->Name_Withdrawal ?? '-' }}</span><br>
+                                <small class="text-muted d-block mb-2">
+                                    <i class="far fa-clock mr-1"></i>{{ $w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') : '-' }}
+                                </small>
+                                <span class="badge badge-secondary d-block mb-1">{{ $w->rack_no }}</span>
+                                <span class="badge badge-dark d-block mb-1">{{ $w->rack_name }}</span>
+                                <span class="badge badge-info d-block">{{ $w->Code_Item_Withdrawal }}</span>
                             </td>
 
                             {{-- PREPARE BY DST (Action/Button for DST) --}}
                             <td class="td-dst">
                                 @if($w->Oke_Withdrawal)
-                                    <span class="chip chip-active"><i class="fas fa-check mr-1"></i>OK</span><br>
-                                    <small class="text-muted d-block mt-1">
+                                    <span class="chip chip-active mb-1"><i class="fas fa-check mr-1"></i>OK</span><br>
+                                    <span class="font-weight-bold" style="font-size:0.75rem;">{{ $w->name_disiapkan ?? '-' }}</span><br>
+                                    <small class="text-muted d-block">
                                         {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
                                     </small>
                                 @else
@@ -164,35 +160,37 @@
                                     </button>
                                 @endif
                             </td>
-                            <td class="td-dst">{{ $w->name_disiapkan ?? '-' }}</td>
 
-                            {{-- RECEIVED BY QC (Read Only for DST) --}}
+                            {{-- RECEIVED BY QC & FINISH (Read Only for DST) --}}
                             <td class="td-rcv">
-                                @if($w->Oke_Receiving)
-                                    <span class="chip chip-done"><i class="fas fa-check mr-1"></i>Diterima QC</span><br>
-                                    <small class="text-muted d-block mt-1">
-                                        {{ \Carbon\Carbon::parse($w->Date_Receiving)->format('d/m/y H:i') }}
-                                    </small>
-                                @else
-                                    <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Diterima</span>
-                                @endif
-                            </td>
-                            <td class="td-rcv">
-                                @if($w->Finish_Receiving)
-                                    <span class="chip chip-done"><i class="fas fa-check-double mr-1"></i>Selesai QC</span><br>
-                                    <small class="text-muted d-block mt-1">
-                                        {{ \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') }}
-                                    </small>
-                                @else
-                                    <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Selesai</span>
-                                @endif
+                                <div class="mb-2">
+                                    @if($w->Oke_Receiving)
+                                        <span class="chip chip-done"><i class="fas fa-check mr-1"></i>Diterima QC</span><br>
+                                        <small class="text-muted d-block mt-1">
+                                            {{ \Carbon\Carbon::parse($w->Date_Receiving)->format('d/m/y H:i') }}
+                                        </small>
+                                    @else
+                                        <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Diterima</span>
+                                    @endif
+                                </div>
+                                <div>
+                                    @if($w->Finish_Receiving)
+                                        <span class="chip chip-done"><i class="fas fa-check-double mr-1"></i>Selesai QC</span><br>
+                                        <small class="text-muted d-block mt-1">
+                                            {{ \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') }}
+                                        </small>
+                                    @else
+                                        <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Selesai</span>
+                                    @endif
+                                </div>
                             </td>
 
                             {{-- RETURN TO RACK (Action/Button for DST) --}}
                             <td class="td-ret">
                                 @if($w->Date_Return)
                                     <span class="font-weight-bold">{{ $w->name_return ?? $w->NIK_Return }}</span><br>
-                                    <small class="text-muted d-block mt-1">
+                                    <span class="badge badge-secondary mb-1">Rak: {{ $w->Code_Rack_Return ?? '-' }}</span><br>
+                                    <small class="text-muted d-block">
                                         {{ \Carbon\Carbon::parse($w->Date_Return)->format('d/m/y H:i') }}
                                     </small>
                                 @elseif($w->Finish_Receiving)
@@ -202,9 +200,6 @@
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
-                            </td>
-                            <td class="td-ret">
-                                {{ $w->Code_Rack_Return ?? '-' }}
                             </td>
                         </tr>
 
@@ -270,8 +265,8 @@
                                                     <input type="text" name="Code_Rack_Return"
                                                         id="codeRack{{ $w->Id_Withdrawal }}"
                                                         class="form-control"
-                                                        placeholder="Scan barcode rak atau ketik manual"
-                                                        required autocomplete="off">
+                                                        placeholder="Scan barcode rak"
+                                                        required readonly autocomplete="off">
                                                     <div class="input-group-append">
                                                         <button type="button" class="btn btn-outline-secondary btnScan"
                                                             data-id="{{ $w->Id_Withdrawal }}"
@@ -358,7 +353,8 @@ $(document).ready(function() {
 
         scanners[id] = new Html5QrcodeScanner(readerId, {
             fps: 10,
-            qrbox: { width: 240, height: 240 }
+            qrbox: { width: 240, height: 240 },
+            videoConstraints: { facingMode: "environment" }
         });
 
         scanners[id].render(function(decodedText) {
