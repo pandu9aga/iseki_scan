@@ -209,6 +209,24 @@
                             </td>
                         </tr>
 
+                        @empty
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                Belum ada data withdrawal.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+</div>
+</div>
+</div>
+
+
+@foreach($withdrawals as $w)
+
                         {{-- Modal OK --}}
                         @if(!$w->Oke_Withdrawal)
                         <div class="modal fade" id="modalOke{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
@@ -226,11 +244,11 @@
                                             </p>
                                             <div class="form-group mb-2">
                                                 <label style="font-size:0.82rem;font-weight:600;">NIK Member DST (Opsional jika ceklis Admin)</label>
-                                                <input type="number" name="NIK_Withdrawal" class="form-control nik-input"
+                                                <input type="text" name="NIK_Withdrawal" class="form-control nik-input"
                                                     placeholder="Masukkan NIK Member" id="nikWd{{ $w->Id_Withdrawal }}">
                                                 <div class="custom-control custom-checkbox mt-2">
                                                     <input type="checkbox" class="custom-control-input cb-admin" name="Is_User"
-                                                        id="cbAdminWd{{ $w->Id_Withdrawal }}" value="1" data-target="#nikWd{{ $w->Id_Withdrawal }}">
+                                                        id="cbAdminWd{{ $w->Id_Withdrawal }}" value="1" data-target="#nikWd{{ $w->Id_Withdrawal }}" checked>
                                                     <label class="custom-control-label" for="cbAdminWd{{ $w->Id_Withdrawal }}" style="font-size:0.82rem;font-weight:600;">
                                                         Centang jika disiapkan oleh Admin ({{ session('Username_User', 'Admin') }})
                                                     </label>
@@ -248,6 +266,7 @@
                             </div>
                         </div>
                         @endif
+
 
                         {{-- Modal Masuk Rak --}}
                         @if($w->Finish_Receiving && !$w->Date_Return)
@@ -269,11 +288,11 @@
                                             </div>
                                             <div class="form-group mb-2">
                                                 <label style="font-size:0.82rem;font-weight:600;">NIK Member DST (Opsional jika ceklis Admin)</label>
-                                                <input type="number" name="NIK_Return" class="form-control nik-input"
+                                                <input type="text" name="NIK_Return" class="form-control nik-input"
                                                     placeholder="Masukkan NIK Member" id="nikRet{{ $w->Id_Withdrawal }}">
                                                 <div class="custom-control custom-checkbox mt-2">
                                                     <input type="checkbox" class="custom-control-input cb-admin" name="Is_User"
-                                                        id="cbAdminRet{{ $w->Id_Withdrawal }}" value="1" data-target="#nikRet{{ $w->Id_Withdrawal }}">
+                                                        id="cbAdminRet{{ $w->Id_Withdrawal }}" value="1" data-target="#nikRet{{ $w->Id_Withdrawal }}" checked>
                                                     <label class="custom-control-label" for="cbAdminRet{{ $w->Id_Withdrawal }}" style="font-size:0.82rem;font-weight:600;">
                                                         Centang jika dimasukkan oleh Admin ({{ session('Username_User', 'Admin') }})
                                                     </label>
@@ -311,20 +330,8 @@
                         </div>
                         @endif
 
-                        @empty
-                        <tr>
-                            <td colspan="16" class="text-center text-muted py-4">
-                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                                Belum ada data withdrawal.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+@endforeach
+
 @endsection
 
 @section('script')
@@ -411,7 +418,11 @@ $(document).ready(function() {
     $('.modal').on('show.bs.modal', function() {
         var $cb = $(this).find('.cb-admin');
         if($cb.length) {
-            $cb.prop('checked', false).trigger('change');
+            $cb.prop('checked', true).trigger('change');
+            
+            // Auto-fill UNAME from session AFTER trigger change (so it's not cleared by the listener)
+            var target = $cb.data('target');
+            $(target).val("{{ session('Username_User') }}");
         }
     });
 

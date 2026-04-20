@@ -264,7 +264,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="17" class="text-center text-muted py-4">
+                            <td colspan="10" class="text-center text-muted py-4">
                                 <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                                 Belum ada data withdrawal.
                             </td>
@@ -278,7 +278,7 @@
 </div>
 
 {{-- Modal Pengajuan Baru --}}
-<div class="modal fade" id="modalPengajuan" tabindex="-1" role="dialog">
+<div class="modal fade" id="modalPengajuan" tabindex="-1" role="dialog" aria-labelledby="modalPengajuanLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <form action="{{ route('qc.withdrawal.store') }}" method="POST" id="formPengajuan">
