@@ -255,6 +255,22 @@ class UrgentController extends Controller
             return redirect()->back()->with('success', 'Scan sedang diproses atau sudah berhasil (Double Input dicegah).');
         }
 
+        // Helper function to check for duplicates today during business hours (07:00 - 17:00)
+        $checkDuplicateToday = function () use ($codeRack, $idMemberLogged) {
+            if (Carbon::now()->between('07:00', '17:00')) {
+                $exists = Urgent::where('Code_Rack', $codeRack)
+                    ->whereDate('Time_Urgent', Carbon::today())
+                    ->where('Id_User', $idMemberLogged)
+                    ->whereNull('Id_Type_User') // In UrgentController, reporter is always a Member
+                    ->exists();
+
+                if ($exists) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
         // Check if waiting request exists
         $waitingRequest = RequestModel::where('Code_Rack', $codeRack)
             ->where('Status_Request', 'Waiting')
@@ -273,6 +289,10 @@ class UrgentController extends Controller
             if ($isLessThan24Hours) {
                 // If < 24 hours, category is "telat request" and PIC is the member responsible
                 [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
+
+                if ($checkDuplicateToday($idMemberTarget)) {
+                    return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).');
+                }
 
                 $category = 'telat request';
                 $manualDetail = null;
@@ -311,6 +331,10 @@ class UrgentController extends Controller
             } elseif ($waitingRequest->Ready_Request !== null) {
                 // Determine target member PIC
                 [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
+
+                if ($checkDuplicateToday($idMemberTarget)) {
+                    return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).');
+                }
 
                 $category = 'telat supply';
                 $manualDetail = null;
@@ -357,6 +381,10 @@ class UrgentController extends Controller
                 } else {
                     $idBossMc = $bossMcMember ? $bossMcMember->Id_Member : 32;
                     $nameBossMc = 'Boss MC';
+                }
+
+                if ($checkDuplicateToday()) {
+                    return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak oleh Anda hari ini).');
                 }
 
                 $category = 'telat supply mc';
@@ -441,6 +469,10 @@ class UrgentController extends Controller
 
         } else {
             [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
+
+            if ($checkDuplicateToday()) {
+                return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak oleh Anda hari ini).');
+            }
 
             $lastReq = RequestModel::where('Code_Rack', $codeRack)->orderBy('Id_Request', 'desc')->first();
             $sumRequest = 1;

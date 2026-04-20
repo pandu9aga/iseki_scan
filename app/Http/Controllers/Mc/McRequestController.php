@@ -189,6 +189,7 @@ class McRequestController extends Controller
             'Sum Stock',
             'Estimation Date',
             'Ready Stock',
+            'Status Request',
             'Time Record',
             'Sum Record',
             'Member Request',
@@ -203,8 +204,8 @@ class McRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
-        $sheet->getStyle('A1:R1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:S1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:S1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -219,7 +220,7 @@ class McRequestController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $request->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 18, '-'), // 18 kolom sesuai header
+                    array_fill(0, 19, '-'), // 19 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -288,6 +289,7 @@ class McRequestController extends Controller
                 $sumStockDisplay,
                 $estimationDisplay,
                 $readyStockDisplay,
+                $request->Status_Request == 'Done' ? 'Done' : 'Waiting',
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
                 $request->Is_User == 1 ? (optional($request->user)->Name_User ?? 'Admin') : ($request->member->Name_Member ?? ''),
@@ -326,7 +328,7 @@ class McRequestController extends Controller
 
         $lastRow = $row - 1;
         if ($lastRow >= 2) {
-            $columnsToCenter = ['E', 'F', 'I', 'J', 'K', 'N'];
+            $columnsToCenter = ['E', 'F', 'I', 'J', 'K', 'M', 'O'];
             foreach ($columnsToCenter as $col) {
                 $range = $col . '2:' . $col . $lastRow;
                 $sheet->getStyle($range)->getAlignment()
@@ -649,6 +651,7 @@ class McRequestController extends Controller
             'Sum Stock',
             'Estimation Date',
             'Ready Stock',
+            'Status Request',
             'Time Record',
             'Sum Record',
             'Member Request',
@@ -662,8 +665,8 @@ class McRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
-        $sheet->getStyle('A1:R1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:S1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:S1')->getAlignment()->setWrapText(true);
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
 
         $row = 2;
@@ -672,7 +675,7 @@ class McRequestController extends Controller
 
         foreach ($requests as $req) {
             if ($lastUser !== null && $lastUser != $req->Id_User) {
-                $sheet->fromArray(array_fill(0, 18, '-'), null, 'A' . $row);
+                $sheet->fromArray(array_fill(0, 19, '-'), null, 'A' . $row);
                 $row++;
                 $no = 1;
             }
@@ -721,6 +724,7 @@ class McRequestController extends Controller
                 $sumStockDisplay,
                 $estimationDisplay,
                 $readyStockDisplay,
+                $req->Status_Request == 'Done' ? 'Done' : 'Waiting',
                 $timeRecord,
                 optional($req->record)->Sum_Record ?? '',
                 $req->Is_User == 1 ? (optional($req->user)->Name_User ?? 'Admin') : ($req->member->Name_Member ?? ''),
@@ -759,7 +763,7 @@ class McRequestController extends Controller
 
         $lastRow = $row - 1;
         if ($lastRow >= 2) {
-            $columnsToCenter = ['E', 'F', 'I', 'J', 'K', 'N'];
+            $columnsToCenter = ['E', 'F', 'I', 'J', 'K', 'M', 'O'];
             foreach ($columnsToCenter as $col) {
                 $sheet->getStyle($col . '2:' . $col . $lastRow)
                     ->getAlignment()
