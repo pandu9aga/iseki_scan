@@ -328,28 +328,38 @@
 <script>
 $(document).ready(function() {
 
-    // DataTable
-    var table = $('#withdrawalTable').DataTable({
-        pageLength: 25,
-        order: [], // Let it use backend ordering (Newest first)
-        columnDefs: [
-            { orderable: false, targets: 0 } // Disable sorting on "No" column
-        ],
-        language: {
-            search: "Cari:", lengthMenu: "Tampilkan _MENU_ data",
-            info: "Data _START_-_END_ dari _TOTAL_", infoEmpty: "Tidak ada data",
-            zeroRecords: "Tidak ditemukan", emptyTable: "Belum ada data withdrawal",
-            paginate: { next: "Selanjutnya", previous: "Sebelumnya" }
-        }
-    });
+    // ── Detect base URL dynamically ───────────────────────────
+    // Works on both localhost/iseki_scan/public/ and 192.168.173.201/iseki_scan/
+    var currentPath = window.location.pathname;
+    var baseUrl = currentPath.substring(0, currentPath.indexOf('/qc/withdrawal'));
+    var searchRackUrl = baseUrl + '/qc/withdrawal/search-rack';
 
-    // Auto-numbering
-    table.on('order.dt search.dt', function () {
-        let i = 1;
-        table.cells(null, 0, { search: 'applied', order: 'applied' }).every(function (cell) {
-            this.data(i++);
+    // ── DataTable (wrapped in try-catch so autocomplete still works if this fails) ──
+    try {
+        var table = $('#withdrawalTable').DataTable({
+            pageLength: 25,
+            order: [],
+            columnDefs: [
+                { orderable: false, targets: 0 }
+            ],
+            language: {
+                search: "Cari:", lengthMenu: "Tampilkan _MENU_ data",
+                info: "Data _START_-_END_ dari _TOTAL_", infoEmpty: "Tidak ada data",
+                zeroRecords: "Tidak ditemukan", emptyTable: "Belum ada data withdrawal",
+                paginate: { next: "Selanjutnya", previous: "Sebelumnya" }
+            }
         });
-    }).draw();
+
+        // Auto-numbering
+        table.on('order.dt search.dt', function () {
+            let i = 1;
+            table.cells(null, 0, { search: 'applied', order: 'applied' }).every(function (cell) {
+                this.data(i++);
+            });
+        }).draw();
+    } catch(e) {
+        console.warn('DataTable init error (autocomplete masih berjalan):', e.message);
+    }
 
     // ── Autocomplete Kode Part ──────────────────────────────
     const $input   = $('#Code_Item_Withdrawal');
@@ -398,7 +408,7 @@ $(document).ready(function() {
     function search(q) {
         $results.html('<div class="autocomplete-loading"><i class="fas fa-spinner fa-spin mr-1"></i>Mencari...</div>').addClass('show');
         $.ajax({
-            url:  '{{ route("qc.withdrawal.searchRack") }}',
+            url:  searchRackUrl,
             data: { query: q },
             success: function(data) { results = data; renderResults(); },
             error:   function()     { $results.html('<div class="autocomplete-empty text-danger"><i class="fas fa-exclamation-circle mr-1"></i>Gagal memuat data</div>'); }
