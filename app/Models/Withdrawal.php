@@ -26,6 +26,7 @@ class Withdrawal extends Model
         'NIK_Return',
         'Code_Rack_Return',
         'Date_Return',
+        'Is_User',
     ];
 
     protected $casts = [

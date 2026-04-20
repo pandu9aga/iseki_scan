@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\AdminRequestController;
 use App\Http\Controllers\Admin\AdminRequestingController;
 use App\Http\Controllers\Admin\AdminRecordingController;
+use App\Http\Controllers\Admin\AdminWithdrawalController;
 use App\Http\Controllers\Admin\AdminSubmissionController;
 use App\Http\Controllers\Admin\ForgotController;
 use App\Http\Controllers\Admin\ItemController;
@@ -169,6 +170,12 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::post('/admin_recording/create', [AdminRecordingController::class, 'create'])->name('admin.recording.create');
     Route::get('/admin_recording/check', [AdminRecordingController::class, 'check'])->name('admin.recording.check');
     Route::post('/admin_recording/check-multiple', [AdminRecordingController::class, 'checkMultiple'])->name('admin.recording.checkMultiple');
+
+    // Admin Withdrawal (with actions)
+    Route::get('/admin_withdrawal', [AdminWithdrawalController::class, 'index'])->name('admin.withdrawal');
+    Route::post('/admin_withdrawal/oke/{id}', [AdminWithdrawalController::class, 'oke'])->name('admin.withdrawal.oke');
+    Route::post('/admin_withdrawal/return/{id}', [AdminWithdrawalController::class, 'returnRack'])->name('admin.withdrawal.return');
+    Route::get('/admin_withdrawal/export', [AdminWithdrawalController::class, 'export'])->name('admin.withdrawal.export');
 });
 
 // WA Queue API (accessible without auth for cross-device JS calls)
@@ -226,6 +233,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/user_withdrawal', [UserWithdrawalController::class, 'index'])->name('user.withdrawal');
     Route::post('/user_withdrawal/oke/{id}', [UserWithdrawalController::class, 'oke'])->name('user.withdrawal.oke');
     Route::post('/user_withdrawal/return/{id}', [UserWithdrawalController::class, 'returnRack'])->name('user.withdrawal.return');
+    Route::get('/user_withdrawal/export', [UserWithdrawalController::class, 'export'])->name('user.withdrawal.export');
 });
 
 Route::middleware(McMiddleware::class)->group(function () {
@@ -311,9 +319,12 @@ Route::middleware(AreaMiddleware::class)->group(function () {
 
 Route::middleware(QcMiddleware::class)->group(function () {
     Route::get('/qc/withdrawal', [WithdrawalController::class, 'index'])->name('qc.withdrawal');
+    Route::get('/qc/withdrawal/search-rack', [WithdrawalController::class, 'searchRack'])->name('qc.withdrawal.searchRack');
     Route::post('/qc/withdrawal/store', [WithdrawalController::class, 'store'])->name('qc.withdrawal.store');
     Route::post('/qc/withdrawal/oke/{id}', [WithdrawalController::class, 'oke'])->name('qc.withdrawal.oke');
     Route::post('/qc/withdrawal/receiving/{id}', [WithdrawalController::class, 'receiving'])->name('qc.withdrawal.receiving');
     Route::post('/qc/withdrawal/finish/{id}', [WithdrawalController::class, 'finish'])->name('qc.withdrawal.finish');
     Route::post('/qc/withdrawal/return/{id}', [WithdrawalController::class, 'returnRack'])->name('qc.withdrawal.return');
+    Route::delete('/qc/withdrawal/destroy/{id}', [WithdrawalController::class, 'destroy'])->name('qc.withdrawal.destroy');
+    Route::get('/qc/withdrawal/export', [WithdrawalController::class, 'export'])->name('qc.withdrawal.export');
 });

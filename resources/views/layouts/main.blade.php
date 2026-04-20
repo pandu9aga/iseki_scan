@@ -280,6 +280,21 @@
             </li>
 
             <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                QC
+            </div>
+
+            <!-- Nav Item - Withdrawal -->
+            <li class="nav-item {{ request()->routeIs('admin.withdrawal') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.withdrawal') }}">
+                    <i class="fas fa-fw fa-exchange-alt"></i>
+                    <span>Withdrawal</span></a>
+            </li>
+
+            <!-- Divider -->
             {{--
             <hr class="sidebar-divider"> --}}
 

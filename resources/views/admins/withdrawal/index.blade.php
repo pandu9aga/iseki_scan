@@ -1,4 +1,4 @@
-@extends('layouts.user')
+@extends('layouts.main')
 
 @section('style')
 <link href="{{asset('vendor/datatables/dataTables.bootstrap4.min.css')}}" rel="stylesheet">
@@ -50,7 +50,7 @@
     tbody tr:nth-child(even) .td-dst  { background-color: #e8f2ff; }
     tbody tr:nth-child(even) .td-rcv  { background-color: #e8faee; }
     tbody tr:nth-child(even) .td-ret  { background-color: #f6f0ff; }
-    
+
     .scan-area { margin-top: 10px; }
 </style>
 @endsection
@@ -59,9 +59,9 @@
 <div class="container-fluid">
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
         <h4 class="text-primary font-weight-bold mb-2 mb-md-0">
-            <i class="fas fa-exchange-alt mr-2"></i>QC Withdrawal <small class="text-muted" style="font-size:0.65em;">DST Member</small>
+            <i class="fas fa-exchange-alt mr-2"></i>QC Withdrawal <small class="text-muted" style="font-size:0.65em;">Admin</small>
         </h4>
-        <a href="{{ route('user.withdrawal.export', request()->all()) }}" class="btn btn-success btn-sm">
+        <a href="{{ route('admin.withdrawal.export', request()->all()) }}" class="btn btn-success btn-sm">
             <i class="fas fa-download mr-1"></i> Export Excel
         </a>
     </div>
@@ -69,7 +69,7 @@
     {{-- Filter Card --}}
     <div class="card shadow-sm mb-3 border-left-primary">
         <div class="card-body py-2 px-3">
-            <form method="GET" action="{{ route('user.withdrawal') }}" class="form-inline d-flex align-items-center flex-wrap">
+            <form method="GET" action="{{ route('admin.withdrawal') }}" class="form-inline d-flex align-items-center flex-wrap">
                 <div class="mr-3 mb-2 mb-md-0 mt-2 mt-md-0 d-flex align-items-center">
                     <label class="mr-2 font-weight-bold text-gray-700" style="font-size:0.85rem;"><i class="fas fa-filter mr-1"></i>Filter:</label>
                     <select name="status" class="form-control form-control-sm" style="min-width: 150px;">
@@ -91,7 +91,7 @@
 
                 <div class="mt-2 mt-md-0">
                     <button type="submit" class="btn btn-primary btn-sm mr-1"><i class="fas fa-search"></i> Terapkan</button>
-                    <a href="{{ route('user.withdrawal') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-sync-alt"></i> Reset</a>
+                    <a href="{{ route('admin.withdrawal') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-sync-alt"></i> Reset</a>
                 </div>
             </form>
         </div>
@@ -118,21 +118,39 @@
             <div class="table-responsive">
                 <table class="table table-bordered table-hover mb-0" id="withdrawalTable" width="100%">
                     <thead>
+                        {{-- Group Header Row --}}
+                        <tr>
+                            <th rowspan="2" class="th-group-wd" style="min-width:30px;">No</th>
+                            {{-- WITHDRAWAL QC --}}
+                            <th colspan="5" class="th-group-wd">WITHDRAWAL QC</th>
+                            {{-- PREPARE BY DST --}}
+                            <th colspan="3" class="th-group-dst">PREPARE BY DST</th>
+                            {{-- RECEIVED BY QC --}}
+                            <th colspan="4" class="th-group-rcv">RECEIVED BY QC</th>
+                            {{-- RETURN TO RACK --}}
+                            <th colspan="3" class="th-group-ret">RETURN TO RACK</th>
+                        </tr>
                         {{-- Column Header Row --}}
                         <tr>
-                            <th class="th-group-wd" style="min-width:30px;">No</th>
-                            <th class="th-group-wd" style="min-width:100px;">Date WD</th>
-                            <th class="th-group-wd" style="min-width:110px;">Name PIC</th>
-                            <th class="th-group-wd" style="min-width:140px;">Item Code</th>
-                            
-                            <th class="th-group-dst" style="min-width:110px;">Oke DST</th>
-                            <th class="th-group-dst" style="min-width:110px;">PIC DST</th>
-                            
-                            <th class="th-group-rcv" style="min-width:110px;">Received</th>
-                            <th class="th-group-rcv" style="min-width:110px;">Finish</th>
-                            
-                            <th class="th-group-ret" style="min-width:120px;">PIC Return</th>
-                            <th class="th-group-ret" style="min-width:100px;">No Rack Return</th>
+                            {{-- WD cols --}}
+                            <th class="th-group-wd" style="min-width:100px;">Date</th>
+                            <th class="th-group-wd" style="min-width:90px;">Name</th>
+                            <th class="th-group-wd" style="min-width:90px;">Item Code</th>
+                            <th class="th-group-wd" style="min-width:110px;">Name Item</th>
+                            <th class="th-group-wd" style="min-width:80px;">No Rack</th>
+                            {{-- DST cols --}}
+                            <th class="th-group-dst" style="min-width:90px;">Oke DST</th>
+                            <th class="th-group-dst" style="min-width:110px;">Name Member</th>
+                            <th class="th-group-dst" style="min-width:100px;">Date Oke</th>
+                            {{-- RCV cols --}}
+                            <th class="th-group-rcv" style="min-width:90px;">Received</th>
+                            <th class="th-group-rcv" style="min-width:100px;">Date Received</th>
+                            <th class="th-group-rcv" style="min-width:90px;">Finish</th>
+                            <th class="th-group-rcv" style="min-width:100px;">Date Finish</th>
+                            {{-- RET cols --}}
+                            <th class="th-group-ret" style="min-width:110px;">PIC Return</th>
+                            <th class="th-group-ret" style="min-width:80px;">No Rack</th>
+                            <th class="th-group-ret" style="min-width:100px;">Date Return</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -145,19 +163,14 @@
                                 {{ $w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') : '-' }}
                             </td>
                             <td class="td-wd text-left">{{ $w->Name_Withdrawal ?? '-' }}</td>
-                            <td class="td-wd">
-                                <span class="font-weight-bold d-block">{{ $w->Code_Item_Withdrawal }}</span>
-                                <span class="badge badge-dark mt-1">{{ $w->rack_name }}</span><br>
-                                <span class="badge badge-secondary mt-1">{{ $w->rack_no }}</span>
-                            </td>
+                            <td class="td-wd"><strong>{{ $w->Code_Item_Withdrawal }}</strong></td>
+                            <td class="td-wd text-left">{{ $w->rack_name }}</td>
+                            <td class="td-wd"><code>{{ $w->rack_no }}</code></td>
 
-                            {{-- PREPARE BY DST (Action/Button for DST) --}}
+                            {{-- PREPARE BY DST (Action for Admin) --}}
                             <td class="td-dst">
                                 @if($w->Oke_Withdrawal)
-                                    <span class="chip chip-active"><i class="fas fa-check mr-1"></i>OK</span><br>
-                                    <small class="text-muted d-block mt-1">
-                                        {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
-                                    </small>
+                                    <span class="chip chip-active"><i class="fas fa-check mr-1"></i>OK</span>
                                 @else
                                     <button class="btn btn-warning btn-action font-weight-bold" data-toggle="modal" data-target="#modalOke{{ $w->Id_Withdrawal }}">
                                         <i class="fas fa-hand-pointer mr-1"></i>OK Siapkan
@@ -165,36 +178,38 @@
                                 @endif
                             </td>
                             <td class="td-dst">{{ $w->name_disiapkan ?? '-' }}</td>
+                            <td class="td-dst">
+                                {{ $w->Oke_Withdrawal && $w->Date_Withdrawal
+                                    ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i')
+                                    : '-' }}
+                            </td>
 
-                            {{-- RECEIVED BY QC (Read Only for DST) --}}
+                            {{-- RECEIVED BY QC (Read Only for Admin) --}}
                             <td class="td-rcv">
                                 @if($w->Oke_Receiving)
-                                    <span class="chip chip-done"><i class="fas fa-check mr-1"></i>Diterima QC</span><br>
-                                    <small class="text-muted d-block mt-1">
-                                        {{ \Carbon\Carbon::parse($w->Date_Receiving)->format('d/m/y H:i') }}
-                                    </small>
+                                    <span class="chip chip-done"><i class="fas fa-check mr-1"></i>Diterima QC</span>
                                 @else
                                     <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Diterima</span>
                                 @endif
                             </td>
                             <td class="td-rcv">
+                                {{ $w->Date_Receiving ? \Carbon\Carbon::parse($w->Date_Receiving)->format('d/m/y H:i') : '-' }}
+                            </td>
+                            <td class="td-rcv">
                                 @if($w->Finish_Receiving)
-                                    <span class="chip chip-done"><i class="fas fa-check-double mr-1"></i>Selesai QC</span><br>
-                                    <small class="text-muted d-block mt-1">
-                                        {{ \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') }}
-                                    </small>
+                                    <span class="chip chip-done"><i class="fas fa-check-double mr-1"></i>Selesai QC</span>
                                 @else
                                     <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Selesai</span>
                                 @endif
                             </td>
+                            <td class="td-rcv">
+                                {{ $w->Date_Finish_Receiving ? \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') : '-' }}
+                            </td>
 
-                            {{-- RETURN TO RACK (Action/Button for DST) --}}
+                            {{-- RETURN TO RACK (Action for Admin) --}}
                             <td class="td-ret">
                                 @if($w->Date_Return)
-                                    <span class="font-weight-bold">{{ $w->name_return ?? $w->NIK_Return }}</span><br>
-                                    <small class="text-muted d-block mt-1">
-                                        {{ \Carbon\Carbon::parse($w->Date_Return)->format('d/m/y H:i') }}
-                                    </small>
+                                    <span class="font-weight-bold">{{ $w->name_return ?? $w->NIK_Return }}</span>
                                 @elseif($w->Finish_Receiving)
                                     <button class="btn btn-primary btn-action font-weight-bold" data-toggle="modal" data-target="#modalReturn{{ $w->Id_Withdrawal }}">
                                         <i class="fas fa-undo mr-1"></i>Masuk Rak
@@ -206,6 +221,9 @@
                             <td class="td-ret">
                                 {{ $w->Code_Rack_Return ?? '-' }}
                             </td>
+                            <td class="td-ret">
+                                {{ $w->Date_Return ? \Carbon\Carbon::parse($w->Date_Return)->format('d/m/y H:i') : '-' }}
+                            </td>
                         </tr>
 
                         {{-- Modal OK --}}
@@ -213,19 +231,27 @@
                         <div class="modal fade" id="modalOke{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
                             <div class="modal-dialog modal-sm" role="document">
                                 <div class="modal-content">
-                                    <form action="{{ route('user.withdrawal.oke', $w->Id_Withdrawal) }}" method="POST">
+                                    <form action="{{ route('admin.withdrawal.oke', $w->Id_Withdrawal) }}" method="POST">
                                         @csrf
                                         <div class="modal-header bg-warning">
                                             <h6 class="modal-title font-weight-bold">OK Siapkan Barang</h6>
                                             <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                                         </div>
                                         <div class="modal-body">
+                                            <p style="font-size:0.85rem;" class="mb-2">
+                                                Menyiapkan item <strong>{{ $w->Code_Item_Withdrawal }}</strong>.
+                                            </p>
                                             <div class="form-group mb-2">
-                                                <label style="font-size:0.82rem;font-weight:600;">NIK Anda (Member DST)</label>
-                                                <input type="number" name="NIK_Withdrawal" class="form-control"
-                                                    placeholder="Masukkan NIK" required
-                                                    value="{{ session('NIK_Member') }}">
-                                                <small class="text-muted">NIK ini akan terekam sebagai PIC yang menyiapkan.</small>
+                                                <label style="font-size:0.82rem;font-weight:600;">NIK Member DST (Opsional jika ceklis Admin)</label>
+                                                <input type="number" name="NIK_Withdrawal" class="form-control nik-input"
+                                                    placeholder="Masukkan NIK Member" id="nikWd{{ $w->Id_Withdrawal }}">
+                                                <div class="custom-control custom-checkbox mt-2">
+                                                    <input type="checkbox" class="custom-control-input cb-admin" name="Is_User"
+                                                        id="cbAdminWd{{ $w->Id_Withdrawal }}" value="1" data-target="#nikWd{{ $w->Id_Withdrawal }}">
+                                                    <label class="custom-control-label" for="cbAdminWd{{ $w->Id_Withdrawal }}" style="font-size:0.82rem;font-weight:600;">
+                                                        Centang jika disiapkan oleh Admin ({{ session('Username_User', 'Admin') }})
+                                                    </label>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="modal-footer py-2">
@@ -245,7 +271,7 @@
                         <div class="modal fade" id="modalReturn{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
                             <div class="modal-dialog" role="document">
                                 <div class="modal-content">
-                                    <form action="{{ route('user.withdrawal.return', $w->Id_Withdrawal) }}" method="POST">
+                                    <form action="{{ route('admin.withdrawal.return', $w->Id_Withdrawal) }}" method="POST">
                                         @csrf
                                         <div class="modal-header bg-primary text-white">
                                             <h6 class="modal-title font-weight-bold">
@@ -258,11 +284,17 @@
                                                 <i class="fas fa-exclamation-triangle mr-1"></i>
                                                 Pastikan barcode rak yang discan adalah <strong>{{ $w->rack_no }}</strong>
                                             </div>
-                                            <div class="form-group">
-                                                <label style="font-size:0.82rem;font-weight:600;">NIK Member DST <span class="text-danger">*</span></label>
-                                                <input type="number" name="NIK_Return" class="form-control"
-                                                    placeholder="Masukkan NIK" required
-                                                    value="{{ session('NIK_Member') }}">
+                                            <div class="form-group mb-2">
+                                                <label style="font-size:0.82rem;font-weight:600;">NIK Member DST (Opsional jika ceklis Admin)</label>
+                                                <input type="number" name="NIK_Return" class="form-control nik-input"
+                                                    placeholder="Masukkan NIK Member" id="nikRet{{ $w->Id_Withdrawal }}">
+                                                <div class="custom-control custom-checkbox mt-2">
+                                                    <input type="checkbox" class="custom-control-input cb-admin" name="Is_User"
+                                                        id="cbAdminRet{{ $w->Id_Withdrawal }}" value="1" data-target="#nikRet{{ $w->Id_Withdrawal }}">
+                                                    <label class="custom-control-label" for="cbAdminRet{{ $w->Id_Withdrawal }}" style="font-size:0.82rem;font-weight:600;">
+                                                        Centang jika dimasukkan oleh Admin ({{ session('Username_User', 'Admin') }})
+                                                    </label>
+                                                </div>
                                             </div>
                                             <div class="form-group">
                                                 <label style="font-size:0.82rem;font-weight:600;">Scan / Input Barcode Rak <span class="text-danger">*</span></label>
@@ -298,7 +330,7 @@
 
                         @empty
                         <tr>
-                            <td colspan="14" class="text-center text-muted py-4">
+                            <td colspan="16" class="text-center text-muted py-4">
                                 <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
                                 Belum ada data withdrawal.
                             </td>
@@ -379,12 +411,25 @@ $(document).ready(function() {
         }
     });
 
-    // Focus NIK
-    $(document).on('shown.bs.modal', '[id^="modalOke"]', function() {
-        $(this).find('input[name="NIK_Withdrawal"]').focus().select();
+    // ── Checkbox Admin Flow ────────────────────────────────
+    $(document).on('change', '.cb-admin', function() {
+        var target = $(this).data('target');
+        if($(this).is(':checked')) {
+            $(target).prop('disabled', true).val('');
+            $(target).removeAttr('required');
+        } else {
+            $(target).prop('disabled', false);
+            $(target).attr('required', true);
+            $(target).focus();
+        }
     });
-    $(document).on('shown.bs.modal', '[id^="modalReturn"]', function() {
-        $(this).find('input[name="NIK_Return"]').focus().select();
+
+    // Initialize state on modal open
+    $('.modal').on('show.bs.modal', function() {
+        var $cb = $(this).find('.cb-admin');
+        if($cb.length) {
+            $cb.prop('checked', false).trigger('change');
+        }
     });
 
 });
