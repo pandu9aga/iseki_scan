@@ -67,9 +67,9 @@ class AreaScanController extends Controller
             $namePart = $rackModel ? ($rackModel->Name_Item_Rack ?? '-') : '-';
             $idRequest = $waitingRequest->Id_Request;
 
-            // Check if request is less than 24 hours old
+            // Check if request is less than 24 working hours old (excluding weekends)
             $requestTime = Carbon::parse($waitingRequest->Day_Request.' '.$waitingRequest->Time_Request);
-            $isLessThan24Hours = $requestTime->diffInHours(Carbon::now()) < 24;
+            $isLessThan24Hours = $requestTime->diffInHoursFiltered(fn (Carbon $date) => $date->isWeekday(), Carbon::now()) < 24;
 
             if ($isLessThan24Hours) {
                 // If < 24 hours, category is "telat request" and PIC is the member responsible
