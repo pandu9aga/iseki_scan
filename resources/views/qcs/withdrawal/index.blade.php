@@ -164,7 +164,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($withdrawals as $index => $w)
+                        @foreach($withdrawals as $index => $w)
                         <tr>
                             <td class="td-wd">{{ $index + 1 }}</td>
 
@@ -262,14 +262,7 @@
                                 {{ $w->Code_Rack_Return ?? '-' }}
                             </td>
                         </tr>
-                        @empty
-                        <tr>
-                            <td colspan="10" class="text-center text-muted py-4">
-                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                                Belum ada data withdrawal.
-                            </td>
-                        </tr>
-                        @endforelse
+                        @endforeach
                     </tbody>
                 </table>
             </div>
