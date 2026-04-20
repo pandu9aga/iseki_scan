@@ -278,7 +278,7 @@
 </div>
 
 {{-- Modal Pengajuan Baru --}}
-<div class="modal fade" id="modalPengajuan" tabindex="-1" role="dialog">
+<div class="modal fade" id="modalPengajuan" tabindex="-1" role="dialog" aria-labelledby="modalPengajuanLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <form action="{{ route('qc.withdrawal.store') }}" method="POST" id="formPengajuan">

@@ -203,6 +203,24 @@
                             </td>
                         </tr>
 
+                        @empty
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                Belum ada data withdrawal.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+</div>
+</div>
+</div>
+
+
+@foreach($withdrawals as $w)
+
                         {{-- Modal OK --}}
                         @if(!$w->Oke_Withdrawal)
                         <div class="modal fade" id="modalOke{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
@@ -234,6 +252,7 @@
                             </div>
                         </div>
                         @endif
+
 
                         {{-- Modal Masuk Rak --}}
                         @if($w->Finish_Receiving && !$w->Date_Return)
@@ -291,20 +310,8 @@
                         </div>
                         @endif
 
-                        @empty
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                                Belum ada data withdrawal.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+@endforeach
+
 @endsection
 
 @section('script')
