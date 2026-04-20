@@ -149,8 +149,7 @@
                         {{-- Column Header Row --}}
                         <tr>
                             <th class="th-group-wd" style="min-width:30px;">No</th>
-                            <th class="th-group-wd" style="min-width:100px;">Date WD</th>
-                            <th class="th-group-wd" style="min-width:110px;">Name PIC</th>
+                            <th class="th-group-wd" style="min-width:140px;">PIC Withdrawal</th>
                             <th class="th-group-wd" style="min-width:140px;">Item Code</th>
                             <th class="th-group-wd" style="min-width:50px;">Aksi</th>
                             
@@ -171,9 +170,11 @@
 
                             {{-- WITHDRAWAL QC --}}
                             <td class="td-wd">
-                                {{ $w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') : '-' }}
+                                <span class="font-weight-bold">{{ $w->Name_Withdrawal ?? '-' }}</span><br>
+                                <small class="text-muted d-block mt-1">
+                                    {{ $w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') : '-' }}
+                                </small>
                             </td>
-                            <td class="td-wd text-left">{{ $w->Name_Withdrawal ?? '-' }}</td>
                             <td class="td-wd">
                                 <span class="font-weight-bold d-block">{{ $w->Code_Item_Withdrawal }}</span>
                                 <span class="badge badge-dark mt-1">{{ $w->rack_name }}</span><br>
