@@ -224,6 +224,21 @@ class AdminWithdrawalController extends Controller
     }
 
     /**
+     * Admin deletes withdrawal — can delete regardless of status
+     */
+    public function destroy($id)
+    {
+        try {
+            $withdrawal = Withdrawal::findOrFail($id);
+            $withdrawal->delete();
+            return back()->with('success', 'Data withdrawal berhasil dihapus.');
+        } catch (\Exception $e) {
+            Log::error('Admin Withdrawal delete failed: ' . $e->getMessage(), ['withdrawal_id' => $id]);
+            return back()->withErrors(['error' => 'Gagal menghapus data: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
      * Export withdrawal data to Excel
      */
     public function export(Request $request)
@@ -287,7 +302,7 @@ class AdminWithdrawalController extends Controller
         $headers = [
             'No', 'Date WD', 'Name PIC', 'Item Code', 'Name Item', 'No Rack',
             'Oke DST', 'PIC DST', 'Date Oke',
-            'Received', 'Date Received', 'Finish', 'Date Finish',
+            'Received', 'Date Received', 'Finish', 'Date Finish', 'Description Finish',
             'PIC Return', 'No Rack Return', 'Date Return'
         ];
         $sheet->fromArray([$headers], null, 'A1');
@@ -296,7 +311,7 @@ class AdminWithdrawalController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:P1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
 
         $row = 2;
         foreach ($withdrawals as $index => $w) {
@@ -343,6 +358,7 @@ class AdminWithdrawalController extends Controller
                 $w->Date_Receiving ? Carbon::parse($w->Date_Receiving)->format('d/m/Y H:i') : '-',
                 $w->Finish_Receiving ? 'Selesai' : '-',
                 $w->Date_Finish_Receiving ? Carbon::parse($w->Date_Finish_Receiving)->format('d/m/Y H:i') : '-',
+                $w->Desc_Finish ?? '-',
                 $w->Date_Return ? $nameReturn : '-',
                 $w->Code_Rack_Return ?? '-',
                 $w->Date_Return ? Carbon::parse($w->Date_Return)->format('d/m/Y H:i') : '-',

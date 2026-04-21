@@ -175,6 +175,7 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/admin_withdrawal', [AdminWithdrawalController::class, 'index'])->name('admin.withdrawal');
     Route::post('/admin_withdrawal/oke/{id}', [AdminWithdrawalController::class, 'oke'])->name('admin.withdrawal.oke');
     Route::post('/admin_withdrawal/return/{id}', [AdminWithdrawalController::class, 'returnRack'])->name('admin.withdrawal.return');
+    Route::delete('/admin_withdrawal/destroy/{id}', [AdminWithdrawalController::class, 'destroy'])->name('admin.withdrawal.destroy');
     Route::get('/admin_withdrawal/export', [AdminWithdrawalController::class, 'export'])->name('admin.withdrawal.export');
 });
 

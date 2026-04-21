@@ -179,6 +179,11 @@
                                         <small class="text-muted d-block mt-1">
                                             {{ \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') }}
                                         </small>
+                                        @if($w->Desc_Finish)
+                                            <small class="d-block mt-1 text-wrap" style="white-space:normal; max-width:140px; font-size:0.72rem; color:#555;">
+                                                <i class="fas fa-comment-alt mr-1"></i>{{ $w->Desc_Finish }}
+                                            </small>
+                                        @endif
                                     @else
                                         <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Selesai</span>
                                     @endif

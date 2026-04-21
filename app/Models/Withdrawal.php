@@ -27,6 +27,7 @@ class Withdrawal extends Model
         'Code_Rack_Return',
         'Date_Return',
         'Is_User',
+        'Desc_Finish',
     ];
 
     protected $casts = [

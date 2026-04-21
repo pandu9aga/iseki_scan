@@ -123,6 +123,7 @@
                             <th class="th-group-wd" style="min-width:30px;">No</th>
                             <th class="th-group-wd" style="min-width:140px;">PIC Withdrawal</th>
                             <th class="th-group-wd" style="min-width:140px;">Item Code</th>
+                            <th class="th-group-wd" style="min-width:50px;">Aksi</th>
                             
                             <th class="th-group-dst" style="min-width:110px;">Oke DST</th>
                             <th class="th-group-dst" style="min-width:110px;">PIC DST</th>
@@ -150,6 +151,17 @@
                                 <span class="font-weight-bold d-block">{{ $w->Code_Item_Withdrawal }}</span>
                                 <span class="badge badge-dark mt-1">{{ $w->rack_name }}</span><br>
                                 <span class="badge badge-secondary mt-1">{{ $w->rack_no }}</span>
+                            </td>
+
+                            {{-- AKSI (Delete) --}}
+                            <td class="td-wd">
+                                <form action="{{ route('admin.withdrawal.destroy', $w->Id_Withdrawal) }}" method="POST" onsubmit="return confirm('Yakin hapus data withdrawal ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-action" title="Hapus">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                             </td>
 
                             {{-- PREPARE BY DST (Action for Admin) --}}
@@ -184,6 +196,11 @@
                                     <small class="text-muted d-block mt-1">
                                         {{ \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') }}
                                     </small>
+                                    @if($w->Desc_Finish)
+                                        <small class="d-block mt-1 text-wrap" style="white-space:normal; max-width:140px; font-size:0.72rem; color:#555;">
+                                            <i class="fas fa-comment-alt mr-1"></i>{{ $w->Desc_Finish }}
+                                        </small>
+                                    @endif
                                 @else
                                     <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Selesai</span>
                                 @endif
