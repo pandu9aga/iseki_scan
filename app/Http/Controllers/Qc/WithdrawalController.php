@@ -270,13 +270,15 @@ class WithdrawalController extends Controller
 
         // Verify barcode matches: Code_Rack_Return must correspond to a rack
         // whose Code_Item_Rack matches the original Code_Item_Withdrawal
-        $rack = Rack::where('Code_Rack', $request->Code_Rack_Return)->first();
-        if (!$rack) {
-            return back()->withErrors(['Code_Rack_Return' => 'Kode rak tidak ditemukan.']);
-        }
+        if ($request->Code_Rack_Return !== 'DAICHI') {
+            $rack = Rack::where('Code_Rack', $request->Code_Rack_Return)->first();
+            if (!$rack) {
+                return back()->withErrors(['Code_Rack_Return' => 'Kode rak tidak ditemukan.']);
+            }
 
-        if ($rack->Code_Item_Rack !== $withdrawal->Code_Item_Withdrawal) {
-            return back()->withErrors(['Code_Rack_Return' => 'Kode rak tidak sesuai dengan kode part pengajuan! Part: ' . $withdrawal->Code_Item_Withdrawal . ', Rak: ' . $rack->Code_Item_Rack]);
+            if ($rack->Code_Item_Rack !== $withdrawal->Code_Item_Withdrawal) {
+                return back()->withErrors(['Code_Rack_Return' => 'Kode rak tidak sesuai dengan kode part pengajuan! Part: ' . $withdrawal->Code_Item_Withdrawal . ', Rak: ' . $rack->Code_Item_Rack]);
+            }
         }
 
         $withdrawal->update([

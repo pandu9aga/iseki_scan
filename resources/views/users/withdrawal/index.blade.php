@@ -4,26 +4,59 @@
 <link href="{{asset('vendor/datatables/dataTables.bootstrap4.min.css')}}" rel="stylesheet">
 <style>
     /* ── Table Base ─────────────────────────────────────── */
-    .table-responsive { overflow-x: auto; }
-    .table th, .table td {
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table th,
+    .table td {
         white-space: nowrap;
         text-align: center;
         vertical-align: middle;
         font-size: 0.8rem;
         padding: 6px 8px;
     }
-    .table td.text-left { text-align: left; }
+
+    .table td.text-left {
+        text-align: left;
+    }
 
     /* ── Column Group Headers ─────────────────────────────── */
-    .th-group-wd   { background-color: #fff3cd !important; color: #856404; }
-    .th-group-dst  { background-color: #cce5ff !important; color: #004085; }
-    .th-group-rcv  { background-color: #d4edda !important; color: #155724; }
-    .th-group-ret  { background-color: #e2d5f1 !important; color: #5a2d82; }
+    .th-group-wd {
+        background-color: #fff3cd !important;
+        color: #856404;
+    }
 
-    .td-wd   { background-color: #fffdf0; }
-    .td-dst  { background-color: #f0f7ff; }
-    .td-rcv  { background-color: #f0fff4; }
-    .td-ret  { background-color: #faf5ff; }
+    .th-group-dst {
+        background-color: #cce5ff !important;
+        color: #004085;
+    }
+
+    .th-group-rcv {
+        background-color: #d4edda !important;
+        color: #155724;
+    }
+
+    .th-group-ret {
+        background-color: #e2d5f1 !important;
+        color: #5a2d82;
+    }
+
+    .td-wd {
+        background-color: #fffdf0;
+    }
+
+    .td-dst {
+        background-color: #f0f7ff;
+    }
+
+    .td-rcv {
+        background-color: #f0fff4;
+    }
+
+    .td-ret {
+        background-color: #faf5ff;
+    }
 
     /* ── Buttons ─────────────────────────────────────────── */
     .btn-action {
@@ -40,18 +73,47 @@
         font-size: 0.7rem;
         font-weight: 600;
     }
-    .chip-wait   { background:#ffeeba; color:#856404; }
-    .chip-done   { background:#d4edda; color:#155724; }
-    .chip-active { background:#cce5ff; color:#004085; }
-    .chip-err    { background:#f8d7da; color:#721c24; }
+
+    .chip-wait {
+        background: #ffeeba;
+        color: #856404;
+    }
+
+    .chip-done {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .chip-active {
+        background: #cce5ff;
+        color: #004085;
+    }
+
+    .chip-err {
+        background: #f8d7da;
+        color: #721c24;
+    }
 
     /* ── Zebra striping override ─────────────────────────── */
-    tbody tr:nth-child(even) .td-wd   { background-color: #fffae8; }
-    tbody tr:nth-child(even) .td-dst  { background-color: #e8f2ff; }
-    tbody tr:nth-child(even) .td-rcv  { background-color: #e8faee; }
-    tbody tr:nth-child(even) .td-ret  { background-color: #f6f0ff; }
-    
-    .scan-area { margin-top: 10px; }
+    tbody tr:nth-child(even) .td-wd {
+        background-color: #fffae8;
+    }
+
+    tbody tr:nth-child(even) .td-dst {
+        background-color: #e8f2ff;
+    }
+
+    tbody tr:nth-child(even) .td-rcv {
+        background-color: #e8faee;
+    }
+
+    tbody tr:nth-child(even) .td-ret {
+        background-color: #f6f0ff;
+    }
+
+    .scan-area {
+        margin-top: 10px;
+    }
 </style>
 @endsection
 
@@ -99,17 +161,17 @@
 
     {{-- Flash Messages --}}
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show">
-            <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
-            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-        </div>
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+    </div>
     @endif
     @if($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show">
-            <i class="fas fa-exclamation-triangle mr-1"></i>
-            @foreach($errors->all() as $error) {{ $error }}<br> @endforeach
-            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-        </div>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-triangle mr-1"></i>
+        @foreach($errors->all() as $error) {{ $error }}<br> @endforeach
+        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+    </div>
     @endif
 
     {{-- Main Table Card --}}
@@ -122,11 +184,11 @@
                         <tr>
                             <th class="th-group-wd" style="min-width:30px;">No</th>
                             <th class="th-group-wd" style="min-width:180px;">Withdrawal</th>
-                            
+
                             <th class="th-group-dst" style="min-width:140px;">Oke DST</th>
-                            
+
                             <th class="th-group-rcv" style="min-width:140px;">Status Withdrawal</th>
-                            
+
                             <th class="th-group-ret" style="min-width:140px;">Return to Rack</th>
                         </tr>
                     </thead>
@@ -149,15 +211,15 @@
                             {{-- PREPARE BY DST (Action/Button for DST) --}}
                             <td class="td-dst">
                                 @if($w->Oke_Withdrawal)
-                                    <span class="chip chip-active mb-1"><i class="fas fa-check mr-1"></i>OK</span><br>
-                                    <span class="font-weight-bold" style="font-size:0.75rem;">{{ $w->name_disiapkan ?? '-' }}</span><br>
-                                    <small class="text-muted d-block">
-                                        {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
-                                    </small>
+                                <span class="chip chip-active mb-1"><i class="fas fa-check mr-1"></i>OK</span><br>
+                                <span class="font-weight-bold" style="font-size:0.75rem;">{{ $w->name_disiapkan ?? '-' }}</span><br>
+                                <small class="text-muted d-block">
+                                    {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
+                                </small>
                                 @else
-                                    <button class="btn btn-warning btn-action font-weight-bold" data-toggle="modal" data-target="#modalOke{{ $w->Id_Withdrawal }}">
-                                        <i class="fas fa-hand-pointer mr-1"></i>OK Siapkan
-                                    </button>
+                                <button class="btn btn-warning btn-action font-weight-bold" data-toggle="modal" data-target="#modalOke{{ $w->Id_Withdrawal }}">
+                                    <i class="fas fa-hand-pointer mr-1"></i>OK Siapkan
+                                </button>
                                 @endif
                             </td>
 
@@ -165,27 +227,27 @@
                             <td class="td-rcv">
                                 <div class="mb-2">
                                     @if($w->Oke_Receiving)
-                                        <span class="chip chip-done"><i class="fas fa-check mr-1"></i>Diterima QC</span><br>
-                                        <small class="text-muted d-block mt-1">
-                                            {{ \Carbon\Carbon::parse($w->Date_Receiving)->format('d/m/y H:i') }}
-                                        </small>
+                                    <span class="chip chip-done"><i class="fas fa-check mr-1"></i>Diterima QC</span><br>
+                                    <small class="text-muted d-block mt-1">
+                                        {{ \Carbon\Carbon::parse($w->Date_Receiving)->format('d/m/y H:i') }}
+                                    </small>
                                     @else
-                                        <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Diterima</span>
+                                    <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Diterima</span>
                                     @endif
                                 </div>
                                 <div>
                                     @if($w->Finish_Receiving)
-                                        <span class="chip chip-done"><i class="fas fa-check-double mr-1"></i>Selesai QC</span><br>
-                                        <small class="text-muted d-block mt-1">
-                                            {{ \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') }}
-                                        </small>
-                                        @if($w->Desc_Finish)
-                                            <small class="d-block mt-1 text-wrap" style="white-space:normal; max-width:140px; font-size:0.72rem; color:#555;">
-                                                <i class="fas fa-comment-alt mr-1"></i>{{ $w->Desc_Finish }}
-                                            </small>
-                                        @endif
+                                    <span class="chip chip-done"><i class="fas fa-check-double mr-1"></i>Selesai QC</span><br>
+                                    <small class="text-muted d-block mt-1">
+                                        {{ \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') }}
+                                    </small>
+                                    @if($w->Desc_Finish)
+                                    <small class="d-block mt-1 text-wrap" style="white-space:normal; max-width:140px; font-size:0.72rem; color:#555;">
+                                        <i class="fas fa-comment-alt mr-1"></i>{{ $w->Desc_Finish }}
+                                    </small>
+                                    @endif
                                     @else
-                                        <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Selesai</span>
+                                    <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Selesai</span>
                                     @endif
                                 </div>
                             </td>
@@ -193,17 +255,17 @@
                             {{-- RETURN TO RACK (Action/Button for DST) --}}
                             <td class="td-ret">
                                 @if($w->Date_Return)
-                                    <span class="font-weight-bold">{{ $w->name_return ?? $w->NIK_Return }}</span><br>
-                                    <span class="badge badge-secondary mb-1">Rak: {{ $w->Code_Rack_Return ?? '-' }}</span><br>
-                                    <small class="text-muted d-block">
-                                        {{ \Carbon\Carbon::parse($w->Date_Return)->format('d/m/y H:i') }}
-                                    </small>
+                                <span class="font-weight-bold">{{ $w->name_return ?? $w->NIK_Return }}</span><br>
+                                <span class="badge badge-secondary mb-1">Rak: {{ $w->Code_Rack_Return ?? '-' }}</span><br>
+                                <small class="text-muted d-block">
+                                    {{ \Carbon\Carbon::parse($w->Date_Return)->format('d/m/y H:i') }}
+                                </small>
                                 @elseif($w->Finish_Receiving)
-                                    <button class="btn btn-primary btn-action font-weight-bold" data-toggle="modal" data-target="#modalReturn{{ $w->Id_Withdrawal }}">
-                                        <i class="fas fa-undo mr-1"></i>Masuk Rak
-                                    </button>
+                                <button class="btn btn-primary btn-action font-weight-bold" data-toggle="modal" data-target="#modalReturn{{ $w->Id_Withdrawal }}">
+                                    <i class="fas fa-undo mr-1"></i>Masuk Rak
+                                </button>
                                 @else
-                                    <span class="text-muted">-</span>
+                                <span class="text-muted">-</span>
                                 @endif
                             </td>
                         </tr>
@@ -212,101 +274,110 @@
                     </tbody>
                 </table>
             </div>
-</div>
-</div>
+        </div>
+    </div>
 </div>
 
 
 @foreach($withdrawals as $w)
 
-                        {{-- Modal OK --}}
-                        @if(!$w->Oke_Withdrawal)
-                        <div class="modal fade" id="modalOke{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
-                            <div class="modal-dialog modal-sm" role="document">
-                                <div class="modal-content">
-                                    <form action="{{ route('user.withdrawal.oke', $w->Id_Withdrawal) }}" method="POST">
-                                        @csrf
-                                        <div class="modal-header bg-warning">
-                                            <h6 class="modal-title font-weight-bold">OK Siapkan Barang</h6>
-                                            <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="form-group mb-2">
-                                                <label style="font-size:0.82rem;font-weight:600;">NIK Anda (Member DST)</label>
-                                                <input type="number" name="NIK_Withdrawal" class="form-control"
-                                                    placeholder="Masukkan NIK" required
-                                                    value="{{ session('NIK_Member') }}">
-                                                <small class="text-muted">NIK ini akan terekam sebagai PIC yang menyiapkan.</small>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer py-2">
-                                            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
-                                            <button type="submit" class="btn btn-warning btn-sm">
-                                                <i class="fas fa-check mr-1"></i>Konfirmasi OK
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        @endif
+{{-- Modal OK --}}
+@if(!$w->Oke_Withdrawal)
+<div class="modal fade" id="modalOke{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <form action="{{ route('user.withdrawal.oke', $w->Id_Withdrawal) }}" method="POST">
+                @csrf
+                <div class="modal-header bg-warning">
+                    <h6 class="modal-title font-weight-bold">OK Siapkan Barang</h6>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group mb-2">
+                        <label style="font-size:0.82rem;font-weight:600;">NIK Anda (Member DST)</label>
+                        <input type="number" name="NIK_Withdrawal" class="form-control"
+                            placeholder="Masukkan NIK" required
+                            value="{{ session('NIK_Member') }}">
+                        <small class="text-muted">NIK ini akan terekam sebagai PIC yang menyiapkan.</small>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning btn-sm">
+                        <i class="fas fa-check mr-1"></i>Konfirmasi OK
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 
-                        {{-- Modal Masuk Rak --}}
-                        @if($w->Finish_Receiving && !$w->Date_Return)
-                        <div class="modal fade" id="modalReturn{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
-                            <div class="modal-dialog" role="document">
-                                <div class="modal-content">
-                                    <form action="{{ route('user.withdrawal.return', $w->Id_Withdrawal) }}" method="POST">
-                                        @csrf
-                                        <div class="modal-header bg-primary text-white">
-                                            <h6 class="modal-title font-weight-bold">
-                                                <i class="fas fa-undo mr-1"></i>Masuk Rak — {{ $w->Code_Item_Withdrawal }}
-                                            </h6>
-                                            <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="alert alert-warning py-2 mb-3" style="font-size:0.8rem;">
-                                                <i class="fas fa-exclamation-triangle mr-1"></i>
-                                                Pastikan barcode rak yang discan adalah <strong>{{ $w->rack_no }}</strong>
-                                            </div>
-                                            <div class="form-group">
-                                                <label style="font-size:0.82rem;font-weight:600;">NIK Member DST <span class="text-danger">*</span></label>
-                                                <input type="number" name="NIK_Return" class="form-control"
-                                                    placeholder="Masukkan NIK" required
-                                                    value="{{ session('NIK_Member') }}">
-                                            </div>
-                                            <div class="form-group">
-                                                <label style="font-size:0.82rem;font-weight:600;">Scan / Input Barcode Rak <span class="text-danger">*</span></label>
-                                                <div class="input-group">
-                                                    <input type="text" name="Code_Rack_Return"
-                                                        id="codeRack{{ $w->Id_Withdrawal }}"
-                                                        class="form-control"
-                                                        placeholder="Scan barcode rak"
-                                                        required readonly autocomplete="off">
-                                                    <div class="input-group-append">
-                                                        <button type="button" class="btn btn-outline-secondary btnScan"
-                                                            data-id="{{ $w->Id_Withdrawal }}"
-                                                            title="Buka scanner kamera">
-                                                            <i class="fas fa-camera"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {{-- QR Scanner --}}
-                                            <div id="readerRack{{ $w->Id_Withdrawal }}" class="scan-area"></div>
-                                        </div>
-                                        <div class="modal-footer py-2">
-                                            <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
-                                            <button type="submit" class="btn btn-primary btn-sm">
-                                                <i class="fas fa-save mr-1"></i>Simpan & Masuk Rak
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
+{{-- Modal Masuk Rak --}}
+@if($w->Finish_Receiving && !$w->Date_Return)
+<div class="modal fade" id="modalReturn{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form action="{{ route('user.withdrawal.return', $w->Id_Withdrawal) }}" method="POST">
+                @csrf
+                <div class="modal-header bg-primary text-white">
+                    <h6 class="modal-title font-weight-bold">
+                        <i class="fas fa-undo mr-1"></i>Masuk Rak — {{ $w->Code_Item_Withdrawal }}
+                    </h6>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning py-2 mb-3" style="font-size:0.8rem;">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        Pastikan barcode rak yang discan adalah <strong>{{ $w->rack_no }}</strong>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:0.82rem;font-weight:600;">NIK Member DST <span class="text-danger">*</span></label>
+                        <input type="number" name="NIK_Return" class="form-control"
+                            placeholder="Masukkan NIK" required
+                            value="{{ session('NIK_Member') }}">
+                    </div>
+
+                    <div class="custom-control custom-checkbox mb-3 p-2 bg-light rounded border">
+                        <input type="checkbox" class="custom-control-input cb-daichi" id="daichi{{ $w->Id_Withdrawal }}"
+                            data-target="#codeRack{{ $w->Id_Withdrawal }}" data-scan-btn="#btnScan{{ $w->Id_Withdrawal }}">
+                        <label class="custom-control-label font-weight-bold text-primary" for="daichi{{ $w->Id_Withdrawal }}" style="font-size:0.85rem; cursor:pointer;">
+                            <i class="fas fa-shipping-fast mr-1"></i>Item DAICHI
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size:0.82rem;font-weight:600;">Scan / Input Barcode Rak <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" name="Code_Rack_Return"
+                                id="codeRack{{ $w->Id_Withdrawal }}"
+                                class="form-control"
+                                placeholder="Scan barcode rak"
+                                required readonly autocomplete="off">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary btnScan"
+                                    id="btnScan{{ $w->Id_Withdrawal }}"
+                                    data-id="{{ $w->Id_Withdrawal }}"
+                                    title="Buka scanner kamera">
+                                    <i class="fas fa-camera"></i>
+                                </button>
                             </div>
                         </div>
-                        @endif
+                    </div>
+                    {{-- QR Scanner --}}
+                    <div id="readerRack{{ $w->Id_Withdrawal }}" class="scan-area"></div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-save mr-1"></i>Simpan & Masuk Rak
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 @endforeach
 
@@ -317,77 +388,121 @@
 <script src="{{asset('vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>
 <script src="{{ asset('js/html5-qrcode.min.js') }}"></script>
 <script>
-$(document).ready(function() {
+    $(document).ready(function() {
 
-    // DataTable
-    var table = $('#withdrawalTable').DataTable({
-        pageLength: 25,
-        order: [], // Let it use backend ordering (Newest first)
-        columnDefs: [
-            { orderable: false, targets: 0 } // Disable sorting on "No" column
-        ],
-        language: {
-            search: "Cari:", lengthMenu: "Tampilkan _MENU_ data",
-            info: "Data _START_-_END_ dari _TOTAL_", infoEmpty: "Tidak ada data",
-            zeroRecords: "Tidak ditemukan", emptyTable: '<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Belum ada data withdrawal.</div>',
-            paginate: { next: "Selanjutnya", previous: "Sebelumnya" }
-        }
-    });
-
-    // Auto-numbering
-    table.on('order.dt search.dt', function () {
-        let i = 1;
-        table.cells(null, 0, { search: 'applied', order: 'applied' }).every(function (cell) {
-            this.data(i++);
-        });
-    }).draw();
-
-    // ── QR Scanner for Masuk Rak ────────────────────────────
-    var scanners = {};
-
-    $(document).on('click', '.btnScan', function() {
-        var id = $(this).data('id');
-        var readerId = 'readerRack' + id;
-
-        if (scanners[id]) {
-            scanners[id].clear();
-            delete scanners[id];
-            $('#' + readerId).empty();
-            return;
-        }
-
-        scanners[id] = new Html5QrcodeScanner(readerId, {
-            fps: 10,
-            qrbox: { width: 240, height: 240 },
-            videoConstraints: { facingMode: "environment" }
+        // DataTable
+        var table = $('#withdrawalTable').DataTable({
+            pageLength: 25,
+            order: [], // Let it use backend ordering (Newest first)
+            columnDefs: [{
+                    orderable: false,
+                    targets: 0
+                } // Disable sorting on "No" column
+            ],
+            language: {
+                search: "Cari:",
+                lengthMenu: "Tampilkan _MENU_ data",
+                info: "Data _START_-_END_ dari _TOTAL_",
+                infoEmpty: "Tidak ada data",
+                zeroRecords: "Tidak ditemukan",
+                emptyTable: '<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Belum ada data withdrawal.</div>',
+                paginate: {
+                    next: "Selanjutnya",
+                    previous: "Sebelumnya"
+                }
+            }
         });
 
-        scanners[id].render(function(decodedText) {
-            $('#codeRack' + id).val(decodedText.trim());
-            scanners[id].clear();
-            delete scanners[id];
-            $('#' + readerId).empty();
+        // Auto-numbering
+        table.on('order.dt search.dt', function() {
+            let i = 1;
+            table.cells(null, 0, {
+                search: 'applied',
+                order: 'applied'
+            }).every(function(cell) {
+                this.data(i++);
+            });
+        }).draw();
+
+        // ── QR Scanner for Masuk Rak ────────────────────────────
+        var scanners = {};
+
+        $(document).on('click', '.btnScan', function() {
+            var id = $(this).data('id');
+            var readerId = 'readerRack' + id;
+
+            if (scanners[id]) {
+                scanners[id].clear();
+                delete scanners[id];
+                $('#' + readerId).empty();
+                return;
+            }
+
+            scanners[id] = new Html5QrcodeScanner(readerId, {
+                fps: 10,
+                qrbox: {
+                    width: 240,
+                    height: 240
+                },
+                videoConstraints: {
+                    facingMode: "environment"
+                }
+            });
+
+            scanners[id].render(function(decodedText) {
+                $('#codeRack' + id).val(decodedText.trim());
+                scanners[id].clear();
+                delete scanners[id];
+                $('#' + readerId).empty();
+            });
         });
-    });
 
-    // Stop scanner when modal closes
-    $('.modal').on('hidden.bs.modal', function() {
-        var id = $(this).find('.btnScan').data('id');
-        if (id && scanners[id]) {
-            scanners[id].clear();
-            delete scanners[id];
-            $('#readerRack' + id).empty();
-        }
-    });
+        // Stop scanner when modal closes
+        $('.modal').on('hidden.bs.modal', function() {
+            var id = $(this).find('.btnScan').data('id');
+            if (id && scanners[id]) {
+                scanners[id].clear();
+                delete scanners[id];
+                $('#readerRack' + id).empty();
+            }
+        });
 
-    // Focus NIK
-    $(document).on('shown.bs.modal', '[id^="modalOke"]', function() {
-        $(this).find('input[name="NIK_Withdrawal"]').focus().select();
-    });
-    $(document).on('shown.bs.modal', '[id^="modalReturn"]', function() {
-        $(this).find('input[name="NIK_Return"]').focus().select();
-    });
+        // Focus NIK
+        $(document).on('shown.bs.modal', '[id^="modalOke"]', function() {
+            $(this).find('input[name="NIK_Withdrawal"]').focus().select();
+        });
+        $(document).on('shown.bs.modal', '[id^="modalReturn"]', function() {
+            $(this).find('input[name="NIK_Return"]').focus().select();
+        });
 
-});
+        // ── Item DAICHI Checkbox Logic ─────────────────────────
+        $(document).on('change', '.cb-daichi', function() {
+            const isChecked = $(this).is(':checked');
+            const targetInput = $(this).data('target');
+            const scanBtn = $(this).data('scan-btn');
+            const id = $(targetInput).attr('id').replace('codeRack', '');
+
+            if (isChecked) {
+                $(targetInput).val('DAICHI').attr('readonly', true).addClass('bg-light font-weight-bold text-primary');
+                $(scanBtn).addClass('disabled').css('pointer-events', 'none').attr('tabindex', '-1');
+
+                // Stop scanner if it's open for this id
+                if (scanners[id]) {
+                    scanners[id].clear();
+                    delete scanners[id];
+                    $('#readerRack' + id).empty();
+                }
+            } else {
+                $(targetInput).val('').attr('readonly', true).removeClass('bg-light font-weight-bold text-primary');
+                $(scanBtn).removeClass('disabled').css('pointer-events', 'auto').removeAttr('tabindex');
+            }
+        });
+
+        // Reset DAICHI state when modal closes
+        $('.modal').on('hidden.bs.modal', function() {
+            $(this).find('.cb-daichi').prop('checked', false).trigger('change');
+        });
+
+    });
 </script>
 @endsection

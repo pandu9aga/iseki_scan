@@ -174,17 +174,19 @@ class UserWithdrawalController extends Controller
             }
 
             // Validasi rack & barcode
-            $rack = Rack::where('Code_Rack', $request->Code_Rack_Return)->first();
-            if (!$rack) {
-                return back()->withErrors(['Code_Rack_Return' => 'Barcode rak tidak dikenali.']);
-            }
+            if ($request->Code_Rack_Return !== 'DAICHI') {
+                $rack = Rack::where('Code_Rack', $request->Code_Rack_Return)->first();
+                if (!$rack) {
+                    return back()->withErrors(['Code_Rack_Return' => 'Barcode rak tidak dikenali.']);
+                }
 
-            // ✅ Normalisasi perbandingan string
-            if (trim(strtolower($rack->Code_Item_Rack)) !== trim(strtolower($withdrawal->Code_Item_Withdrawal))) {
-                return back()->withErrors([
-                    'Code_Rack_Return' => 'Salah Barang! Discan: ' . $rack->Code_Item_Rack .
-                        ', Seharusnya: ' . $withdrawal->Code_Item_Withdrawal
-                ]);
+                // ✅ Normalisasi perbandingan string
+                if (trim(strtolower($rack->Code_Item_Rack)) !== trim(strtolower($withdrawal->Code_Item_Withdrawal))) {
+                    return back()->withErrors([
+                        'Code_Rack_Return' => 'Salah Barang! Discan: ' . $rack->Code_Item_Rack .
+                            ', Seharusnya: ' . $withdrawal->Code_Item_Withdrawal
+                    ]);
+                }
             }
 
             // ✅ Update pakai NIK dari session
