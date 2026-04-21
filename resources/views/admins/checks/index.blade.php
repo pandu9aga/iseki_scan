@@ -26,8 +26,8 @@
                     <label class="mr-2 text-gray-700" style="font-size:0.8rem;">Status:</label>
                     <select name="status" class="form-control form-control-sm" style="min-width: 100px;">
                         <option value="">Semua</option>
-                        <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Mid</option>
-                        <option value="2" {{ request('status') == '2' ? 'selected' : '' }}>Lot</option>
+                        <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Sedang</option>
+                        <option value="2" {{ request('status') == '2' ? 'selected' : '' }}>Banyak</option>
                     </select>
                 </div>
                 <div class="mr-3 mb-2 mb-md-0 mt-2 mt-md-0 d-flex align-items-center">
@@ -81,9 +81,9 @@
                             <td>{{ $c->rack_name }}</td>
                             <td>
                                 @if($c->Status_Check == 1)
-                                    <span class="badge badge-mid">Mid</span>
+                                    <span class="badge badge-mid">Sedang</span>
                                 @elseif($c->Status_Check == 2)
-                                    <span class="badge badge-lot">Lot</span>
+                                    <span class="badge badge-lot">Banyak</span>
                                 @else
                                     -
                                 @endif
