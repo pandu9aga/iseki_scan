@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AdminRequestController;
 use App\Http\Controllers\Admin\AdminRequestingController;
 use App\Http\Controllers\Admin\AdminRecordingController;
 use App\Http\Controllers\Admin\AdminWithdrawalController;
+use App\Http\Controllers\Admin\AdminCheckController;
 use App\Http\Controllers\Admin\AdminSubmissionController;
 use App\Http\Controllers\Admin\ForgotController;
 use App\Http\Controllers\Admin\ItemController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\User\UserMissingController;
 use App\Http\Controllers\User\RequestController;
 use App\Http\Controllers\User\SubmissionController;
 use App\Http\Controllers\User\UserWithdrawalController;
+use App\Http\Controllers\User\UserCheckController;
 use App\Http\Controllers\User\UserAchievementController;
 use App\Http\Controllers\User\UserForgotController;
 use App\Http\Controllers\User\UserMistakeController;
@@ -176,6 +178,10 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::post('/admin_withdrawal/oke/{id}', [AdminWithdrawalController::class, 'oke'])->name('admin.withdrawal.oke');
     Route::post('/admin_withdrawal/return/{id}', [AdminWithdrawalController::class, 'returnRack'])->name('admin.withdrawal.return');
     Route::get('/admin_withdrawal/export', [AdminWithdrawalController::class, 'export'])->name('admin.withdrawal.export');
+
+    // Admin Check
+    Route::get('/admin_check', [AdminCheckController::class, 'index'])->name('admin.check');
+    Route::post('/admin_check/store', [AdminCheckController::class, 'store'])->name('admin.check.store');
 });
 
 // WA Queue API (accessible without auth for cross-device JS calls)
@@ -234,6 +240,10 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::post('/user_withdrawal/oke/{id}', [UserWithdrawalController::class, 'oke'])->name('user.withdrawal.oke');
     Route::post('/user_withdrawal/return/{id}', [UserWithdrawalController::class, 'returnRack'])->name('user.withdrawal.return');
     Route::get('/user_withdrawal/export', [UserWithdrawalController::class, 'export'])->name('user.withdrawal.export');
+
+    // User Check
+    Route::get('/user_check', [UserCheckController::class, 'index'])->name('user.check');
+    Route::post('/user_check/store', [UserCheckController::class, 'store'])->name('user.check.store');
 });
 
 Route::middleware(McMiddleware::class)->group(function () {

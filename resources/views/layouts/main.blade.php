@@ -294,6 +294,13 @@
                     <span>Withdrawal</span></a>
             </li>
 
+            <!-- Nav Item - Check -->
+            <li class="nav-item {{ request()->routeIs('admin.check') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.check') }}">
+                    <i class="fas fa-fw fa-clipboard-check"></i>
+                    <span>Check</span></a>
+            </li>
+
             <!-- Divider -->
             {{--
             <hr class="sidebar-divider"> --}}
