@@ -167,7 +167,7 @@
                                     </td>
                                     <td class="text-center">{{ $s->Urgent_Request == 1 ? '✓' : '' }}</td>
                                     <td>{{ $s->Code_Item_Rack }}</td>
-                                    <td>{{ $s->rack->Name_Item_Rack }}</td>
+                                    <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
                                     <td>
                                         @php
                                             $statuses = [];

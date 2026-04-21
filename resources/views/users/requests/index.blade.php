@@ -46,6 +46,17 @@
                                                 </button>
                                             </a>
                                         </div>
+
+                                        {{-- Check Buttons: Mid & Lot --}}
+                                        <div class="mb-2 mt-4">
+                                            <button type="button" id="btnMid" class="btn btn-sm mr-2" style="background-color:#fd7e14;color:#fff;padding:4px 10px;font-weight:600;" onclick="submitCheck(1)">
+                                                Sedang
+                                            </button>
+                                            <button type="button" id="btnLot" class="btn btn-sm ml-2" style="background-color:#6f42c1;color:#fff;padding:4px 10px;font-weight:600;" onclick="submitCheck(2)">
+                                                Banyak
+                                            </button>
+                                        </div>
+
                                         <span style="font-size: small;">Rack Code</span>
                                         <input type="text" onkeyup="this.value = this.value.toUpperCase();" name="Code_Rack" id="Code_Rack" class="form-control form-control-user mb-2 @error('Code_Rack') is-invalid @enderror" value="{{ old('Code_Rack') }}" required>
                                         <span style="font-size: small;">Item Code</span>
@@ -280,7 +291,35 @@
         let codeRack = $(this).val();
         checkDuplicateRequest(codeRack);
     });
+
+    // === Check Mid/Lot submit ===
+    function submitCheck(statusCheck) {
+        var codeRack = document.getElementById("Code_Rack").value;
+        var codeItem = document.getElementById("Code_Item").value;
+
+        if (!codeRack || !codeItem) {
+            alert('Silakan scan atau isi Rack Code terlebih dahulu.');
+            return;
+        }
+
+        var label = statusCheck == 1 ? 'Mid' : 'Lot';
+        if (!confirm('Submit Check ' + label + ' untuk rack ' + codeRack + '?')) return;
+
+        document.getElementById('check_Code_Rack').value = codeRack;
+        document.getElementById('check_Code_Item').value = codeItem;
+        document.getElementById('check_Status').value = statusCheck;
+        document.getElementById('checkForm').submit();
+    }
 </script>
+
+{{-- Hidden form for Check submission --}}
+<form id="checkForm" action="{{ route('user.check.store') }}" method="POST" style="display:none;">
+    @csrf
+    <input type="hidden" name="Code_Rack" id="check_Code_Rack">
+    <input type="hidden" name="Code_Item" id="check_Code_Item">
+    <input type="hidden" name="Status_Check" id="check_Status">
+</form>
+
 @endsection
 
 @section('style')
