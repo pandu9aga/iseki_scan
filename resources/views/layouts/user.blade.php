@@ -258,20 +258,6 @@
                 </div>
             </li>
 
-            <!-- Nav Item - Withdrawal -->
-            <li class="nav-item {{ request()->routeIs('user.withdrawal') ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('user.withdrawal') }}">
-                    <i class="fas fa-fw fa-exchange-alt"></i>
-                    <span>Withdrawal</span></a>
-            </li>
-
-            <!-- Nav Item - Check -->
-            <li class="nav-item {{ request()->routeIs('user.check') ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('user.check') }}">
-                    <i class="fas fa-fw fa-clipboard-check"></i>
-                    <span>Check</span></a>
-            </li>
-
             <!-- Divider -->
             <hr class="sidebar-divider">
 
@@ -298,6 +284,20 @@
                 <a class="nav-link" href="{{ route('user.oke.estimation') }}">
                     <i class="fas fa-fw fa-check-circle"></i>
                     <span>Oke Estimation</span></a>
+            </li>
+
+            <!-- Nav Item - Check -->
+            <li class="nav-item {{ request()->routeIs('user.check') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('user.check') }}">
+                    <i class="fas fa-fw fa-clipboard-check"></i>
+                    <span>Check</span></a>
+            </li>
+
+            <!-- Nav Item - Withdrawal -->
+            <li class="nav-item {{ request()->routeIs('user.withdrawal') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('user.withdrawal') }}">
+                    <i class="fas fa-fw fa-exchange-alt"></i>
+                    <span>Withdrawal</span></a>
             </li>
 
             <!-- Divider -->

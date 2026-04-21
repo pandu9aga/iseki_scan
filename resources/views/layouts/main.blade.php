@@ -240,7 +240,7 @@
 
             <!-- Heading -->
             <div class="sidebar-heading">
-                Request
+                Report
             </div>
 
             <!-- Nav Item - Report -->
@@ -257,14 +257,6 @@
                     <span>Request</span></a>
             </li>
 
-            <!-- Divider -->
-            <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                Record
-            </div>
-
             <!-- Nav Item - Monthly -->
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('monthly') }}">
@@ -277,6 +269,13 @@
                 <a class="nav-link" href="{{ route('report') }}">
                     <i class="fas fa-fw fa-qrcode"></i>
                     <span>Record</span></a>
+            </li>
+
+            <!-- Nav Item - Check -->
+            <li class="nav-item {{ request()->routeIs('admin.check') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.check') }}">
+                    <i class="fas fa-fw fa-clipboard-check"></i>
+                    <span>Check</span></a>
             </li>
 
             <!-- Divider -->
@@ -292,13 +291,6 @@
                 <a class="nav-link" href="{{ route('admin.withdrawal') }}">
                     <i class="fas fa-fw fa-exchange-alt"></i>
                     <span>Withdrawal</span></a>
-            </li>
-
-            <!-- Nav Item - Check -->
-            <li class="nav-item {{ request()->routeIs('admin.check') ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('admin.check') }}">
-                    <i class="fas fa-fw fa-clipboard-check"></i>
-                    <span>Check</span></a>
             </li>
 
             <!-- Divider -->
