@@ -4,26 +4,59 @@
 <link href="{{asset('vendor/datatables/dataTables.bootstrap4.min.css')}}" rel="stylesheet">
 <style>
     /* ── Table Base ─────────────────────────────────────── */
-    .table-responsive { overflow-x: auto; }
-    .table th, .table td {
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table th,
+    .table td {
         white-space: nowrap;
         text-align: center;
         vertical-align: middle;
         font-size: 0.8rem;
         padding: 6px 8px;
     }
-    .table td.text-left { text-align: left; }
+
+    .table td.text-left {
+        text-align: left;
+    }
 
     /* ── Column Group Headers ─────────────────────────────── */
-    .th-group-wd   { background-color: #fff3cd !important; color: #856404; }
-    .th-group-dst  { background-color: #cce5ff !important; color: #004085; }
-    .th-group-rcv  { background-color: #d4edda !important; color: #155724; }
-    .th-group-ret  { background-color: #e2d5f1 !important; color: #5a2d82; }
+    .th-group-wd {
+        background-color: #fff3cd !important;
+        color: #856404;
+    }
 
-    .td-wd   { background-color: #fffdf0; }
-    .td-dst  { background-color: #f0f7ff; }
-    .td-rcv  { background-color: #f0fff4; }
-    .td-ret  { background-color: #faf5ff; }
+    .th-group-dst {
+        background-color: #cce5ff !important;
+        color: #004085;
+    }
+
+    .th-group-rcv {
+        background-color: #d4edda !important;
+        color: #155724;
+    }
+
+    .th-group-ret {
+        background-color: #e2d5f1 !important;
+        color: #5a2d82;
+    }
+
+    .td-wd {
+        background-color: #fffdf0;
+    }
+
+    .td-dst {
+        background-color: #f0f7ff;
+    }
+
+    .td-rcv {
+        background-color: #f0fff4;
+    }
+
+    .td-ret {
+        background-color: #faf5ff;
+    }
 
     /* ── Buttons ─────────────────────────────────────────── */
     .btn-action {
@@ -31,7 +64,11 @@
         padding: 3px 8px;
         border-radius: 4px;
     }
-    .badge-ok  { font-size: 0.7rem; padding: 3px 7px; }
+
+    .badge-ok {
+        font-size: 0.7rem;
+        padding: 3px 7px;
+    }
 
     /* ── Status Chips ────────────────────────────────────── */
     .chip {
@@ -41,15 +78,32 @@
         font-size: 0.7rem;
         font-weight: 600;
     }
-    .chip-wait   { background:#ffeeba; color:#856404; }
-    .chip-done   { background:#d4edda; color:#155724; }
-    .chip-active { background:#cce5ff; color:#004085; }
+
+    .chip-wait {
+        background: #ffeeba;
+        color: #856404;
+    }
+
+    .chip-done {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .chip-active {
+        background: #cce5ff;
+        color: #004085;
+    }
 
     /* ── Autocomplete ────────────────────────────────────── */
-    .autocomplete-wrapper { position: relative; }
+    .autocomplete-wrapper {
+        position: relative;
+    }
+
     .autocomplete-results {
         position: absolute;
-        top: 100%; left: 0; right: 0;
+        top: 100%;
+        left: 0;
+        right: 0;
         z-index: 9999;
         background: white;
         border: 1px solid #ccc;
@@ -57,24 +111,58 @@
         overflow-y: auto;
         display: none;
         border-radius: 4px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
     }
-    .autocomplete-results.show { display: block; }
+
+    .autocomplete-results.show {
+        display: block;
+    }
+
     .autocomplete-item {
         padding: 9px 12px;
         cursor: pointer;
         border-bottom: 1px solid #f0f0f0;
     }
-    .autocomplete-item:hover, .autocomplete-item.selected { background: #f0f7ff; }
-    .autocomplete-main { font-weight: 700; color: #2d4a8a; font-size: 0.9rem; }
-    .autocomplete-sub  { font-size: 0.78rem; color: #666; }
-    .autocomplete-loading, .autocomplete-empty { padding: 10px; text-align: center; color: #888; }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.selected {
+        background: #f0f7ff;
+    }
+
+    .autocomplete-main {
+        font-weight: 700;
+        color: #2d4a8a;
+        font-size: 0.9rem;
+    }
+
+    .autocomplete-sub {
+        font-size: 0.78rem;
+        color: #666;
+    }
+
+    .autocomplete-loading,
+    .autocomplete-empty {
+        padding: 10px;
+        text-align: center;
+        color: #888;
+    }
 
     /* ── Zebra striping override ─────────────────────────── */
-    tbody tr:nth-child(even) .td-wd   { background-color: #fffae8; }
-    tbody tr:nth-child(even) .td-dst  { background-color: #e8f2ff; }
-    tbody tr:nth-child(even) .td-rcv  { background-color: #e8faee; }
-    tbody tr:nth-child(even) .td-ret  { background-color: #f6f0ff; }
+    tbody tr:nth-child(even) .td-wd {
+        background-color: #fffae8;
+    }
+
+    tbody tr:nth-child(even) .td-dst {
+        background-color: #e8f2ff;
+    }
+
+    tbody tr:nth-child(even) .td-rcv {
+        background-color: #e8faee;
+    }
+
+    tbody tr:nth-child(even) .td-ret {
+        background-color: #f6f0ff;
+    }
 </style>
 @endsection
 
@@ -127,17 +215,17 @@
 
     {{-- Flash Messages --}}
     @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show">
-            <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
-            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-        </div>
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fas fa-check-circle mr-1"></i> {{ session('success') }}
+        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+    </div>
     @endif
     @if($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show">
-            <i class="fas fa-exclamation-triangle mr-1"></i>
-            @foreach($errors->all() as $error) {{ $error }}<br> @endforeach
-            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-        </div>
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fas fa-exclamation-triangle mr-1"></i>
+        @foreach($errors->all() as $error) {{ $error }}<br> @endforeach
+        <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+    </div>
     @endif
 
     {{-- Main Table Card --}}
@@ -152,13 +240,13 @@
                             <th class="th-group-wd" style="min-width:140px;">PIC Withdrawal</th>
                             <th class="th-group-wd" style="min-width:140px;">Item Code</th>
                             <th class="th-group-wd" style="min-width:50px;">Aksi</th>
-                            
+
                             <th class="th-group-dst" style="min-width:110px;">Oke DST</th>
                             <th class="th-group-dst" style="min-width:110px;">PIC DST</th>
-                            
+
                             <th class="th-group-rcv" style="min-width:110px;">Received</th>
                             <th class="th-group-rcv" style="min-width:110px;">Finish</th>
-                            
+
                             <th class="th-group-ret" style="min-width:120px;">PIC Return</th>
                             <th class="th-group-ret" style="min-width:100px;">No Rack Return</th>
                         </tr>
@@ -182,27 +270,27 @@
                             </td>
                             <td class="td-wd">
                                 @if(!$w->Oke_Withdrawal)
-                                    <form action="{{ route('qc.withdrawal.destroy', $w->Id_Withdrawal) }}" method="POST" onsubmit="return confirm('Hapus data pengajuan ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-action" title="Hapus Pengajuan">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
+                                <form action="{{ route('qc.withdrawal.destroy', $w->Id_Withdrawal) }}" method="POST" onsubmit="return confirm('Hapus data pengajuan ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-action" title="Hapus Pengajuan">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                                 @else
-                                    <span class="text-muted" title="Sudah di-OKE DST"><i class="fas fa-lock"></i></span>
+                                <span class="text-muted" title="Sudah di-OKE DST"><i class="fas fa-lock"></i></span>
                                 @endif
                             </td>
 
                             {{-- PREPARE BY DST — READ ONLY (QC monitors) --}}
                             <td class="td-dst">
                                 @if($w->Oke_Withdrawal)
-                                    <span class="chip chip-done"><i class="fas fa-check mr-1"></i>OK</span><br>
-                                    <small class="text-muted d-block mt-1">
-                                        {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
-                                    </small>
+                                <span class="chip chip-done"><i class="fas fa-check mr-1"></i>OK</span><br>
+                                <small class="text-muted d-block mt-1">
+                                    {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
+                                </small>
                                 @else
-                                    <span class="chip chip-wait">Menunggu</span>
+                                <span class="chip chip-wait">Menunggu</span>
                                 @endif
                             </td>
                             <td class="td-dst">{{ $w->name_disiapkan ?? '-' }}</td>
@@ -210,52 +298,54 @@
                             {{-- RECEIVED BY QC --}}
                             <td class="td-rcv">
                                 @if($w->Oke_Receiving)
-                                    <span class="chip chip-done"><i class="fas fa-check mr-1"></i>Ya</span><br>
-                                    <small class="text-muted d-block mt-1">
-                                        {{ \Carbon\Carbon::parse($w->Date_Receiving)->format('d/m/y H:i') }}
-                                    </small>
+                                <span class="chip chip-done"><i class="fas fa-check mr-1"></i>Ya</span><br>
+                                <small class="text-muted d-block mt-1">
+                                    {{ \Carbon\Carbon::parse($w->Date_Receiving)->format('d/m/y H:i') }}
+                                </small>
                                 @elseif($w->Oke_Withdrawal)
-                                    <form action="{{ route('qc.withdrawal.receiving', $w->Id_Withdrawal) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="btn btn-success btn-action"
-                                            onclick="return confirm('Konfirmasi barang sudah diterima QC?')">
-                                            <i class="fas fa-hand-holding mr-1"></i>Terima
-                                        </button>
-                                    </form>
+                                <form action="{{ route('qc.withdrawal.receiving', $w->Id_Withdrawal) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success btn-action"
+                                        onclick="return confirm('Konfirmasi barang sudah diterima QC?')">
+                                        <i class="fas fa-hand-holding mr-1"></i>Terima
+                                    </button>
+                                </form>
                                 @else
-                                    <span class="text-muted">-</span>
+                                <span class="text-muted">-</span>
                                 @endif
                             </td>
                             <td class="td-rcv">
                                 @if($w->Finish_Receiving)
-                                    <span class="chip chip-done"><i class="fas fa-check-double mr-1"></i>Ya</span><br>
-                                    <small class="text-muted d-block mt-1">
-                                        {{ \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') }}
-                                    </small>
+                                <span class="chip chip-done"><i class="fas fa-check-double mr-1"></i>Ya</span><br>
+                                <small class="text-muted d-block mt-1">
+                                    {{ \Carbon\Carbon::parse($w->Date_Finish_Receiving)->format('d/m/y H:i') }}
+                                </small>
+                                @if($w->Desc_Finish)
+                                <small class="d-block mt-1 text-wrap" style="white-space:normal; max-width:140px; font-size:0.72rem; color:#555;">
+                                    <i class="fas fa-comment-alt mr-1"></i>{{ $w->Desc_Finish }}
+                                </small>
+                                @endif
                                 @elseif($w->Oke_Receiving)
-                                    <form action="{{ route('qc.withdrawal.finish', $w->Id_Withdrawal) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="btn btn-info btn-action"
-                                            onclick="return confirm('Konfirmasi QC selesai menggunakan barang?')">
-                                            <i class="fas fa-flag-checkered mr-1"></i>Selesai
-                                        </button>
-                                    </form>
+                                <button type="button" class="btn btn-info btn-action"
+                                    data-toggle="modal" data-target="#modalFinish{{ $w->Id_Withdrawal }}">
+                                    <i class="fas fa-flag-checkered mr-1"></i>Selesai
+                                </button>
                                 @else
-                                    <span class="text-muted">-</span>
+                                <span class="text-muted">-</span>
                                 @endif
                             </td>
 
                             {{-- RETURN TO RACK — READ ONLY for QC (DST does the action) --}}
                             <td class="td-ret">
                                 @if($w->Date_Return)
-                                    <span class="font-weight-bold">{{ $w->name_return ?? $w->NIK_Return }}</span><br>
-                                    <small class="text-muted d-block mt-1">
-                                        {{ \Carbon\Carbon::parse($w->Date_Return)->format('d/m/y H:i') }}
-                                    </small>
+                                <span class="font-weight-bold">{{ $w->name_return ?? $w->NIK_Return }}</span><br>
+                                <small class="text-muted d-block mt-1">
+                                    {{ \Carbon\Carbon::parse($w->Date_Return)->format('d/m/y H:i') }}
+                                </small>
                                 @elseif($w->Finish_Receiving)
-                                    <span class="chip chip-active">Menunggu DST</span>
+                                <span class="chip chip-active">Menunggu DST</span>
                                 @else
-                                    <span class="text-muted">-</span>
+                                <span class="text-muted">-</span>
                                 @endif
                             </td>
                             <td class="td-ret">
@@ -269,6 +359,41 @@
         </div>
     </div>
 </div>
+
+{{-- Modal Finish Description (per-row) --}}
+@foreach($withdrawals as $w)
+@if($w->Oke_Receiving && !$w->Finish_Receiving)
+<div class="modal fade" id="modalFinish{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <form action="{{ route('qc.withdrawal.finish', $w->Id_Withdrawal) }}" method="POST">
+                @csrf
+                <div class="modal-header bg-info text-white">
+                    <h6 class="modal-title font-weight-bold">
+                        <i class="fas fa-flag-checkered mr-1"></i>Selesai — {{ $w->Code_Item_Withdrawal }}
+                    </h6>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group mb-0">
+                        <label style="font-size:0.82rem;font-weight:600;">Keterangan <span class="text-danger">*</span></label>
+                        <textarea name="Desc_Finish" class="form-control" rows="3"
+                            placeholder="Masukkan keterangan ..." maxlength="255" required></textarea>
+                        <small class="text-muted">Keterangan kondisi part terkait</small>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-info btn-sm">
+                        <i class="fas fa-check mr-1"></i>Konfirmasi Selesai
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+@endforeach
 
 {{-- Modal Pengajuan Baru --}}
 <div class="modal fade" id="modalPengajuan" tabindex="-1" role="dialog" aria-labelledby="modalPengajuanLabel" aria-hidden="true">
@@ -319,91 +444,124 @@
 <script src="{{asset('vendor/datatables/jquery.dataTables.min.js')}}"></script>
 <script src="{{asset('vendor/datatables/dataTables.bootstrap4.min.js')}}"></script>
 <script>
-$(document).ready(function() {
+    $(document).ready(function() {
 
-    // DataTable
-    var table = $('#withdrawalTable').DataTable({
-        pageLength: 25,
-        order: [], // Let it use backend ordering (Newest first)
-        columnDefs: [
-            { orderable: false, targets: 0 } // Disable sorting on "No" column
-        ],
-        language: {
-            search: "Cari:", lengthMenu: "Tampilkan _MENU_ data",
-            info: "Data _START_-_END_ dari _TOTAL_", infoEmpty: "Tidak ada data",
-            zeroRecords: "Tidak ditemukan", emptyTable: '<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Belum ada data withdrawal.</div>',
-            paginate: { next: "Selanjutnya", previous: "Sebelumnya" }
+        // ── Detect base URL dynamically ───────────────────────────
+        // Works on both localhost/iseki_scan/public/ and 192.168.173.201/iseki_scan/
+        var currentPath = window.location.pathname;
+        var baseUrl = currentPath.substring(0, currentPath.indexOf('/qc/withdrawal'));
+        var searchRackUrl = baseUrl + '/qc/withdrawal/search-rack';
+
+        // ── DataTable (wrapped in try-catch so autocomplete still works if this fails) ──
+        try {
+            var table = $('#withdrawalTable').DataTable({
+                pageLength: 25,
+                order: [],
+                columnDefs: [{
+                    orderable: false,
+                    targets: 0
+                }],
+                language: {
+                    search: "Cari:",
+                    lengthMenu: "Tampilkan _MENU_ data",
+                    info: "Data _START_-_END_ dari _TOTAL_",
+                    infoEmpty: "Tidak ada data",
+                    zeroRecords: "Tidak ditemukan",
+                    emptyTable: '<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>Belum ada data withdrawal.</div>',
+                    paginate: {
+                        next: "Selanjutnya",
+                        previous: "Sebelumnya"
+                    }
+                }
+            });
+
+            // Auto-numbering
+            table.on('order.dt search.dt', function() {
+                let i = 1;
+                table.cells(null, 0, {
+                    search: 'applied',
+                    order: 'applied'
+                }).every(function(cell) {
+                    this.data(i++);
+                });
+            }).draw();
+        } catch (e) {
+            console.warn('DataTable init error (autocomplete masih berjalan):', e.message);
         }
-    });
 
-    // Auto-numbering
-    table.on('order.dt search.dt', function () {
-        let i = 1;
-        table.cells(null, 0, { search: 'applied', order: 'applied' }).every(function (cell) {
-            this.data(i++);
+        // ── Autocomplete Kode Part ──────────────────────────────
+        const $input = $('#Code_Item_Withdrawal');
+        const $results = $('#autocomplete-results');
+        const $preview = $('#rackPreview');
+        let timeout, selectedIndex = -1,
+            results = [];
+
+        // Debounced Search Input
+        $input.on('input', function() {
+            const q = $(this).val().trim();
+            clearTimeout(timeout);
+            selectedIndex = -1;
+            $preview.hide();
+            if (q.length < 1) {
+                $results.removeClass('show').empty();
+                return;
+            }
+            timeout = setTimeout(() => search(q), 280);
         });
-    }).draw();
 
-    // ── Autocomplete Kode Part ──────────────────────────────
-    const $input   = $('#Code_Item_Withdrawal');
-    const $results = $('#autocomplete-results');
-    const $preview = $('#rackPreview');
-    let timeout, selectedIndex = -1, results = [];
-
-    $input.on('input', function() {
-        const q = $(this).val().trim();
-        clearTimeout(timeout);
-        selectedIndex = -1;
-        $preview.hide();
-        if (q.length < 1) { $results.removeClass('show').empty(); return; }
-        timeout = setTimeout(() => search(q), 280);
-    });
-
-    $input.on('keydown', function(e) {
-        if (!$results.hasClass('show')) return;
-        const $items = $results.find('.autocomplete-item');
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            selectedIndex = Math.min(selectedIndex + 1, $items.length - 1);
-            updateSel($items);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            selectedIndex = Math.max(selectedIndex - 1, -1);
-            updateSel($items);
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (selectedIndex >= 0) selectItem(results[selectedIndex]);
-        } else if (e.key === 'Escape') {
-            $results.removeClass('show');
-        }
-    });
-
-    $(document).on('click', '.autocomplete-item', function() {
-        selectItem(results[$(this).data('index')]);
-    });
-
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('.autocomplete-wrapper').length) {
-            $results.removeClass('show');
-        }
-    });
-
-    function search(q) {
-        $results.html('<div class="autocomplete-loading"><i class="fas fa-spinner fa-spin mr-1"></i>Mencari...</div>').addClass('show');
-        $.ajax({
-            url:  '{{ route("qc.withdrawal.searchRack") }}',
-            data: { query: q },
-            success: function(data) { results = data; renderResults(); },
-            error:   function()     { $results.html('<div class="autocomplete-empty text-danger"><i class="fas fa-exclamation-circle mr-1"></i>Gagal memuat data</div>'); }
+        // Keyboard Navigation
+        $input.on('keydown', function(e) {
+            if (!$results.hasClass('show')) return;
+            const $items = $results.find('.autocomplete-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, $items.length - 1);
+                updateSel($items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, -1);
+                updateSel($items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0) selectItem(results[selectedIndex]);
+            } else if (e.key === 'Escape') {
+                $results.removeClass('show');
+            }
         });
-    }
 
-    function renderResults() {
-        if (results.length === 0) {
-            $results.html('<div class="autocomplete-empty">Tidak ada hasil ditemukan</div>');
-            return;
+        $(document).on('click', '.autocomplete-item', function() {
+            selectItem(results[$(this).data('index')]);
+        });
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.autocomplete-wrapper').length) {
+                $results.removeClass('show');
+            }
+        });
+
+        function search(q) {
+            $results.html('<div class="autocomplete-loading"><i class="fas fa-spinner fa-spin mr-1"></i>Mencari...</div>').addClass('show');
+            $.ajax({
+                url: searchRackUrl,
+                data: {
+                    query: q
+                },
+                success: function(data) {
+                    results = data;
+                    renderResults();
+                },
+                error: function() {
+                    $results.html('<div class="autocomplete-empty text-danger"><i class="fas fa-exclamation-circle mr-1"></i>Gagal memuat data</div>');
+                }
+            });
         }
-        const html = results.map((item, i) => `
+
+        function renderResults() {
+            if (results.length === 0) {
+                $results.html('<div class="autocomplete-empty">Tidak ada hasil ditemukan</div>');
+                return;
+            }
+            const html = results.map((item, i) => `
             <div class="autocomplete-item" data-index="${i}">
                 <div class="autocomplete-main">${esc(item.item_code)}</div>
                 <div class="autocomplete-sub">
@@ -411,39 +569,45 @@ $(document).ready(function() {
                     Rack: <code>${esc(item.rack_no)}</code>
                 </div>
             </div>`).join('');
-        $results.html(html).addClass('show');
-    }
+            $results.html(html).addClass('show');
+        }
 
-    function updateSel($items) {
-        $items.removeClass('selected');
-        if (selectedIndex >= 0) $items.eq(selectedIndex).addClass('selected')[0].scrollIntoView({block:'nearest'});
-    }
+        function updateSel($items) {
+            $items.removeClass('selected');
+            if (selectedIndex >= 0) {
+                const $active = $items.eq(selectedIndex);
+                $active.addClass('selected');
+                if ($active.length) $active[0].scrollIntoView({
+                    block: 'nearest'
+                });
+            }
+        }
 
-    function selectItem(item) {
-        if (!item) return;
-        $input.val(item.item_code);
-        $results.removeClass('show').empty();
-        // Show preview
-        $('#prevItemCode').text(item.item_code);
-        $('#prevItemName').text(item.part_name || '-');
-        $('#prevRackNo').text(item.rack_no);
-        $preview.show();
-    }
+        function selectItem(item) {
+            if (!item) return;
+            $input.val(item.item_code);
+            $results.removeClass('show').empty();
+            // Show preview
+            $('#prevItemCode').text(item.item_code);
+            $('#prevItemName').text(item.part_name || '-');
+            $('#prevRackNo').text(item.rack_no);
+            $preview.show();
+        }
 
-    function esc(text) {
-        if (!text) return '';
-        const d = document.createElement('div');
-        d.textContent = text;
-        return d.innerHTML;
-    }
+        function esc(text) {
+            if (!text) return '';
+            const d = document.createElement('div');
+            d.textContent = text;
+            return d.innerHTML;
+        }
 
-    // Clear preview when modal closes
-    $('#modalPengajuan').on('hidden.bs.modal', function() {
-        $preview.hide();
-        $results.removeClass('show').empty();
-        $input.val('');
+        // Clear preview when modal closes
+        $('#modalPengajuan').on('hidden.bs.modal', function() {
+            $preview.hide();
+            $results.removeClass('show').empty();
+            $input.val('');
+        });
+
     });
-
-});
 </script>
 @endsection

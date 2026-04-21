@@ -232,12 +232,17 @@ class WithdrawalController extends Controller
     /**
      * QC clicks "Selesai" - marks QC process as finished
      */
-    public function finish($id)
+    public function finish($id, Request $request)
     {
+        $request->validate([
+            'Desc_Finish' => 'required|string|max:255',
+        ]);
+
         $withdrawal = Withdrawal::findOrFail($id);
         $withdrawal->update([
             'Finish_Receiving' => true,
             'Date_Finish_Receiving' => Carbon::now(),
+            'Desc_Finish' => $request->Desc_Finish,
         ]);
 
         return back()->with('success', 'QC telah selesai.');
@@ -346,7 +351,7 @@ class WithdrawalController extends Controller
         $headers = [
             'No', 'Date WD', 'Name PIC', 'Item Code', 'Name Item', 'No Rack',
             'Oke DST', 'PIC DST', 'Date Oke',
-            'Received', 'Date Received', 'Finish', 'Date Finish',
+            'Received', 'Date Received', 'Finish', 'Date Finish', 'Description Finish',
             'PIC Return', 'No Rack Return', 'Date Return'
         ];
         $sheet->fromArray([$headers], null, 'A1');
@@ -355,7 +360,7 @@ class WithdrawalController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:P1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
 
         $row = 2;
         foreach ($withdrawals as $index => $w) {
@@ -401,6 +406,7 @@ class WithdrawalController extends Controller
                 $w->Date_Receiving ? Carbon::parse($w->Date_Receiving)->format('d/m/Y H:i') : '-',
                 $w->Finish_Receiving ? 'Selesai' : '-',
                 $w->Date_Finish_Receiving ? Carbon::parse($w->Date_Finish_Receiving)->format('d/m/Y H:i') : '-',
+                $w->Desc_Finish ?? '-',
                 $w->Date_Return ? $nameReturn : '-',
                 $w->Code_Rack_Return ?? '-',
                 $w->Date_Return ? Carbon::parse($w->Date_Return)->format('d/m/Y H:i') : '-',
