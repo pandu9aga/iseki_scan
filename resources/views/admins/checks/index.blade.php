@@ -24,10 +24,19 @@
                 </div>
                 <div class="mr-3 mb-2 mb-md-0 mt-2 mt-md-0 d-flex align-items-center">
                     <label class="mr-2 text-gray-700" style="font-size:0.8rem;">Status:</label>
-                    <select name="status" class="form-control form-control-sm" style="min-width: 120px;">
+                    <select name="status" class="form-control form-control-sm" style="min-width: 100px;">
                         <option value="">Semua</option>
-                        <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Sedang</option>
-                        <option value="2" {{ request('status') == '2' ? 'selected' : '' }}>Banyak</option>
+                        <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Mid</option>
+                        <option value="2" {{ request('status') == '2' ? 'selected' : '' }}>Lot</option>
+                    </select>
+                </div>
+                <div class="mr-3 mb-2 mb-md-0 mt-2 mt-md-0 d-flex align-items-center">
+                    <label class="mr-2 text-gray-700" style="font-size:0.8rem;">Checker:</label>
+                    <select name="checker" class="form-control form-control-sm" style="min-width: 140px;">
+                        <option value="">Semua</option>
+                        @foreach($checkerList as $id => $name)
+                            <option value="{{ $id }}" {{ request('checker') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="mt-2 mt-md-0">
@@ -72,9 +81,9 @@
                             <td>{{ $c->rack_name }}</td>
                             <td>
                                 @if($c->Status_Check == 1)
-                                    <span class="badge badge-mid">Sedang</span>
+                                    <span class="badge badge-mid">Mid</span>
                                 @elseif($c->Status_Check == 2)
-                                    <span class="badge badge-lot">Banyak</span>
+                                    <span class="badge badge-lot">Lot</span>
                                 @else
                                     -
                                 @endif
@@ -96,7 +105,8 @@
 <script>
 $(document).ready(function() {
     $('#checkTable').DataTable({
-        pageLength: 25,
+        pageLength: 100,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
         order: [],
         language: {
             search: "Cari:", lengthMenu: "Tampilkan _MENU_ data",

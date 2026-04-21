@@ -16,9 +16,11 @@ class AdminCheckController extends Controller
     {
         $query = Check::query();
 
-        // Filter by date
-        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
-        $query->whereDate('Time_Check', $date);
+        // Filter by date (optional — empty = show all)
+        $date = $request->input('date');
+        if ($date) {
+            $query->whereDate('Time_Check', $date);
+        }
 
         // Filter by status
         $status = $request->input('status');
@@ -26,32 +28,51 @@ class AdminCheckController extends Controller
             $query->where('Status_Check', $status);
         }
 
+        // Filter by checker (Id_User)
+        $checker = $request->input('checker');
+        if ($checker) {
+            $query->where('Id_User', $checker);
+        }
+
         $checks = $query->orderBy('Id_Checks', 'desc')->get();
 
-        // Enrich with member/user names and rack info
-        $userIds = $checks->pluck('Id_User')->filter()->unique();
+        // Build member & user maps for all checks
+        $allMemberIds = Check::select('Id_User')->where('Is_User', 0)->orWhereNull('Is_User')->distinct()->pluck('Id_User')->filter();
+        $allAdminIds = Check::select('Id_User')->where('Is_User', 1)->distinct()->pluck('Id_User')->filter();
+
         $membersMap = [];
-        $usersMap = [];
-        if ($userIds->isNotEmpty()) {
-            $members = \App\Models\Member::whereIn('Id_Member', $userIds)->get()->keyBy('Id_Member');
+        if ($allMemberIds->isNotEmpty()) {
+            $members = \App\Models\Member::whereIn('Id_Member', $allMemberIds)->get()->keyBy('Id_Member');
             foreach ($members as $id => $member) {
                 $membersMap[$id] = $member->Name_Member;
             }
-            $users = \App\Models\User::whereIn('Id_User', $userIds)->get()->keyBy('Id_User');
+        }
+
+        $usersMap = [];
+        if ($allAdminIds->isNotEmpty()) {
+            $users = \App\Models\User::whereIn('Id_User', $allAdminIds)->get()->keyBy('Id_User');
             foreach ($users as $id => $user) {
                 $usersMap[$id] = $user->Username_User;
             }
         }
 
+        // Build checker list for filter dropdown
+        $checkerList = [];
+        foreach ($membersMap as $id => $name) {
+            $checkerList[$id] = $name;
+        }
+        foreach ($usersMap as $id => $name) {
+            $checkerList[$id] = $name . ' (Admin)';
+        }
+        asort($checkerList);
+
+        // Enrich rack info
         $codes = $checks->pluck('Code_Rack')->filter()->unique();
         $racksMap = [];
         if ($codes->isNotEmpty()) {
             $racks = \App\Models\Rack::whereIn('Code_Rack', $codes)->get()->keyBy('Code_Rack');
             foreach ($racks as $code => $rack) {
-                $racksMap[$code] = [
-                    'name' => $rack->Name_Item_Rack,
-                    'item_code' => $rack->Code_Item_Rack,
-                ];
+                $racksMap[$code] = $rack->Name_Item_Rack;
             }
         }
 
@@ -64,13 +85,12 @@ class AdminCheckController extends Controller
                 $c->checker_name = '-';
             }
 
-            $rackInfo = $racksMap[$c->Code_Rack] ?? null;
-            $c->rack_name = $rackInfo ? $rackInfo['name'] : '-';
+            $c->rack_name = $racksMap[$c->Code_Rack] ?? '-';
         }
 
-        $dateForInput = $date;
+        $dateForInput = $date ?? '';
 
-        return view('admins.checks.index', compact('checks', 'dateForInput'));
+        return view('admins.checks.index', compact('checks', 'dateForInput', 'checkerList'));
     }
 
     /**
