@@ -39,6 +39,9 @@ class WithdrawalController extends Controller
             $parsedMonth = Carbon::parse($month . '-01');
             $query->whereMonth('Date_Withdrawal', $parsedMonth->format('m'))
                   ->whereYear('Date_Withdrawal', $parsedMonth->format('Y'));
+        } else {
+            $query->whereMonth('Date_Withdrawal', Carbon::now()->format('m'))
+                  ->whereYear('Date_Withdrawal', Carbon::now()->format('Y'));
         }
 
         $withdrawals = $query->orderBy('Id_Withdrawal', 'desc')->get();
@@ -76,7 +79,9 @@ class WithdrawalController extends Controller
         }
 
         // Enrich with member names and rack info
-        foreach ($withdrawals as $w) {
+        $total = $withdrawals->count();
+        foreach ($withdrawals as $index => $w) {
+            $w->no_urut = $total - $index;
             if ($w->NIK_Withdrawal) {
                 if ($w->Is_User && isset($usersMap[$w->NIK_Withdrawal])) {
                     $w->name_disiapkan = $usersMap[$w->NIK_Withdrawal] . ' (Admin)';
@@ -313,9 +318,13 @@ class WithdrawalController extends Controller
             $parsedMonth = Carbon::parse($month . '-01');
             $query->whereMonth('Date_Withdrawal', $parsedMonth->format('m'))
                   ->whereYear('Date_Withdrawal', $parsedMonth->format('Y'));
+        } else {
+            $query->whereMonth('Date_Withdrawal', Carbon::now()->format('m'))
+                  ->whereYear('Date_Withdrawal', Carbon::now()->format('Y'));
         }
 
         $withdrawals = $query->orderBy('Id_Withdrawal', 'desc')->get();
+        $total = $withdrawals->count();
 
         $niks = $withdrawals->pluck('NIK_Withdrawal')
             ->merge($withdrawals->pluck('NIK_Return'))
@@ -366,6 +375,7 @@ class WithdrawalController extends Controller
 
         $row = 2;
         foreach ($withdrawals as $index => $w) {
+            $noUrut = $total - $index;
             $nameDisiapkan = '-';
             if ($w->NIK_Withdrawal) {
                 if ($w->Is_User && isset($usersMap[$w->NIK_Withdrawal])) {
@@ -395,7 +405,7 @@ class WithdrawalController extends Controller
             $rackInfo = $racksMap[$w->Code_Item_Withdrawal] ?? null;
 
             $sheet->fromArray([
-                $index + 1,
+                $noUrut,
                 $w->Date_Withdrawal ? Carbon::parse($w->Date_Withdrawal)->format('d/m/Y H:i') : '-',
                 $w->Name_Withdrawal ?? '-',
                 $w->Code_Item_Withdrawal ?? '-',

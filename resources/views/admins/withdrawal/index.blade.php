@@ -143,7 +143,7 @@
 
                 <div class="mr-3 mb-2 mb-md-0 mt-2 mt-md-0 d-flex align-items-center">
                     <label class="mr-2 text-gray-700" style="font-size:0.8rem;">Bulan:</label>
-                    <input type="month" name="month" class="form-control form-control-sm" value="{{ request('month') }}">
+                    <input type="month" name="month" class="form-control form-control-sm" value="{{ request('month') ?? \Carbon\Carbon::now()->format('Y-m') }}">
                 </div>
 
                 <div class="mr-3 mb-2 mb-md-0 mt-2 mt-md-0 d-flex align-items-center">
@@ -200,7 +200,7 @@
                     <tbody>
                         @foreach($withdrawals as $index => $w)
                         <tr>
-                            <td class="td-wd">{{ $index + 1 }}</td>
+                            <td class="td-wd">{{ $w->no_urut }}</td>
 
                             {{-- WITHDRAWAL QC (Read Only) --}}
                             <td class="td-wd">
@@ -445,16 +445,7 @@
             }
         });
 
-        // Auto-numbering
-        table.on('order.dt search.dt', function() {
-            let i = 1;
-            table.cells(null, 0, {
-                search: 'applied',
-                order: 'applied'
-            }).every(function(cell) {
-                this.data(i++);
-            });
-        }).draw();
+        // Auto-numbering removed, using backend sequence numbers
 
         // ── QR Scanner for Masuk Rak ────────────────────────────
         var scanners = {};
