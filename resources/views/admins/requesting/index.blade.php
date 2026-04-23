@@ -147,6 +147,30 @@
     </div>
 </div>
 
+<!-- Modal Stock Check (informasi stok sudah ada) -->
+<div class="modal fade" id="stockCheckModal" tabindex="-1" role="dialog" aria-labelledby="stockCheckModalLabel" aria-hidden="true" style="display:none;">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="stockCheckModalLabel">
+                    ✅ Stock
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <div style="font-size: 48px;">✅</div>
+                <h4 class="mt-2 text-success font-weight-bold">Stock Tersedia</h4>
+                <p class="mb-0">Code Rack ini sudah ada di Stock Item.<br>Tidak perlu di-request lagi.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-dismiss="modal">OK, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // Reset form saat klik di luar modal (backdrop click)
     document.addEventListener('click', function(e) {
@@ -216,6 +240,8 @@
                 if(response.code_item) {
                     document.getElementById("Code_Item").value = response.code_item;
                     document.getElementById("Type_Tractor").value = response.type_tractor ?? '';
+                    // Setelah berhasil fetch code item, cek stock
+                    checkStockItem(codeRack);
                 } else {
                     document.getElementById("Code_Item").value = '';
                     document.getElementById("Type_Tractor").value = '';
@@ -277,6 +303,25 @@
         let codeRack = $(this).val();
         checkDuplicateRequest(codeRack);
     });
+
+    // === fungsi cek stock item ===
+    function checkStockItem(codeRack) {
+        if (!codeRack) return;
+
+        $.ajax({
+            url: './api/check-stock-item',
+            method: 'POST',
+            data: {
+                code_rack: codeRack,
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                if (response.in_stock) {
+                    $('#stockCheckModal').modal('show');
+                }
+            }
+        });
+    }
 
     // === Check Mid/Lot submit ===
     function submitCheck(statusCheck) {
