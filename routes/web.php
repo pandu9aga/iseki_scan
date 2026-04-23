@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AdminRequestController;
 use App\Http\Controllers\Admin\AdminRequestingController;
 use App\Http\Controllers\Admin\AdminRecordingController;
 use App\Http\Controllers\Admin\AdminWithdrawalController;
+use App\Http\Controllers\Admin\AdminStockItemController;
 use App\Http\Controllers\Admin\AdminCheckController;
 use App\Http\Controllers\Admin\AdminSubmissionController;
 use App\Http\Controllers\Admin\ForgotController;
@@ -183,6 +184,15 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     // Admin Check
     Route::get('/admin_check', [AdminCheckController::class, 'index'])->name('admin.check');
     Route::post('/admin_check/store', [AdminCheckController::class, 'store'])->name('admin.check.store');
+
+    // Stock Item
+    Route::get('/stock_item', [AdminStockItemController::class, 'index'])->name('stock_item');
+    Route::post('/stock_item/store', [AdminStockItemController::class, 'store'])->name('stock_item.store');
+    Route::post('/stock_item/import', [AdminStockItemController::class, 'import'])->name('stock_item.import');
+    Route::get('/stock_item/export', [AdminStockItemController::class, 'export'])->name('stock_item.export');
+    Route::get('/stock_item/template', [AdminStockItemController::class, 'downloadTemplate'])->name('stock_item.template');
+    Route::delete('/stock_item/delete/{id}', [AdminStockItemController::class, 'destroy'])->name('stock_item.destroy');
+    Route::post('/stock_item/bulk-destroy', [AdminStockItemController::class, 'bulkDestroy'])->name('stock_item.bulk_destroy');
 });
 
 // WA Queue API (accessible without auth for cross-device JS calls)
@@ -314,6 +324,13 @@ Route::post('/api/get-code-item', function (Request $request) {
 
 Route::get('/api/urgents/data', [UrgentController::class, 'getData'])->name('urgents.data');
 Route::get('/api/urgents/recap', [UrgentController::class, 'getRecapData'])->name('urgents.recap');
+
+// Stock Item Check API (accessible from admin & member request pages)
+Route::post('/api/check-stock-item', function (Request $request) {
+    $codeRack = $request->input('code_rack');
+    $exists = \App\Models\StockItem::where('Code_Rack_Stock_Item', $codeRack)->exists();
+    return response()->json(['in_stock' => $exists]);
+})->name('api.check_stock_item');
 
 Route::get('/urgents/unrecorded', [UrgentController::class, 'unrecordedIndex'])->name('urgents.unrecorded');
 Route::get('/api/urgents/unrecorded-data', [UrgentController::class, 'getUnrecordedData'])->name('urgents.unrecorded.data');

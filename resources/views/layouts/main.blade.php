@@ -409,6 +409,13 @@
                     <span>WA Queue</span></a>
             </li>
 
+            <!-- Nav Item - Stock Item -->
+            <li class="nav-item {{ request()->routeIs('stock_item') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('stock_item') }}">
+                    <i class="fas fa-fw fa-boxes"></i>
+                    <span>Stock Item</span></a>
+            </li>
+
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
 
