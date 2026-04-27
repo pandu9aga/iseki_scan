@@ -11,6 +11,10 @@
         font-size: 11px;
         line-height: 1.3;
     }
+    .badge-pink {
+        background-color: #e83e8c;
+        color: white;
+    }
 </style>
 @endsection
 
@@ -161,6 +165,8 @@
                     createdCell: function (td, cellData, rowData, row, col) {
                         if (cellData === 'Boss MC') {
                             $(td).css('background-color', '#f6c23e');
+                        } else if (cellData === 'QC') {
+                            $(td).css({'background-color': '#e83e8c', 'color': '#fff'});
                         }
                     }
                 },
