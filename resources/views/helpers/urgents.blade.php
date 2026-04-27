@@ -11,6 +11,16 @@
         font-size: 11px;
         line-height: 1.3;
     }
+    .badge-pink {
+        background-color: #e83e8c;
+        color: white;
+    }
+    .border-left-pink {
+        border-left: .25rem solid #e83e8c !important;
+    }
+    .text-pink {
+        color: #e83e8c !important;
+    }
 </style>
 @endsection
 
@@ -174,6 +184,8 @@
                     createdCell: function (td, cellData, rowData, row, col) {
                         if (cellData === 'Boss MC') {
                             $(td).css('background-color', '#f6c23e');
+                        } else if (cellData === 'QC') {
+                            $(td).css({'background-color': '#e83e8c', 'color': '#fff'});
                         }
                     }
                 },
@@ -233,6 +245,7 @@
         function renderRecapCard(containerId, title, data) {
             $(containerId).empty();
             var bossMcHtml = generateCardHtml('Boss MC', data.boss_mc, 'warning');
+            var qcHtml = generateCardHtml('QC', data.qc, 'pink');
             var dstHtml = generateCardHtml('DST', data.dst, 'info');
 
             var html = `
@@ -240,6 +253,7 @@
                     <h5 class="text-gray-800 font-weight-bold">${title}</h5>
                 </div>
                 ${bossMcHtml}
+                ${qcHtml}
                 ${dstHtml}
             `;
             $(containerId).html(html);
@@ -258,7 +272,7 @@
             }
 
             return `
-                <div class="col-xl-6 col-md-6 mb-4">
+                <div class="col-xl-4 col-md-4 mb-4">
                     <div class="card border-left-${colorClass} shadow h-100 py-2">
                         <div class="card-body">
                             <div class="row no-gutters align-items-center mb-3">
