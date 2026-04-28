@@ -8,17 +8,17 @@ use App\Models\Mistake;
 use App\Models\Rack;
 use App\Models\Record;
 use App\Models\Request as RequestModel;
+use App\Models\StockItem;
 use App\Models\Urgent;
 use App\Models\User;
 use App\Models\WaQueue;
 use App\Models\Withdrawal;
-use App\Models\StockItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Yajra\DataTables\Facades\DataTables;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Yajra\DataTables\Facades\DataTables;
 
 class UrgentController extends Controller
 {
@@ -90,6 +90,7 @@ class UrgentController extends Controller
                     if ($urgent->mistake && strtolower($urgent->mistake->Category_Mistake) === 'telat qc') {
                         return 'QC';
                     }
+
                     return $urgent->member ? $urgent->member->Name_Member : '-';
                 })
                 ->addColumn('Mistake_Category', function ($urgent) {
@@ -300,6 +301,7 @@ class UrgentController extends Controller
                     return true;
                 }
             }
+
             return false;
         };
 
@@ -588,6 +590,7 @@ class UrgentController extends Controller
             // Check if it's Stock or QC or Return Rack when NO request exists
             if ($qcOverride || $telatReturnRackOverride || $stockOverride) {
                 $categoryLabel = $qcOverride ? 'TELAT QC' : ($stockOverride ? 'STOCK' : 'TELAT RETURN RACK');
+
                 return redirect()->back()->with('error', "Item terdeteksi sebagai $categoryLabel. Karena tidak ada request sebelumnya, sistem tidak membuat request otomatis. Silakan tindak lanjuti ke bagian terkait.");
             }
 
@@ -857,12 +860,23 @@ class UrgentController extends Controller
                 });
             }
 
-            return DataTables::eloquent($query)
+            $urgents = $query->get();
+            $grouped = $urgents->groupBy('Code_Rack')->map(function ($items) {
+                $first = $items->first(); // Latest due to query order
+                $first->Time_Urgent = $items->pluck('Time_Urgent')->unique()->map(function ($t) {
+                    return \Carbon\Carbon::parse($t)->format('Y-m-d H:i:s');
+                })->implode("\n");
+
+                return $first;
+            })->values();
+
+            return DataTables::of($grouped)
                 ->addColumn('PIC_Urgent', function ($urgent) {
                     // Check if this is a QC mistake
                     if ($urgent->mistake && strtolower($urgent->mistake->Category_Mistake) === 'telat qc') {
                         return 'QC';
                     }
+
                     return $urgent->member ? $urgent->member->Name_Member : '-';
                 })
                 ->addColumn('Mistake_Category', function ($urgent) {
@@ -924,7 +938,10 @@ class UrgentController extends Controller
 
                     return '-';
                 })
-                ->rawColumns(['PIC_Urgent', 'Name_Part', 'Mistake_Category', 'Request_Details', 'Reporter', 'Request_Time'])
+                ->editColumn('Time_Urgent', function ($urgent) {
+                    return nl2br(e($urgent->Time_Urgent));
+                })
+                ->rawColumns(['Time_Urgent', 'PIC_Urgent', 'Name_Part', 'Mistake_Category', 'Request_Details', 'Reporter', 'Request_Time'])
                 ->make(true);
         }
 
@@ -953,15 +970,24 @@ class UrgentController extends Controller
 
         $urgents = $query->get();
 
-        $spreadsheet = new Spreadsheet();
+        $groupedUrgents = $urgents->groupBy('Code_Rack')->map(function ($items) {
+            $first = $items->first();
+            $first->Time_Urgent = $items->pluck('Time_Urgent')->unique()->map(function ($t) {
+                return \Carbon\Carbon::parse($t)->format('Y-m-d H:i:s');
+            })->implode("\n");
+
+            return $first;
+        })->values();
+
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         $headers = ['No', 'Time Urgent', 'Category', 'Code Rack', 'Name Part', 'PIC', 'Reporter', 'Code Item', 'Sum Request', 'Time Request'];
-        $sheet->fromArray([$headers], NULL, 'A1');
+        $sheet->fromArray([$headers], null, 'A1');
 
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
         $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
@@ -969,7 +995,7 @@ class UrgentController extends Controller
         $row = 2;
         $no = 1;
 
-        foreach ($urgents as $urgent) {
+        foreach ($groupedUrgents as $urgent) {
             $category = '-';
             if ($urgent->mistake) {
                 $cat = strtolower($urgent->mistake->Category_Mistake);
@@ -988,13 +1014,13 @@ class UrgentController extends Controller
 
             $namePart = optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
             $pic = $urgent->member ? $urgent->member->Name_Member : '-';
-            $reporter = empty($urgent->Id_Type_User) 
-                ? (optional($urgent->reporterMember)->Name_Member ?? '-') 
+            $reporter = empty($urgent->Id_Type_User)
+                ? (optional($urgent->reporterMember)->Name_Member ?? '-')
                 : (optional($urgent->user)->Username_User ?? '-');
-            
+
             $codeItem = $urgent->requestModel ? $urgent->requestModel->Code_Item_Rack : '-';
             $sumReq = $urgent->requestModel ? $urgent->requestModel->Sum_Request : '-';
-            $timeReq = $urgent->requestModel ? ($urgent->requestModel->Day_Request . ' ' . $urgent->requestModel->Time_Request) : '-';
+            $timeReq = $urgent->requestModel ? ($urgent->requestModel->Day_Request.' '.$urgent->requestModel->Time_Request) : '-';
 
             $sheet->fromArray([
                 $no,
@@ -1006,8 +1032,9 @@ class UrgentController extends Controller
                 $reporter,
                 $codeItem,
                 $sumReq,
-                $timeReq
-            ], null, 'A' . $row);
+                $timeReq,
+            ], null, 'A'.$row);
+            $sheet->getStyle('B'.$row)->getAlignment()->setWrapText(true);
 
             $no++;
             $row++;
@@ -1017,8 +1044,8 @@ class UrgentController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $fileName = "Urgent_Unrecorded_" . $date . ".xlsx";
-        $filePath = storage_path('app/public/' . $fileName);
+        $fileName = 'Urgent_Unrecorded_'.$date.'.xlsx';
+        $filePath = storage_path('app/public/'.$fileName);
 
         $writer = new Xlsx($spreadsheet);
         $writer->save($filePath);
