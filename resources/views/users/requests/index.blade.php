@@ -47,20 +47,33 @@
                                             </a>
                                         </div>
 
-                                        {{-- Check Buttons: Mid & Lot --}}
-                                        <div class="mb-2 mt-4">
-                                            <button type="button" id="btnMid" class="btn btn-sm mr-2" style="background-color:#fd7e14;color:#fff;padding:4px 10px;font-weight:600;" onclick="submitCheck(1)">
-                                                Sedang
+                                        {{-- Check Buttons: 1-4 Hari --}}
+                                        <div class="mb-2 mt-4 d-flex justify-content-center flex-wrap align-items-center" style="gap: 5px;">
+                                            <button type="button" class="btn btn-sm" style="background-color:#28a745;color:#fff;padding:4px 10px;font-weight:600;" onclick="submitCheck(1)">
+                                                1 Hari
                                             </button>
-                                            <button type="button" id="btnLot" class="btn btn-sm ml-2" style="background-color:#6f42c1;color:#fff;padding:4px 10px;font-weight:600;" onclick="submitCheck(2)">
-                                                Banyak
+                                            <button type="button" class="btn btn-sm" style="background-color:#17a2b8;color:#fff;padding:4px 10px;font-weight:600;" onclick="submitCheck(2)">
+                                                2 Hari
                                             </button>
+                                            <button type="button" class="btn btn-sm" style="background-color:#ffc107;color:#fff;padding:4px 10px;font-weight:600;" onclick="submitCheck(3)">
+                                                3 Hari
+                                            </button>
+                                            <button type="button" class="btn btn-sm" style="background-color:#dc3545;color:#fff;padding:4px 10px;font-weight:600;" onclick="submitCheck(4)">
+                                                4 Hari
+                                            </button>
+
+                                            <div class="input-group input-group-sm" style="width: 120px; margin-left: 5px;">
+                                                <input type="number" id="customCheckDays" class="form-control" placeholder="Hari" min="1" style="text-align:center;">
+                                                <div class="input-group-append">
+                                                    <button type="button" class="btn btn-secondary" onclick="submitCustomCheck()">Set</button>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <span style="font-size: small;">Rack Code</span>
-                                        <input type="text" onkeyup="this.value = this.value.toUpperCase();" name="Code_Rack" id="Code_Rack" class="form-control form-control-user mb-2 @error('Code_Rack') is-invalid @enderror" value="{{ old('Code_Rack') }}" required>
+                                        <input type="text" onkeyup="this.value = this.value.toUpperCase();" name="Code_Rack" id="Code_Rack" class="form-control form-control-user mb-2 @error('Code_Rack') is-invalid @enderror" value="{{ old('Code_Rack', $code_rack ?? '') }}" required>
                                         <span style="font-size: small;">Item Code</span>
-                                        <input type="text" name="Code_Item" id="Code_Item" class="form-control form-control-user @error('Code_Item') is-invalid @enderror" value="{{ old('Code_Item') }}" readonly required>
+                                        <input type="text" name="Code_Item" id="Code_Item" class="form-control form-control-user @error('Code_Item') is-invalid @enderror" value="{{ old('Code_Item', $code_item ?? '') }}" readonly required>
                                         <span style="font-size: small;">Tractor Type</span>
                                         <input type="text" name="Type_Tractor" id="Type_Tractor" class="form-control form-control-user" readonly>
                                         @error('Code_Rack')
@@ -108,6 +121,12 @@
                             </div>
 
                             <input type="hidden" id="Correctness" name="Correctness" value="">
+                            <input type="hidden" name="check_id" value="{{ $check_id ?? '' }}">
+                            <input type="hidden" name="return_to_check" value="{{ !empty($check_id) ? 1 : 0 }}">
+                            <input type="hidden" name="date" value="{{ $filter_date ?? '' }}">
+                            <input type="hidden" name="target_date" value="{{ $filter_target_date ?? '' }}">
+                            <input type="hidden" name="status" value="{{ $filter_status ?? '' }}">
+                            <input type="hidden" name="checker" value="{{ $filter_checker ?? '' }}">
 
                             <hr>
                             <span id="status_code" class="status"></span>
@@ -233,6 +252,7 @@
         document.getElementById("Type_Tractor").value = '';
         document.getElementById("Sum_Request").value = 1;
         document.getElementById("Urgent_Request").checked = false;
+        document.getElementById("customCheckDays").value = '';
         document.getElementById("Correctness").value = '';
         document.getElementById("status_code").innerHTML = '';
     }
@@ -347,14 +367,33 @@
             return;
         }
 
-        var label = statusCheck == 1 ? 'Mid' : 'Lot';
-        if (!confirm('Submit Check ' + label + ' untuk rack ' + codeRack + '?')) return;
+        // Tampilkan modal konfirmasi
+        var label = statusCheck + ' Hari Ke Depan';
+        document.getElementById('checkConfirmLabel').textContent = label;
+        document.getElementById('checkConfirmRack').textContent = codeRack;
+        document.getElementById('confirmCheckDays').value = statusCheck;
+        $('#checkConfirmModal').modal('show');
+    }
 
+    function submitCustomCheck() {
+        var days = document.getElementById("customCheckDays").value;
+        if (!days || days < 1) {
+            alert('Masukkan jumlah hari yang valid (minimal 1).');
+            return;
+        }
+        submitCheck(days);
+    }
+
+    document.getElementById('btnConfirmCheck').addEventListener('click', function() {
+        var days = document.getElementById('confirmCheckDays').value;
+        var codeRack = document.getElementById("Code_Rack").value;
+        var codeItem = document.getElementById("Code_Item").value;
         document.getElementById('check_Code_Rack').value = codeRack;
         document.getElementById('check_Code_Item').value = codeItem;
-        document.getElementById('check_Status').value = statusCheck;
+        document.getElementById('check_Status').value = days;
+        $('#checkConfirmModal').modal('hide');
         document.getElementById('checkForm').submit();
-    }
+    });
 </script>
 
 {{-- Hidden form for Check submission --}}
@@ -363,6 +402,11 @@
     <input type="hidden" name="Code_Rack" id="check_Code_Rack">
     <input type="hidden" name="Code_Item" id="check_Code_Item">
     <input type="hidden" name="Status_Check" id="check_Status">
+    <input type="hidden" name="check_id" value="{{ $check_id ?? '' }}">
+    <input type="hidden" name="date" value="{{ $filter_date ?? '' }}">
+    <input type="hidden" name="target_date" value="{{ $filter_target_date ?? '' }}">
+    <input type="hidden" name="status" value="{{ $filter_status ?? '' }}">
+    <input type="hidden" name="checker" value="{{ $filter_checker ?? '' }}">
 </form>
 
 @endsection
@@ -372,3 +416,34 @@
 <link href="{{ asset('vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
 <link href="{{ asset('css/select2.min.css') }}" rel="stylesheet">
 @endsection
+
+{{-- Modal Konfirmasi Check --}}
+<div class="modal fade" id="checkConfirmModal" tabindex="-1" role="dialog" aria-labelledby="checkConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="checkConfirmModalLabel">
+                    <i class="fas fa-clipboard-check mr-2"></i>Konfirmasi Check
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-calendar-alt fa-3x text-primary mb-3"></i>
+                <p class="mb-1">Simpan Check untuk Rack:</p>
+                <h5 class="font-weight-bold text-dark mb-2"><code id="checkConfirmRack"></code></h5>
+                <p class="mb-0">Target: <span class="badge badge-primary px-3 py-2" style="font-size:1rem;" id="checkConfirmLabel"></span></p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Batal
+                </button>
+                <button type="button" class="btn btn-primary px-4" id="btnConfirmCheck">
+                    <i class="fas fa-check mr-1"></i>Ya, Simpan Check!
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<input type="hidden" id="confirmCheckDays" value="">

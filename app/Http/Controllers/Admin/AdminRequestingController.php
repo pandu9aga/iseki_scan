@@ -12,8 +12,15 @@ class AdminRequestingController extends Controller
     public function index(Request $request)
     {
         $area = $request->query('area');
+        $check_id = $request->query('check_id');
+        $code_rack = $request->query('code_rack');
+        $code_item = $request->query('code_item');
+        $filter_date = $request->query('date');
+        $filter_target_date = $request->query('target_date');
+        $filter_status = $request->query('status');
+        $filter_checker = $request->query('checker');
 
-        return view('admins.requesting.index', compact('area'));
+        return view('admins.requesting.index', compact('area', 'check_id', 'code_rack', 'code_item', 'filter_date', 'filter_target_date', 'filter_status', 'filter_checker'));
     }
 
     public function create(Request $request)
@@ -77,6 +84,19 @@ class AdminRequestingController extends Controller
         $newRequest->Urgent_Request = $request->has('Urgent_Request') ? 1 : 0;
 
         $newRequest->save();
+
+        $filterParams = array_filter($request->only(['date', 'target_date', 'status', 'checker']));
+
+        if ($request->has('check_id') && !empty($request->input('check_id'))) {
+            $check = \App\Models\Check::find($request->input('check_id'));
+            if ($check) {
+                $check->Status_Check = null;
+                $check->save();
+            }
+            if ($request->input('return_to_check') == 1) {
+                return redirect()->route('admin.check', $filterParams)->with('success', 'Request berhasil dibuat dan Check ditandai Selesai.');
+            }
+        }
 
         return redirect()->back()->with('success', 'Request berhasil dibuat.');
     }

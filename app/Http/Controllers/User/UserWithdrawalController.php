@@ -36,10 +36,10 @@ class UserWithdrawalController extends Controller
         } elseif ($month) {
             $parsedMonth = Carbon::parse($month . '-01');
             $query->whereMonth('Date_Withdrawal', $parsedMonth->format('m'))
-                  ->whereYear('Date_Withdrawal', $parsedMonth->format('Y'));
+                ->whereYear('Date_Withdrawal', $parsedMonth->format('Y'));
         } else {
             $query->whereMonth('Date_Withdrawal', Carbon::now()->format('m'))
-                  ->whereYear('Date_Withdrawal', Carbon::now()->format('Y'));
+                ->whereYear('Date_Withdrawal', Carbon::now()->format('Y'));
         }
 
         $withdrawals = $query->orderBy('Id_Withdrawal', 'desc')->get();
@@ -94,7 +94,7 @@ class UserWithdrawalController extends Controller
             } else {
                 $w->name_disiapkan = '-';
             }
-            
+
             if ($w->NIK_Return) {
                 if ($w->Is_User && isset($usersMap[$w->NIK_Return])) {
                     $w->name_return = $usersMap[$w->NIK_Return] . ' (Admin)';
@@ -233,10 +233,10 @@ class UserWithdrawalController extends Controller
         } elseif ($month) {
             $parsedMonth = Carbon::parse($month . '-01');
             $query->whereMonth('Date_Withdrawal', $parsedMonth->format('m'))
-                  ->whereYear('Date_Withdrawal', $parsedMonth->format('Y'));
+                ->whereYear('Date_Withdrawal', $parsedMonth->format('Y'));
         } else {
             $query->whereMonth('Date_Withdrawal', Carbon::now()->format('m'))
-                  ->whereYear('Date_Withdrawal', Carbon::now()->format('Y'));
+                ->whereYear('Date_Withdrawal', Carbon::now()->format('Y'));
         }
 
         $withdrawals = $query->orderBy('Id_Withdrawal', 'desc')->get();
@@ -276,10 +276,23 @@ class UserWithdrawalController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         $headers = [
-            'No', 'Date WD', 'Name PIC', 'Item Code', 'Name Item', 'No Rack',
-            'Oke DST', 'PIC DST', 'Date Oke',
-            'Received', 'Date Received', 'Finish', 'Date Finish', 'Description Finish',
-            'PIC Return', 'No Rack Return', 'Date Return'
+            'No',
+            'Date WD',
+            'Name PIC',
+            'Item Code',
+            'Name Item',
+            'No Rack',
+            'Oke DST',
+            'PIC DST',
+            'Date Oke',
+            'Received',
+            'Date Received',
+            'Finish',
+            'Date Finish',
+            'Description Finish',
+            'PIC Return',
+            'No Rack Return',
+            'Date Return'
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
@@ -317,7 +330,7 @@ class UserWithdrawalController extends Controller
                     $nameReturn = $w->NIK_Return;
                 }
             }
-            
+
             $rackInfo = $racksMap[$w->Code_Item_Withdrawal] ?? null;
 
             $sheet->fromArray([

@@ -193,6 +193,7 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/stock_item/template', [AdminStockItemController::class, 'downloadTemplate'])->name('stock_item.template');
     Route::delete('/stock_item/delete/{id}', [AdminStockItemController::class, 'destroy'])->name('stock_item.destroy');
     Route::post('/stock_item/bulk-destroy', [AdminStockItemController::class, 'bulkDestroy'])->name('stock_item.bulk_destroy');
+    Route::post('/admin_check/{id}/done', [AdminCheckController::class, 'markAsDone'])->name('admin.check.done');
 });
 
 // WA Queue API (accessible without auth for cross-device JS calls)
@@ -255,6 +256,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     // User Check
     Route::get('/user_check', [UserCheckController::class, 'index'])->name('user.check');
     Route::post('/user_check/store', [UserCheckController::class, 'store'])->name('user.check.store');
+    Route::post('/user_check/{id}/done', [UserCheckController::class, 'markAsDone'])->name('user.check.done');
 });
 
 Route::middleware(McMiddleware::class)->group(function () {
