@@ -221,7 +221,7 @@
                             // Kolom Member Request → dropdown
                             var select = $(`<select class="form-control form-control-sm member-filter"><option value="">All</option></select>`);
                             members.forEach(member => {
-                                select.append(`<option value="${member.Id_Member}">${member.Name_Member}</option>`);
+                                select.append(`<option value="${member.id}">${member.name}</option>`);
                             });
                             select.on('change', function () {
                                 column.search(this.value).draw();

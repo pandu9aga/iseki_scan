@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Check;
 use App\Models\Member;
-use App\Models\Request as RequestModel;
 use App\Models\Record;
+use App\Models\Request as RequestModel;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Illuminate\Support\Facades\DB;
 
 class AchievementController extends Controller
 {
@@ -19,59 +20,80 @@ class AchievementController extends Controller
         $month = $request->input('month', Carbon::now()->format('Y-m'));
         $date = Carbon::parse($month);
         $daysInMonth = $date->daysInMonth;
-        
-        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->get();
-        
+
+        $people = $this->getPeople();
+
+        // Initial setup for data arrays
         $requestsData = [];
         $recordsData = [];
-        
-        foreach ($members as $member) {
-            // Requests
-            $userRequests = RequestModel::where('Id_User', $member->Id_Member)
-                ->whereMonth('Day_Request', $date->month)
-                ->whereYear('Day_Request', $date->year)
-                ->get();
-            
-            $daysReq = array_fill(1, $daysInMonth, 0);
-            foreach ($userRequests as $req) {
+        foreach ($people as $person) {
+            $requestsData[$person->id] = [
+                'name' => $person->name,
+                'total' => 0,
+                'days' => array_fill(1, $daysInMonth, 0),
+                'days_check' => array_fill(1, $daysInMonth, 0),
+            ];
+            $recordsData[$person->id] = [
+                'name' => $person->name,
+                'total' => 0,
+                'days' => array_fill(1, $daysInMonth, 0),
+            ];
+        }
+
+        // Fetch all data for the month in bulk
+        $allRequests = RequestModel::whereMonth('Day_Request', $date->month)
+            ->whereYear('Day_Request', $date->year)
+            ->get();
+
+        $allChecks = Check::whereMonth('Time_Check', $date->month)
+            ->whereYear('Time_Check', $date->year)
+            ->get();
+
+        $allRecords = Record::whereMonth('Day_Record', $date->month)
+            ->whereYear('Day_Record', $date->year)
+            ->get();
+
+        // Process Requests
+        foreach ($allRequests as $req) {
+            $prefix = ($req->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$req->Id_User;
+            if (isset($requestsData[$key])) {
                 $day = (int) Carbon::parse($req->Day_Request)->format('d');
-                $daysReq[$day]++;
+                $requestsData[$key]['days'][$day]++;
+                $requestsData[$key]['total']++;
             }
-            
-            $requestsData[$member->Id_Member] = [
-                'name' => $member->Name_Member,
-                'total' => $userRequests->count(),
-                'days' => $daysReq
-            ];
-            
-            // Records
-            $userRecords = Record::where('Id_User', $member->Id_Member)
-                ->whereMonth('Day_Record', $date->month)
-                ->whereYear('Day_Record', $date->year)
-                ->get();
-            
-            $daysRec = array_fill(1, $daysInMonth, 0);
-            foreach ($userRecords as $rec) {
+        }
+
+        // Process Checks
+        foreach ($allChecks as $check) {
+            $prefix = ($check->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$check->Id_User;
+            if (isset($requestsData[$key])) {
+                $day = (int) Carbon::parse($check->Time_Check)->format('d');
+                $requestsData[$key]['days_check'][$day]++;
+            }
+        }
+
+        // Process Records
+        foreach ($allRecords as $rec) {
+            $prefix = ($rec->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$rec->Id_User;
+            if (isset($recordsData[$key])) {
                 $day = (int) Carbon::parse($rec->Day_Record)->format('d');
-                $daysRec[$day]++;
+                $recordsData[$key]['days'][$day]++;
+                $recordsData[$key]['total']++;
             }
-            
-            $recordsData[$member->Id_Member] = [
-                'name' => $member->Name_Member,
-                'total' => $userRecords->count(),
-                'days' => $daysRec
-            ];
         }
 
         // Sort by total descending
         uasort($requestsData, function ($a, $b) {
             return $b['total'] <=> $a['total'];
         });
-        
+
         uasort($recordsData, function ($a, $b) {
             return $b['total'] <=> $a['total'];
         });
-        
+
         return view('admins.achievements.index', compact('requestsData', 'recordsData', 'month', 'daysInMonth'));
     }
 
@@ -80,70 +102,90 @@ class AchievementController extends Controller
         $month = $request->input('month', Carbon::now()->format('Y-m'));
         $date = Carbon::parse($month);
         $daysInMonth = $date->daysInMonth;
-        
-        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->get();
-        
+
+        $people = $this->getPeople();
+
+        // Initial setup for data arrays
         $requestsData = [];
         $recordsData = [];
+        foreach ($people as $person) {
+            $requestsData[$person->id] = [
+                'name' => $person->name,
+                'total' => 0,
+                'days' => array_fill(1, $daysInMonth, 0),
+                'days_check' => array_fill(1, $daysInMonth, 0),
+            ];
+            $recordsData[$person->id] = [
+                'name' => $person->name,
+                'total' => 0,
+                'days' => array_fill(1, $daysInMonth, 0),
+            ];
+        }
 
-        foreach ($members as $member) {
-            // Requests
-            $userRequests = RequestModel::where('Id_User', $member->Id_Member)
-                ->whereMonth('Day_Request', $date->month)
-                ->whereYear('Day_Request', $date->year)
-                ->get();
-            
-            $daysReq = array_fill(1, $daysInMonth, 0);
-            foreach ($userRequests as $req) {
+        // Fetch all data for the month in bulk
+        $allRequests = RequestModel::whereMonth('Day_Request', $date->month)
+            ->whereYear('Day_Request', $date->year)
+            ->get();
+
+        $allChecks = Check::whereMonth('Time_Check', $date->month)
+            ->whereYear('Time_Check', $date->year)
+            ->get();
+
+        $allRecords = Record::whereMonth('Day_Record', $date->month)
+            ->whereYear('Day_Record', $date->year)
+            ->get();
+
+        // Process Requests
+        foreach ($allRequests as $req) {
+            $prefix = ($req->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$req->Id_User;
+            if (isset($requestsData[$key])) {
                 $day = (int) Carbon::parse($req->Day_Request)->format('d');
-                $daysReq[$day]++;
+                $requestsData[$key]['days'][$day]++;
+                $requestsData[$key]['total']++;
             }
-            
-            $requestsData[$member->Id_Member] = [
-                'name' => $member->Name_Member,
-                'total' => $userRequests->count(),
-                'days' => $daysReq
-            ];
-            
-            // Records
-            $userRecords = Record::where('Id_User', $member->Id_Member)
-                ->whereMonth('Day_Record', $date->month)
-                ->whereYear('Day_Record', $date->year)
-                ->get();
-            
-            $daysRec = array_fill(1, $daysInMonth, 0);
-            foreach ($userRecords as $rec) {
+        }
+
+        // Process Checks
+        foreach ($allChecks as $check) {
+            $prefix = ($check->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$check->Id_User;
+            if (isset($requestsData[$key])) {
+                $day = (int) Carbon::parse($check->Time_Check)->format('d');
+                $requestsData[$key]['days_check'][$day]++;
+            }
+        }
+
+        // Process Records
+        foreach ($allRecords as $rec) {
+            $prefix = ($rec->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$rec->Id_User;
+            if (isset($recordsData[$key])) {
                 $day = (int) Carbon::parse($rec->Day_Record)->format('d');
-                $daysRec[$day]++;
+                $recordsData[$key]['days'][$day]++;
+                $recordsData[$key]['total']++;
             }
-            
-            $recordsData[$member->Id_Member] = [
-                'name' => $member->Name_Member,
-                'total' => $userRecords->count(),
-                'days' => $daysRec
-            ];
         }
 
         // Sort by total descending
         uasort($requestsData, function ($a, $b) {
             return $b['total'] <=> $a['total'];
         });
-        
+
         uasort($recordsData, function ($a, $b) {
             return $b['total'] <=> $a['total'];
         });
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
-        
+
         // Header
-        $sheet->setCellValue('A1', 'Achievement Report - ' . $date->format('F Y'));
-        $sheet->mergeCells('A1:AJ1');
+        $sheet->setCellValue('A1', 'Achievement Report - '.$date->format('F Y'));
+        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($daysInMonth * 2));
+        $sheet->mergeCells('A1:'.$lastColLetter.'1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-        
-        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($daysInMonth + 2);
-        
+
         // Style arrays
         $headerStyle = [
             'font' => ['bold' => true],
@@ -160,85 +202,146 @@ class AchievementController extends Controller
             'borders' => [
                 'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
             ],
+            'alignment' => [
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
         ];
 
         // Request Table Header
         $sheet->setCellValue('A3', 'REQUESTS');
         $sheet->getStyle('A3')->getFont()->setBold(true);
-        
+
         $sheet->setCellValue('A4', 'Name');
         $sheet->setCellValue('B4', 'Total');
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 2);
-            $sheet->setCellValue($col . '4', $i);
+            $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2) - 1);
+            $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2));
+            $sheet->setCellValue($col1.'4', $i);
+            $sheet->mergeCells($col1.'4:'.$col2.'4');
         }
-        
-        $sheet->getStyle('A4:' . $lastColLetter . '4')->applyFromArray($headerStyle);
-        
+
+        $sheet->getStyle('A4:'.$lastColLetter.'4')->applyFromArray($headerStyle);
+
         $row = 5;
         $startRowReq = $row;
-        foreach ($requestsData as $memberId => $data) {
-            $sheet->setCellValue('A' . $row, $data['name']);
-            $sheet->setCellValue('B' . $row, $data['total']);
+        foreach ($requestsData as $personId => $data) {
+            $sheet->setCellValue('A'.$row, $data['name']);
+            $sheet->mergeCells('A'.$row.':A'.($row + 1));
+
+            $sheet->setCellValue('B'.$row, $data['total']);
+            $sheet->mergeCells('B'.$row.':B'.($row + 1));
+
             for ($i = 1; $i <= $daysInMonth; $i++) {
-                $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 2);
-                $sheet->setCellValue($col . $row, $data['days'][$i]);
+                $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2) - 1);
+                $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2));
+
+                $reqCount = $data['days'][$i];
+                $chkCount = $data['days_check'][$i];
+                $totalCount = $reqCount + $chkCount;
+
+                if ($totalCount > 0) {
+                    $sheet->setCellValue($col1.$row, $totalCount);
+                    $sheet->mergeCells($col1.$row.':'.$col1.($row + 1));
+
+                    $sheet->setCellValue($col2.$row, $reqCount);
+                    $sheet->setCellValue($col2.($row + 1), $chkCount);
+                } else {
+                    $sheet->setCellValue($col1.$row, 0);
+                    $sheet->mergeCells($col1.$row.':'.$col1.($row + 1));
+                    $sheet->setCellValue($col2.$row, 0);
+                    $sheet->setCellValue($col2.($row + 1), 0);
+                }
             }
-            $row++;
+            $row += 2;
         }
         $endRowReq = $row - 1;
-        
+
         if ($endRowReq >= $startRowReq) {
-            $sheet->getStyle('A' . $startRowReq . ':A' . $endRowReq)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
-            $sheet->getStyle('B' . $startRowReq . ':' . $lastColLetter . $endRowReq)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('A' . $startRowReq . ':' . $lastColLetter . $endRowReq)->applyFromArray($contentStyle);
+            $sheet->getStyle('A'.$startRowReq.':A'.$endRowReq)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+            $sheet->getStyle('B'.$startRowReq.':'.$lastColLetter.$endRowReq)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A'.$startRowReq.':'.$lastColLetter.$endRowReq)->applyFromArray($contentStyle);
         }
-        
+
         $row += 2;
-        
+
         // Record Table Header
-        $sheet->setCellValue('A' . $row, 'RECORDS');
-        $sheet->getStyle('A' . $row)->getFont()->setBold(true);
+        $sheet->setCellValue('A'.$row, 'RECORDS');
+        $sheet->getStyle('A'.$row)->getFont()->setBold(true);
         $row++;
-        $sheet->setCellValue('A' . $row, 'Name');
-        $sheet->setCellValue('B' . $row, 'Total');
+        $sheet->setCellValue('A'.$row, 'Name');
+        $sheet->setCellValue('B'.$row, 'Total');
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 2);
-            $sheet->setCellValue($col . $row, $i);
+            $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2) - 1);
+            $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2));
+            $sheet->setCellValue($col1.$row, $i);
+            $sheet->mergeCells($col1.$row.':'.$col2.$row);
         }
-        
-        $sheet->getStyle('A' . $row . ':' . $lastColLetter . $row)->applyFromArray($headerStyle);
-        
+
+        $sheet->getStyle('A'.$row.':'.$lastColLetter.$row)->applyFromArray($headerStyle);
+
         $row++;
         $startRowRec = $row;
-        foreach ($recordsData as $memberId => $data) {
-            $sheet->setCellValue('A' . $row, $data['name']);
-            $sheet->setCellValue('B' . $row, $data['total']);
+        foreach ($recordsData as $personId => $data) {
+            $sheet->setCellValue('A'.$row, $data['name']);
+            $sheet->setCellValue('B'.$row, $data['total']);
             for ($i = 1; $i <= $daysInMonth; $i++) {
-                $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 2);
-                $sheet->setCellValue($col . $row, $data['days'][$i]);
+                $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2) - 1);
+                $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2));
+                $sheet->setCellValue($col1.$row, $data['days'][$i]);
+                $sheet->mergeCells($col1.$row.':'.$col2.$row);
             }
             $row++;
         }
         $endRowRec = $row - 1;
-        
+
         if ($endRowRec >= $startRowRec) {
-            $sheet->getStyle('A' . $startRowRec . ':A' . $endRowRec)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
-            $sheet->getStyle('B' . $startRowRec . ':' . $lastColLetter . $endRowRec)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('A' . $startRowRec . ':' . $lastColLetter . $endRowRec)->applyFromArray($contentStyle);
+            $sheet->getStyle('A'.$startRowRec.':A'.$endRowRec)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+            $sheet->getStyle('B'.$startRowRec.':'.$lastColLetter.$endRowRec)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A'.$startRowRec.':'.$lastColLetter.$endRowRec)->applyFromArray($contentStyle);
         }
-        
+
         // Autofit column width for name
         $sheet->getColumnDimension('A')->setAutoSize(true);
 
         $writer = new Xlsx($spreadsheet);
-        $fileName = 'Achievement_Report_' . $month . '.xlsx';
-        
+        $fileName = 'Achievement_Report_'.$month.'.xlsx';
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . $fileName . '"');
+        header('Content-Disposition: attachment;filename="'.$fileName.'"');
         header('Cache-Control: max-age=0');
-        
+
         $writer->save('php://output');
         exit;
+    }
+
+    private function getPeople()
+    {
+        $members = Member::where('Status_Non_Active', '!=', 1)
+            ->orWhereNull('Status_Non_Active')
+            ->orderBy('Name_Member')
+            ->get(['Id_Member', 'Name_Member'])
+            ->map(function ($m) {
+                return (object) [
+                    'id' => 'm_'.$m->Id_Member,
+                    'name' => $m->Name_Member,
+                    'original_id' => $m->Id_Member,
+                    'type' => 'member',
+                ];
+            });
+
+        $users = User::where('Status_Non_Active', '!=', 1)
+            ->orWhereNull('Status_Non_Active')
+            ->orderBy('Name_User')
+            ->get(['Id_User', 'Name_User'])
+            ->map(function ($u) {
+                return (object) [
+                    'id' => 'u_'.$u->Id_User,
+                    'name' => $u->Name_User,
+                    'original_id' => $u->Id_User,
+                    'type' => 'user',
+                ];
+            });
+
+        return $members->concat($users)->sortBy('name')->values();
     }
 }
