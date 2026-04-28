@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Check;
 use App\Models\Member;
 use App\Models\Record;
 use App\Models\Request as RequestModel;
@@ -22,47 +23,66 @@ class AchievementController extends Controller
 
         $people = $this->getPeople();
 
+        // Initial setup for data arrays
         $requestsData = [];
         $recordsData = [];
-
         foreach ($people as $person) {
-            // Requests
-            $userRequests = RequestModel::where('Id_User', $person->original_id)
-                ->where('Is_User', $person->type == 'user' ? 1 : 0)
-                ->whereMonth('Day_Request', $date->month)
-                ->whereYear('Day_Request', $date->year)
-                ->get();
-
-            $daysReq = array_fill(1, $daysInMonth, 0);
-            foreach ($userRequests as $req) {
-                $day = (int) Carbon::parse($req->Day_Request)->format('d');
-                $daysReq[$day]++;
-            }
-
             $requestsData[$person->id] = [
                 'name' => $person->name,
-                'total' => $userRequests->count(),
-                'days' => $daysReq,
+                'total' => 0,
+                'days' => array_fill(1, $daysInMonth, 0),
+                'days_check' => array_fill(1, $daysInMonth, 0),
             ];
-
-            // Records
-            $userRecords = Record::where('Id_User', $person->original_id)
-                ->where('Is_User', $person->type == 'user' ? 1 : 0)
-                ->whereMonth('Day_Record', $date->month)
-                ->whereYear('Day_Record', $date->year)
-                ->get();
-
-            $daysRec = array_fill(1, $daysInMonth, 0);
-            foreach ($userRecords as $rec) {
-                $day = (int) Carbon::parse($rec->Day_Record)->format('d');
-                $daysRec[$day]++;
-            }
-
             $recordsData[$person->id] = [
                 'name' => $person->name,
-                'total' => $userRecords->count(),
-                'days' => $daysRec,
+                'total' => 0,
+                'days' => array_fill(1, $daysInMonth, 0),
             ];
+        }
+
+        // Fetch all data for the month in bulk
+        $allRequests = RequestModel::whereMonth('Day_Request', $date->month)
+            ->whereYear('Day_Request', $date->year)
+            ->get();
+
+        $allChecks = Check::whereMonth('Time_Check', $date->month)
+            ->whereYear('Time_Check', $date->year)
+            ->get();
+
+        $allRecords = Record::whereMonth('Day_Record', $date->month)
+            ->whereYear('Day_Record', $date->year)
+            ->get();
+
+        // Process Requests
+        foreach ($allRequests as $req) {
+            $prefix = ($req->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$req->Id_User;
+            if (isset($requestsData[$key])) {
+                $day = (int) Carbon::parse($req->Day_Request)->format('d');
+                $requestsData[$key]['days'][$day]++;
+                $requestsData[$key]['total']++;
+            }
+        }
+
+        // Process Checks
+        foreach ($allChecks as $check) {
+            $prefix = ($check->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$check->Id_User;
+            if (isset($requestsData[$key])) {
+                $day = (int) Carbon::parse($check->Time_Check)->format('d');
+                $requestsData[$key]['days_check'][$day]++;
+            }
+        }
+
+        // Process Records
+        foreach ($allRecords as $rec) {
+            $prefix = ($rec->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$rec->Id_User;
+            if (isset($recordsData[$key])) {
+                $day = (int) Carbon::parse($rec->Day_Record)->format('d');
+                $recordsData[$key]['days'][$day]++;
+                $recordsData[$key]['total']++;
+            }
         }
 
         // Sort by total descending
@@ -85,47 +105,66 @@ class AchievementController extends Controller
 
         $people = $this->getPeople();
 
+        // Initial setup for data arrays
         $requestsData = [];
         $recordsData = [];
-
         foreach ($people as $person) {
-            // Requests
-            $userRequests = RequestModel::where('Id_User', $person->original_id)
-                ->where('Is_User', $person->type == 'user' ? 1 : 0)
-                ->whereMonth('Day_Request', $date->month)
-                ->whereYear('Day_Request', $date->year)
-                ->get();
-
-            $daysReq = array_fill(1, $daysInMonth, 0);
-            foreach ($userRequests as $req) {
-                $day = (int) Carbon::parse($req->Day_Request)->format('d');
-                $daysReq[$day]++;
-            }
-
             $requestsData[$person->id] = [
                 'name' => $person->name,
-                'total' => $userRequests->count(),
-                'days' => $daysReq,
+                'total' => 0,
+                'days' => array_fill(1, $daysInMonth, 0),
+                'days_check' => array_fill(1, $daysInMonth, 0),
             ];
-
-            // Records
-            $userRecords = Record::where('Id_User', $person->original_id)
-                ->where('Is_User', $person->type == 'user' ? 1 : 0)
-                ->whereMonth('Day_Record', $date->month)
-                ->whereYear('Day_Record', $date->year)
-                ->get();
-
-            $daysRec = array_fill(1, $daysInMonth, 0);
-            foreach ($userRecords as $rec) {
-                $day = (int) Carbon::parse($rec->Day_Record)->format('d');
-                $daysRec[$day]++;
-            }
-
             $recordsData[$person->id] = [
                 'name' => $person->name,
-                'total' => $userRecords->count(),
-                'days' => $daysRec,
+                'total' => 0,
+                'days' => array_fill(1, $daysInMonth, 0),
             ];
+        }
+
+        // Fetch all data for the month in bulk
+        $allRequests = RequestModel::whereMonth('Day_Request', $date->month)
+            ->whereYear('Day_Request', $date->year)
+            ->get();
+
+        $allChecks = Check::whereMonth('Time_Check', $date->month)
+            ->whereYear('Time_Check', $date->year)
+            ->get();
+
+        $allRecords = Record::whereMonth('Day_Record', $date->month)
+            ->whereYear('Day_Record', $date->year)
+            ->get();
+
+        // Process Requests
+        foreach ($allRequests as $req) {
+            $prefix = ($req->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$req->Id_User;
+            if (isset($requestsData[$key])) {
+                $day = (int) Carbon::parse($req->Day_Request)->format('d');
+                $requestsData[$key]['days'][$day]++;
+                $requestsData[$key]['total']++;
+            }
+        }
+
+        // Process Checks
+        foreach ($allChecks as $check) {
+            $prefix = ($check->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$check->Id_User;
+            if (isset($requestsData[$key])) {
+                $day = (int) Carbon::parse($check->Time_Check)->format('d');
+                $requestsData[$key]['days_check'][$day]++;
+            }
+        }
+
+        // Process Records
+        foreach ($allRecords as $rec) {
+            $prefix = ($rec->Is_User == 1) ? 'u_' : 'm_';
+            $key = $prefix.$rec->Id_User;
+            if (isset($recordsData[$key])) {
+                $day = (int) Carbon::parse($rec->Day_Record)->format('d');
+                $recordsData[$key]['days'][$day]++;
+                $recordsData[$key]['total']++;
+            }
         }
 
         // Sort by total descending
@@ -142,11 +181,10 @@ class AchievementController extends Controller
 
         // Header
         $sheet->setCellValue('A1', 'Achievement Report - '.$date->format('F Y'));
-        $sheet->mergeCells('A1:AJ1');
+        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($daysInMonth * 2));
+        $sheet->mergeCells('A1:'.$lastColLetter.'1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-
-        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($daysInMonth + 2);
 
         // Style arrays
         $headerStyle = [
@@ -164,6 +202,9 @@ class AchievementController extends Controller
             'borders' => [
                 'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
             ],
+            'alignment' => [
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
         ];
 
         // Request Table Header
@@ -173,8 +214,10 @@ class AchievementController extends Controller
         $sheet->setCellValue('A4', 'Name');
         $sheet->setCellValue('B4', 'Total');
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 2);
-            $sheet->setCellValue($col.'4', $i);
+            $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2) - 1);
+            $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2));
+            $sheet->setCellValue($col1.'4', $i);
+            $sheet->mergeCells($col1.'4:'.$col2.'4');
         }
 
         $sheet->getStyle('A4:'.$lastColLetter.'4')->applyFromArray($headerStyle);
@@ -183,12 +226,33 @@ class AchievementController extends Controller
         $startRowReq = $row;
         foreach ($requestsData as $personId => $data) {
             $sheet->setCellValue('A'.$row, $data['name']);
+            $sheet->mergeCells('A'.$row.':A'.($row + 1));
+
             $sheet->setCellValue('B'.$row, $data['total']);
+            $sheet->mergeCells('B'.$row.':B'.($row + 1));
+
             for ($i = 1; $i <= $daysInMonth; $i++) {
-                $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 2);
-                $sheet->setCellValue($col.$row, $data['days'][$i]);
+                $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2) - 1);
+                $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2));
+
+                $reqCount = $data['days'][$i];
+                $chkCount = $data['days_check'][$i];
+                $totalCount = $reqCount + $chkCount;
+
+                if ($totalCount > 0) {
+                    $sheet->setCellValue($col1.$row, $totalCount);
+                    $sheet->mergeCells($col1.$row.':'.$col1.($row + 1));
+
+                    $sheet->setCellValue($col2.$row, $reqCount);
+                    $sheet->setCellValue($col2.($row + 1), $chkCount);
+                } else {
+                    $sheet->setCellValue($col1.$row, 0);
+                    $sheet->mergeCells($col1.$row.':'.$col1.($row + 1));
+                    $sheet->setCellValue($col2.$row, 0);
+                    $sheet->setCellValue($col2.($row + 1), 0);
+                }
             }
-            $row++;
+            $row += 2;
         }
         $endRowReq = $row - 1;
 
@@ -207,8 +271,10 @@ class AchievementController extends Controller
         $sheet->setCellValue('A'.$row, 'Name');
         $sheet->setCellValue('B'.$row, 'Total');
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 2);
-            $sheet->setCellValue($col.$row, $i);
+            $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2) - 1);
+            $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2));
+            $sheet->setCellValue($col1.$row, $i);
+            $sheet->mergeCells($col1.$row.':'.$col2.$row);
         }
 
         $sheet->getStyle('A'.$row.':'.$lastColLetter.$row)->applyFromArray($headerStyle);
@@ -219,8 +285,10 @@ class AchievementController extends Controller
             $sheet->setCellValue('A'.$row, $data['name']);
             $sheet->setCellValue('B'.$row, $data['total']);
             for ($i = 1; $i <= $daysInMonth; $i++) {
-                $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 2);
-                $sheet->setCellValue($col.$row, $data['days'][$i]);
+                $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2) - 1);
+                $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2));
+                $sheet->setCellValue($col1.$row, $data['days'][$i]);
+                $sheet->mergeCells($col1.$row.':'.$col2.$row);
             }
             $row++;
         }
