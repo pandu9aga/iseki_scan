@@ -3,19 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Carbon\Carbon;
-use App\Models\Record;
 use App\Models\Member;
+use App\Models\Record;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Font;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ReportController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         $date = Carbon::today();
         $dateForInput = $date->format('Y-m-d');
         $memberId = request('Id_User'); // ambil filter member kalau ada
@@ -23,30 +23,31 @@ class ReportController extends Controller
         $query = Record::whereDate('Day_Record', $date)
             ->orderBy('Time_Record', 'desc')
             ->with('member', 'request');
-        
+
         if ($memberId) {
-            $query->where('Id_User', $memberId);
+            $this->applyMemberFilter($query, $memberId);
         }
 
         $records = $query->get();
-        
+
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRecords = $records->count();
         $date = Carbon::parse($date)->isoFormat('YYYY-MM-DD');
-        
+
         $correct = $records->filter(function ($record) {
             return $record->Correctness_Record == 1;
         })->count();
         $incorrect = $records->count() - $correct;
 
-        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get();
+        $members = $this->getPeople();
 
         return view('admins.reports.index', compact(
-            'records','totalRecords', 'correct', 'incorrect','formattedDate','date', 'dateForInput', 'members'
+            'records', 'totalRecords', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput', 'members'
         ));
     }
 
-    public function submit(Request $request){
+    public function submit(Request $request)
+    {
         $date = $request->input('Day_Record');
         $dateForInput = Carbon::parse($date)->format('Y-m-d');
         $memberId = $request->input('Id_User');
@@ -56,27 +57,28 @@ class ReportController extends Controller
             ->with('member', 'request');
 
         if ($memberId) {
-            $query->where('Id_User', $memberId);
+            $this->applyMemberFilter($query, $memberId);
         }
 
         $records = $query->get();
-        
+
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRecords = $records->count();
-        
+
         $correct = $records->filter(function ($record) {
             return $record->Correctness_Record == 1;
         })->count();
         $incorrect = $records->count() - $correct;
 
-        $members = Member::orderBy('Name_Member')->get();
+        $members = $this->getPeople();
 
         return view('admins.reports.index', compact(
-            'records','totalRecords', 'correct', 'incorrect','formattedDate','date', 'dateForInput', 'members'
+            'records', 'totalRecords', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput', 'members'
         ));
     }
 
-    public function export(Request $request) {
+    public function export(Request $request)
+    {
         $date = Carbon::parse($request->input('Day_Record_Hidden'))->format('Y-m-d');
         $memberId = $request->input('Id_User');
 
@@ -92,27 +94,27 @@ class ReportController extends Controller
 
         // prefix table name supaya tidak ambiguous
         if ($memberId) {
-            $query->where('records.Id_User', $memberId);
+            $this->applyMemberFilter($query, $memberId, 'records.');
         }
 
         $records = $query->get();
 
         // Buat Spreadsheet
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
         $headers = [
             'No', 'Time Record', 'Area', 'Rack', 'Sum Record',
             'Item', 'Name', 'Correctness', 'Time Request',
-            'Sum Request', 'Sum Stock', 'Estimation Date', 'Member Request', 'Member Record', 'Updated'
+            'Sum Request', 'Sum Stock', 'Estimation Date', 'Member Request', 'Member Record', 'Updated',
         ];
-        $sheet->fromArray([$headers], NULL, 'A1');
+        $sheet->fromArray([$headers], null, 'A1');
 
         // Style header
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
         $sheet->getStyle('A1:O1')->applyFromArray($headerStyle);
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
@@ -125,14 +127,14 @@ class ReportController extends Controller
         foreach ($records as $record) {
             // jika user berubah -> tambah satu baris pemisah yang berisi '-' lalu reset nomor
             if ($lastUser !== null && $record->Id_User != $lastUser) {
-                $sheet->fromArray(array_fill(0, count($headers), '-'), null, 'A' . $row);
+                $sheet->fromArray(array_fill(0, count($headers), '-'), null, 'A'.$row);
                 $row++;
                 $no = 1;
             }
 
             $correctness = $record->Correctness_Record == 1 ? 'Correct' : 'Incorrect';
-            $timeRecord = ($record->Day_Record ?? '') . " " . ($record->Time_Record ?? '');
-            $timeRequest = (optional($record->request)->Day_Request ?? '') . " " . (optional($record->request)->Time_Request ?? '');
+            $timeRecord = ($record->Day_Record ?? '').' '.($record->Time_Record ?? '');
+            $timeRequest = (optional($record->request)->Day_Request ?? '').' '.(optional($record->request)->Time_Request ?? '');
 
             $statusCode = '';
             if (optional($record->request)->Ready_Request !== null) {
@@ -172,18 +174,18 @@ class ReportController extends Controller
                 optional($record->request)->Sum_Request ?? '',
                 $sumStockDisplay,
                 $estimationDisplay,
-                optional($record->request)->Is_User == 1 ? (optional($record->request->user)->Name_User ?? 'Admin') : (optional($record->request)->member->Name_Member ?? ''),
-                $record->Is_User == 1 ? (optional($record->user)->Name_User ?? 'Admin') : ($record->member->Name_Member ?? ''),
+                optional($record->request)->display_name ?? '',
+                $record->display_name,
                 $record->Updated_At_Record ?? '',
-            ], NULL, 'A' . $row);
+            ], null, 'A'.$row);
 
             // warna Correct/Incorrect
-            $correctnessCell = 'H' . $row;
+            $correctnessCell = 'H'.$row;
             $sheet->getStyle($correctnessCell)->applyFromArray([
                 'font' => [
                     'bold' => true,
-                    'color' => ['rgb' => $correctness === 'Correct' ? '008000' : 'FF0000']
-                ]
+                    'color' => ['rgb' => $correctness === 'Correct' ? '008000' : 'FF0000'],
+                ],
             ]);
 
             $lastUser = $record->Id_User;
@@ -193,7 +195,7 @@ class ReportController extends Controller
 
         $lastRow = $row - 1;
         if ($lastRow >= 2) {
-            $sheet->getStyle('L2:L' . $lastRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+            $sheet->getStyle('L2:L'.$lastRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
         }
 
         // Auto-size kolom
@@ -202,11 +204,53 @@ class ReportController extends Controller
         }
 
         // Simpan & download
-        $fileName = "Record_" . $date . ".xlsx";
+        $fileName = 'Record_'.$date.'.xlsx';
         $writer = new Xlsx($spreadsheet);
-        $filePath = storage_path('app/public/' . $fileName);
+        $filePath = storage_path('app/public/'.$fileName);
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    private function getPeople()
+    {
+        $members = Member::where('Status_Non_Active', '!=', 1)
+            ->orWhereNull('Status_Non_Active')
+            ->orderBy('Name_Member')
+            ->get(['Id_Member', 'Name_Member'])
+            ->map(function ($m) {
+                return (object) [
+                    'id' => 'm_'.$m->Id_Member,
+                    'name' => $m->Name_Member,
+                    'original_id' => $m->Id_Member,
+                    'type' => 'member',
+                ];
+            });
+
+        $users = User::where('Status_Non_Active', '!=', 1)
+            ->orWhereNull('Status_Non_Active')
+            ->orderBy('Name_User')
+            ->get(['Id_User', 'Name_User'])
+            ->map(function ($u) {
+                return (object) [
+                    'id' => 'u_'.$u->Id_User,
+                    'name' => $u->Name_User,
+                    'original_id' => $u->Id_User,
+                    'type' => 'user',
+                ];
+            });
+
+        return $members->concat($users)->sortBy('name')->values();
+    }
+
+    private function applyMemberFilter($query, $memberId, $prefix = '')
+    {
+        if (strpos($memberId, 'u_') === 0) {
+            $originalId = substr($memberId, 2);
+            $query->where($prefix.'Id_User', $originalId)->where($prefix.'Is_User', 1);
+        } else {
+            $originalId = strpos($memberId, 'm_') === 0 ? substr($memberId, 2) : $memberId;
+            $query->where($prefix.'Id_User', $originalId)->where($prefix.'Is_User', 0);
+        }
     }
 }

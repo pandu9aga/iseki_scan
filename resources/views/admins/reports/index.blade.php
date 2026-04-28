@@ -25,9 +25,9 @@
                                         <select name="Id_User" class="form-control">
                                             <option value="">All Members</option>
                                             @foreach($members as $m)
-                                                <option value="{{ $m->Id_Member }}" 
-                                                    {{ request('Id_User') == $m->Id_Member ? 'selected' : '' }}>
-                                                    {{ $m->Name_Member }}
+                                                <option value="{{ $m->id }}" 
+                                                    {{ request('Id_User') == $m->id ? 'selected' : '' }}>
+                                                    {{ $m->name }}
                                                 </option>
                                             @endforeach
                                         </select>

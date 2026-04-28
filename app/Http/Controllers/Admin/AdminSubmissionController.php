@@ -3,29 +3,31 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;           // untuk HTTP Request
-use Carbon\Carbon;
-use App\Models\Request as RequestModel; // alias model Request supaya gak bentrok
+use App\Models\Request as RequestModel;           // untuk HTTP Request
 use App\Models\User;
+use Carbon\Carbon; // alias model Request supaya gak bentrok
+use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AdminSubmissionController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         $date = Carbon::today()->format('Y-m-d');
         $requests = RequestModel::with('member', 'record', 'rack')->orderBy('Day_Request', 'desc')->orderBy('Time_Request', 'desc')->get();
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRequests = $requests->count();
 
-        $correct = $requests->filter(fn($request) => $request->Correctness_Request == 1)->count();
+        $correct = $requests->filter(fn ($request) => $request->Correctness_Request == 1)->count();
         $incorrect = $totalRequests - $correct;
 
         return view('admins.submissions.index', compact('requests', 'totalRequests', 'correct', 'incorrect', 'formattedDate', 'date'));
     }
 
-    public function export(Request $request) {
+    public function export(Request $request)
+    {
         $date = $request->input('Day_Request_Hidden');
         $date = Carbon::parse($date)->format('Y-m-d');
         $requests = RequestModel::with('member', 'record', 'rack')
@@ -37,17 +39,17 @@ class AdminSubmissionController extends Controller
             ->get();
 
         // Buat Spreadsheet
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
         $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
-        $sheet->fromArray([$headers], NULL, 'A1');
+        $sheet->fromArray([$headers], null, 'A1');
 
         // Style header
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
         $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
 
@@ -64,20 +66,28 @@ class AdminSubmissionController extends Controller
                 $sheet->fromArray(
                     array_fill(0, 17, '-'), // 17 kolom sesuai header
                     null,
-                    'A' . $row
+                    'A'.$row
                 );
                 $row++;
                 $no = 1; // reset nomor
             }
 
-            $timeRequest = ($request->Day_Request ?? '') . " " . ($request->Time_Request ?? '');
-            $timeRecord = ($request->record->Day_Record ?? '') . " " . ($request->record->Time_Record ?? '');
+            $timeRequest = ($request->Day_Request ?? '').' '.($request->Time_Request ?? '');
+            $timeRecord = ($request->record->Day_Record ?? '').' '.($request->record->Time_Record ?? '');
 
             $readyDisplay = [];
-            if ($request->Ready_Request) $readyDisplay[] = 'Ready: ' . $request->Ready_Request;
-            if ($request->Shipping_Request) $readyDisplay[] = 'Shipping: ' . $request->Shipping_Request;
-            if ($request->Production_Area_Request) $readyDisplay[] = 'Production: ' . $request->Production_Area_Request;
-            if ($request->Design_Changes_Request) $readyDisplay[] = 'Design: ' . $request->Design_Changes_Request;
+            if ($request->Ready_Request) {
+                $readyDisplay[] = 'Ready: '.$request->Ready_Request;
+            }
+            if ($request->Shipping_Request) {
+                $readyDisplay[] = 'Shipping: '.$request->Shipping_Request;
+            }
+            if ($request->Production_Area_Request) {
+                $readyDisplay[] = 'Production: '.$request->Production_Area_Request;
+            }
+            if ($request->Design_Changes_Request) {
+                $readyDisplay[] = 'Design: '.$request->Design_Changes_Request;
+            }
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
             $statusCode = '';
@@ -113,10 +123,10 @@ class AdminSubmissionController extends Controller
                 $estimationDisplay,
                 $timeRecord,
                 optional($request->record)->Sum_Record ?? '',
-                $request->member->Name_Member ?? '',
-                optional($request->record)->member->Name_Member ?? '',
+                $request->display_name,
+                optional($request->record)->display_name ?? '',
                 $request->Updated_At_Request,
-            ], null, 'A' . $row);
+            ], null, 'A'.$row);
 
             $lastUser = $request->Id_User;
             $no++;
@@ -144,8 +154,8 @@ class AdminSubmissionController extends Controller
         }
 
         // Simpan ke file di storage/app/public
-        $fileName = "Request_Keseluruhan_" . $date . ".xlsx";
-        $filePath = storage_path('app/public/' . $fileName);
+        $fileName = 'Request_Keseluruhan_'.$date.'.xlsx';
+        $filePath = storage_path('app/public/'.$fileName);
 
         $writer = new Xlsx($spreadsheet);
         $writer->save($filePath);
