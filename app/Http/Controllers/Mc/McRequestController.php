@@ -1002,7 +1002,9 @@ class McRequestController extends Controller
                 } else {
                     $originalId = strpos($id, 'm_') === 0 ? substr($id, 2) : $id;
                     $q->orWhere(function ($sq) use ($originalId) {
-                        $sq->where('Id_User', $originalId)->where('Is_User', 0);
+                        $sq->where('Id_User', $originalId)->where(function($q2) {
+                            $q2->where('Is_User', 0)->orWhereNull('Is_User');
+                        });
                     });
                 }
             }
