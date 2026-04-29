@@ -330,7 +330,91 @@ class UrgentController extends Controller
             $stockOverride = true;
         }
 
-        // Check if waiting request exists
+        // ============================================================
+        // PRIORITAS 1: Stock → PRIORITAS 2: QC/Return Rack
+        // Jika terdeteksi, langsung proses & return (early return)
+        // ============================================================
+        if ($stockOverride || $qcOverride || $telatReturnRackOverride) {
+            if ($stockOverride) {
+                $category = 'stock';
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
+                $displayCategory = 'STOCK';
+                $badgeClass = 'secondary';
+            } elseif ($qcOverride) {
+                $category = 'telat qc';
+                $systemMemberQc = Member::where('Name_Member', 'system')->first();
+                $idMemberTarget = $systemMemberQc ? $systemMemberQc->Id_Member : 35;
+                $nameMemberTarget = 'QC';
+                $displayCategory = 'TELAT QC';
+                $badgeClass = 'pink';
+            } else {
+                $category = 'telat return rack';
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
+                $displayCategory = 'TELAT RETURN RACK';
+                $badgeClass = 'secondary';
+            }
+
+            if ($checkDuplicateToday()) {
+                return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak oleh Anda hari ini).');
+            }
+
+            $namePart = $rackForOverride ? ($rackForOverride->Name_Item_Rack ?? '-') : '-';
+            $codeItem = $rackForOverride ? ($rackForOverride->Code_Item_Rack ?? '-') : '-';
+
+            // Cari waiting request yang ada (TIDAK buat baru)
+            $waitingRequest = RequestModel::where('Code_Rack', $codeRack)
+                ->where('Status_Request', 'Waiting')
+                ->first();
+
+            $idRequest = $waitingRequest ? $waitingRequest->Id_Request : null;
+
+            $mistake = Mistake::create([
+                'Id_Request' => $idRequest,
+                'PIC' => $nameMemberTarget,
+                'Category_Mistake' => $category,
+                'Day_Mistake' => $nowDate,
+                'Status_Mistake' => 0,
+            ]);
+
+            Urgent::create([
+                'Id_User' => $idMemberLogged,
+                'Id_Type_User' => null,
+                'Code_Rack' => $codeRack,
+                'Id_Request' => $idRequest,
+                'Id_Member' => $idMemberTarget,
+                'Time_Urgent' => $nowTime,
+                'Id_Mistake' => $mistake->Id_Mistake,
+            ]);
+
+            $reporter = Member::find($idMemberLogged);
+            $this->queueWaMessage([
+                'time_urgent' => $nowTime,
+                'code_rack' => $codeRack,
+                'pic' => $nameMemberTarget,
+                'reporter' => $reporter ? $reporter->Name_Member : 'Member',
+                'code_item' => $codeItem,
+                'name_part' => $namePart,
+                'sum_request' => $waitingRequest ? $waitingRequest->Sum_Request : '-',
+                'category' => $category,
+                'time_request' => $waitingRequest ? ($waitingRequest->Day_Request.' '.$waitingRequest->Time_Request) : '-',
+            ]);
+
+            return redirect()->back()->with([
+                'success' => 'Urgent Scan Code Rack '.$codeRack.' berhasil diproses.',
+                'scan_success_data' => [
+                    'category' => $displayCategory,
+                    'badge_class' => $badgeClass,
+                    'time_request' => $waitingRequest ? $waitingRequest->Time_Request : $nowTime,
+                    'sum_request' => $waitingRequest ? $waitingRequest->Sum_Request : '-',
+                    'pic' => $nameMemberTarget,
+                    'code_rack' => $codeRack,
+                ],
+            ]);
+        }
+
+        // ============================================================
+        // PRIORITAS 3: Cek Status Request (seperti biasa, tanpa override)
+        // ============================================================
         $waitingRequest = RequestModel::where('Code_Rack', $codeRack)
             ->where('Status_Request', 'Waiting')
             ->first();
@@ -356,22 +440,7 @@ class UrgentController extends Controller
                 $category = 'telat request';
                 $manualDetail = null;
 
-                // Override for QC or Stock
-                if ($qcOverride) {
-                    $category = 'telat qc';
-                    $manualDetail = null;
-                    $systemMemberQc = Member::where('Name_Member', 'system')->first();
-                    $idMemberTarget = $systemMemberQc ? $systemMemberQc->Id_Member : 35;
-                    $nameMemberTarget = 'QC';
-                } elseif ($telatReturnRackOverride) {
-                    $category = 'telat return rack';
-                    $manualDetail = null;
-                    [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
-                } elseif ($stockOverride) {
-                    $category = 'stock';
-                    $manualDetail = null;
-                    [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
-                }
+
 
                 $mistake = Mistake::create([
                     'Id_Request' => $idRequest,
@@ -415,22 +484,7 @@ class UrgentController extends Controller
                 $category = 'telat supply';
                 $manualDetail = null;
 
-                // Override for QC or Stock
-                if ($qcOverride) {
-                    $category = 'telat qc';
-                    $manualDetail = null;
-                    $systemMemberQc = Member::where('Name_Member', 'system')->first();
-                    $idMemberTarget = $systemMemberQc ? $systemMemberQc->Id_Member : 35;
-                    $nameMemberTarget = 'QC';
-                } elseif ($telatReturnRackOverride) {
-                    $category = 'telat return rack';
-                    $manualDetail = null;
-                    [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
-                } elseif ($stockOverride) {
-                    $category = 'stock';
-                    $manualDetail = null;
-                    [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
-                }
+
 
                 $mistake = Mistake::create([
                     'Id_Request' => $idRequest,
@@ -491,22 +545,6 @@ class UrgentController extends Controller
                     $category = 'shipping';
                 }
 
-                // Override for QC or Stock
-                if ($qcOverride) {
-                    $category = 'telat qc';
-                    $manualDetail = null;
-                    $systemMemberQc = Member::where('Name_Member', 'system')->first();
-                    $idBossMc = $systemMemberQc ? $systemMemberQc->Id_Member : 35;
-                    $nameBossMc = 'QC';
-                } elseif ($telatReturnRackOverride) {
-                    $category = 'telat return rack';
-                    $manualDetail = null;
-                    [$idBossMc, $nameBossMc] = $this->getLastRecordPic($codeRack);
-                } elseif ($stockOverride) {
-                    $category = 'stock';
-                    $manualDetail = null;
-                    [$idBossMc, $nameBossMc] = $this->getLastRecordPic($codeRack);
-                }
 
                 $mistake = Mistake::create([
                     'Id_Request' => $idRequest,
@@ -559,15 +597,6 @@ class UrgentController extends Controller
             } elseif ($cat == 'lain-lain' && $mDetail == 'produksi') {
                 $displayCategory = 'PRODUCTION';
                 $badgeClass = 'primary';
-            } elseif ($cat == 'telat qc') {
-                $displayCategory = 'TELAT QC';
-                $badgeClass = 'pink';
-            } elseif ($cat == 'telat return rack') {
-                $displayCategory = 'TELAT RETURN RACK';
-                $badgeClass = 'secondary';
-            } elseif ($cat == 'stock') {
-                $displayCategory = 'STOCK';
-                $badgeClass = 'secondary';
             } elseif ($cat == 'telat supply' || $cat == 'telat request' || $cat == 'telat supply mc') {
                 $badgeClass = 'secondary';
             }
@@ -587,13 +616,6 @@ class UrgentController extends Controller
             ]);
 
         } else {
-            // Check if it's Stock or QC or Return Rack when NO request exists
-            if ($qcOverride || $telatReturnRackOverride || $stockOverride) {
-                $categoryLabel = $qcOverride ? 'TELAT QC' : ($stockOverride ? 'STOCK' : 'TELAT RETURN RACK');
-
-                return redirect()->back()->with('error', "Item terdeteksi sebagai $categoryLabel. Karena tidak ada request sebelumnya, sistem tidak membuat request otomatis. Silakan tindak lanjuti ke bagian terkait.");
-            }
-
             [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
 
             if ($checkDuplicateToday()) {
@@ -629,20 +651,7 @@ class UrgentController extends Controller
 
             $idRequestNew = $newReq->Id_Request;
 
-            // Override for QC or Stock
             $urgentCategory = 'telat request';
-            if ($qcOverride) {
-                $urgentCategory = 'telat qc';
-                $systemMemberQc = Member::where('Name_Member', 'system')->first();
-                $idMemberTarget = $systemMemberQc ? $systemMemberQc->Id_Member : 35;
-                $nameMemberTarget = 'QC';
-            } elseif ($telatReturnRackOverride) {
-                $urgentCategory = 'telat return rack';
-                [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
-            } elseif ($stockOverride) {
-                $urgentCategory = 'stock';
-                [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
-            }
 
             $mistake = Mistake::create([
                 'Id_Request' => $idRequestNew,
@@ -677,18 +686,8 @@ class UrgentController extends Controller
                 'time_request' => $nowTime,
             ]);
 
-            $dispCat = strtoupper($urgentCategory);
+            $dispCat = 'TELAT REQUEST';
             $dispBadge = 'secondary';
-            if ($urgentCategory == 'telat qc') {
-                $dispCat = 'TELAT QC';
-                $dispBadge = 'pink';
-            } elseif ($urgentCategory == 'telat return rack') {
-                $dispCat = 'TELAT RETURN RACK';
-                $dispBadge = 'secondary';
-            } elseif ($urgentCategory == 'stock') {
-                $dispCat = 'STOCK';
-                $dispBadge = 'secondary';
-            }
 
             $scanSuccessData = [
                 'category' => $dispCat,
