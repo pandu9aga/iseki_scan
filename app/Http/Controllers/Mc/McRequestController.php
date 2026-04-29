@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Request as RequestModel;
 use App\Models\Member;
+use App\Models\User;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -28,7 +29,7 @@ class McRequestController extends Controller
             ->orderBy('Time_Request', 'desc');
 
         if (!empty($memberIds)) {
-            $query->whereIn('Id_User', $memberIds); // ← whereIn, bukan where
+            $this->applyMemberFilter($query, $memberIds);
         }
 
         $statusFilters = request('statusFilter', []);
@@ -60,7 +61,7 @@ class McRequestController extends Controller
         $correct = $requests->where('Correctness_Request', 1)->count();
         $incorrect = $totalRequest - $correct;
 
-        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get();
+        $members = $this->getPeople();
 
         return view('mcs.requests.index', compact(
             'requests',
@@ -85,7 +86,7 @@ class McRequestController extends Controller
             ->orderBy('Time_Request', 'desc');
 
         if (!empty($memberIds)) {
-            $query->whereIn('Id_User', $memberIds);
+            $this->applyMemberFilter($query, $memberIds);
         }
 
         $statusFilters = $request->input('statusFilter', []);
@@ -117,7 +118,7 @@ class McRequestController extends Controller
         $correct = $requests->where('Correctness_Request', 1)->count();
         $incorrect = $totalRequest - $correct;
 
-        $members = Member::orderBy('Name_Member')->get();
+        $members = $this->getPeople();
 
         return view('mcs.requests.index', compact(
             'requests',
@@ -144,7 +145,7 @@ class McRequestController extends Controller
             ->orderBy('Time_Request');
 
         if (!empty($memberIds)) {
-            $query->whereIn('Id_User', $memberIds);
+            $this->applyMemberFilter($query, $memberIds);
         }
 
         $statusFilters = $request->input('statusFilter', []);
@@ -896,7 +897,7 @@ class McRequestController extends Controller
                 })
                 ->filterColumn('Id_User', function ($query, $keyword) {
                     if ($keyword !== '') {
-                        $query->where('Id_User', $keyword); // ✅ exact match
+                        $this->applyMemberFilter($query, [$keyword]);
                     }
                 })
                 ->orderColumn('Day_Request', function ($query, $order) {
@@ -949,7 +950,63 @@ class McRequestController extends Controller
         }
 
         // Non-AJAX: kirim daftar member ke view
-        $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->orderBy('Name_Member')->get(['Id_Member', 'Name_Member']);
+        $members = $this->getPeople();
         return view('mcs.requests.search', compact('members'));
     }
+
+    private function getPeople()
+    {
+        $members = Member::where('Status_Non_Active', '!=', 1)
+            ->orWhereNull('Status_Non_Active')
+            ->orderBy('Name_Member')
+            ->get(['Id_Member', 'Name_Member'])
+            ->map(function ($m) {
+                return (object) [
+                    'id' => 'm_' . $m->Id_Member,
+                    'name' => $m->Name_Member,
+                    'original_id' => $m->Id_Member,
+                    'type' => 'member',
+                ];
+            });
+
+        $users = User::where('Status_Non_Active', '!=', 1)
+            ->orWhereNull('Status_Non_Active')
+            ->orderBy('Name_User')
+            ->get(['Id_User', 'Name_User'])
+            ->map(function ($u) {
+                return (object) [
+                    'id' => 'u_' . $u->Id_User,
+                    'name' => $u->Name_User,
+                    'original_id' => $u->Id_User,
+                    'type' => 'user',
+                ];
+            });
+
+        return $members->concat($users)->sortBy('name')->values();
+    }
+
+    private function applyMemberFilter($query, $memberIds)
+    {
+        $memberIds = array_filter($memberIds, function($value) { return $value !== null && $value !== ''; });
+        if (empty($memberIds)) {
+            return;
+        }
+
+        $query->where(function ($q) use ($memberIds) {
+            foreach ($memberIds as $id) {
+                if (strpos($id, 'u_') === 0) {
+                    $originalId = substr($id, 2);
+                    $q->orWhere(function ($sq) use ($originalId) {
+                        $sq->where('Id_User', $originalId)->where('Is_User', 1);
+                    });
+                } else {
+                    $originalId = strpos($id, 'm_') === 0 ? substr($id, 2) : $id;
+                    $q->orWhere(function ($sq) use ($originalId) {
+                        $sq->where('Id_User', $originalId)->where('Is_User', 0);
+                    });
+                }
+            }
+        });
+    }
 }
+
