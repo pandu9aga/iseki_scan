@@ -39,9 +39,9 @@
                                         <select name="Id_User[]" class="form-control" multiple id="memberSelect">
                                             <option value="">All Members</option>
                                             @foreach($members as $m)
-                                            <option value="{{ $m->Id_Member }}"
-                                                {{ in_array($m->Id_Member, request('Id_User', [])) ? 'selected' : '' }}>
-                                                {{ $m->Name_Member }}
+                                            <option value="{{ $m->id }}"
+                                                {{ in_array($m->id, request('Id_User', [])) ? 'selected' : '' }}>
+                                                {{ $m->name }}
                                             </option>
                                             @endforeach
                                         </select>

@@ -647,6 +647,11 @@ class AdminRequestController extends Controller
 
     private function applyMemberFilter($query, $memberIds)
     {
+        $memberIds = array_filter($memberIds, function($value) { return $value !== null && $value !== ''; });
+        if (empty($memberIds)) {
+            return;
+        }
+
         $query->where(function ($q) use ($memberIds) {
             foreach ($memberIds as $id) {
                 if (strpos($id, 'u_') === 0) {
