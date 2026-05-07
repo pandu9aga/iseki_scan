@@ -320,10 +320,12 @@ class UrgentController extends Controller
                 if ($activeWithdrawal->Oke_Receiving && !$activeWithdrawal->Finish_Receiving) {
                     // Hanya salah QC jika status sudah "diterima QC" tapi belum selesai
                     $qcOverride = true;
-                } else {
-                    // Semua status lain (belum disiapkan DST, belum diterima QC, sudah selesai tapi belum dikembalikan) = salah DST
+                } elseif ($activeWithdrawal->Finish_Receiving) {
+                    // QC sudah selesai tapi belum dikembalikan DST = salah DST
                     $telatReturnRackOverride = true;
                 }
+                // Jika belum diterima QC (Oke_Receiving = false), jangan override
+                // Biarkan jatuh ke logika request status biasa (telat supply, telat mc, dll)
             }
         }
         // Check if Code_Rack is in stock_items
