@@ -317,10 +317,12 @@ class UrgentController extends Controller
                 ->orderBy('Id_Withdrawal', 'desc')
                 ->first();
             if ($activeWithdrawal) {
-                if ($activeWithdrawal->Finish_Receiving) {
-                    $telatReturnRackOverride = true;
-                } else {
+                if ($activeWithdrawal->Oke_Receiving && !$activeWithdrawal->Finish_Receiving) {
+                    // Hanya salah QC jika status sudah "diterima QC" tapi belum selesai
                     $qcOverride = true;
+                } else {
+                    // Semua status lain (belum disiapkan DST, belum diterima QC, sudah selesai tapi belum dikembalikan) = salah DST
+                    $telatReturnRackOverride = true;
                 }
             }
         }
