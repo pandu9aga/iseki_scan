@@ -128,6 +128,9 @@ class UrgentController extends Controller
 
                     return '<span class="badge badge-'.$class.'">'.$label.'</span>';
                 })
+                ->addColumn('Type_Tractor', function ($urgent) {
+                    return optional(optional($urgent->requestModel)->rack)->Type_Tractor_Rack ?? '-';
+                })
                 ->addColumn('Name_Part', function ($urgent) {
                     return optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
                 })

@@ -108,6 +108,7 @@
                             <th>No</th>
                             <th>Time Urgent</th>
                             <th>Category</th>
+                            <th>Type Tractor</th>
                             <th>Code Rack</th>
                             <th style="min-width:90px;max-width:110px;">Name Part</th>
                             <th>PIC</th>
@@ -169,6 +170,7 @@
                 },
                 { data: 'Time_Urgent', name: 'Time_Urgent' },
                 { data: 'Mistake_Category', name: 'Mistake_Category', searchable: false },
+                { data: 'Type_Tractor', name: 'Type_Tractor', className: 'name-part-col' },
                 { data: 'Code_Rack', name: 'Code_Rack' },
                 { 
                     data: 'Name_Part', 
