@@ -334,11 +334,16 @@ class UrgentController extends Controller
             $stockOverride = true;
         }
 
+        // Cari waiting request yang ada (TIDAK buat baru di sini)
+        $waitingRequest = RequestModel::where('Code_Rack', $codeRack)
+            ->where('Status_Request', 'Waiting')
+            ->first();
+
         // ============================================================
         // PRIORITAS 1: Stock → PRIORITAS 2: QC/Return Rack
         // Jika terdeteksi, langsung proses & return (early return)
         // ============================================================
-        if ($stockOverride || $qcOverride || $telatReturnRackOverride) {
+        if (($stockOverride && $waitingRequest) || $qcOverride || ($telatReturnRackOverride && $waitingRequest)) {
             if ($stockOverride) {
                 $category = 'stock';
                 [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
@@ -364,11 +369,6 @@ class UrgentController extends Controller
 
             $namePart = $rackForOverride ? ($rackForOverride->Name_Item_Rack ?? '-') : '-';
             $codeItem = $rackForOverride ? ($rackForOverride->Code_Item_Rack ?? '-') : '-';
-
-            // Cari waiting request yang ada (TIDAK buat baru)
-            $waitingRequest = RequestModel::where('Code_Rack', $codeRack)
-                ->where('Status_Request', 'Waiting')
-                ->first();
 
             $idRequest = $waitingRequest ? $waitingRequest->Id_Request : null;
             $isWithdrawal = false;
@@ -426,10 +426,6 @@ class UrgentController extends Controller
         // ============================================================
         // PRIORITAS 3: Cek Status Request (seperti biasa, tanpa override)
         // ============================================================
-        $waitingRequest = RequestModel::where('Code_Rack', $codeRack)
-            ->where('Status_Request', 'Waiting')
-            ->first();
-
         if ($waitingRequest) {
             // Get Part Name for this rack
             $rackModel = Rack::where('Code_Rack', $codeRack)->first();
