@@ -23,6 +23,7 @@ class McMistakeController extends Controller
                 $q->where('Status_Mistake', '!=', 1)
                   ->orWhereNull('Status_Mistake');
             })
+            ->where('Is_Withdrawal', false)
             ->get();
 
         $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->get();

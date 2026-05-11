@@ -125,6 +125,12 @@ class AreaScanController extends Controller
                 ->first();
 
             $idRequest = $waitingRequest ? $waitingRequest->Id_Request : null;
+            $isWithdrawal = false;
+
+            if ($qcOverride && $activeWithdrawal) {
+                $idRequest = $activeWithdrawal->Id_Withdrawal;
+                $isWithdrawal = true;
+            }
 
             $mistake = Mistake::create([
                 'Id_Request' => $idRequest,
@@ -132,6 +138,7 @@ class AreaScanController extends Controller
                 'Category_Mistake' => $category,
                 'Day_Mistake' => $nowDate,
                 'Status_Mistake' => 0,
+                'Is_Withdrawal' => $isWithdrawal,
             ]);
 
             Urgent::create([

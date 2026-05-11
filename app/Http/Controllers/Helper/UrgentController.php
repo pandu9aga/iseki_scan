@@ -317,7 +317,7 @@ class UrgentController extends Controller
                 ->orderBy('Id_Withdrawal', 'desc')
                 ->first();
             if ($activeWithdrawal) {
-                if ($activeWithdrawal->Oke_Receiving && !$activeWithdrawal->Finish_Receiving) {
+                if ($activeWithdrawal->Oke_Receiving && ! $activeWithdrawal->Finish_Receiving) {
                     // Hanya salah QC jika status sudah "diterima QC" tapi belum selesai
                     $qcOverride = true;
                 } elseif ($activeWithdrawal->Finish_Receiving) {
@@ -371,6 +371,12 @@ class UrgentController extends Controller
                 ->first();
 
             $idRequest = $waitingRequest ? $waitingRequest->Id_Request : null;
+            $isWithdrawal = false;
+
+            if ($qcOverride && $activeWithdrawal) {
+                $idRequest = $activeWithdrawal->Id_Withdrawal;
+                $isWithdrawal = true;
+            }
 
             $mistake = Mistake::create([
                 'Id_Request' => $idRequest,
@@ -378,6 +384,7 @@ class UrgentController extends Controller
                 'Category_Mistake' => $category,
                 'Day_Mistake' => $nowDate,
                 'Status_Mistake' => 0,
+                'Is_Withdrawal' => $isWithdrawal,
             ]);
 
             Urgent::create([
@@ -444,8 +451,6 @@ class UrgentController extends Controller
                 $category = 'telat request';
                 $manualDetail = null;
 
-
-
                 $mistake = Mistake::create([
                     'Id_Request' => $idRequest,
                     'PIC' => $nameMemberTarget,
@@ -487,8 +492,6 @@ class UrgentController extends Controller
 
                 $category = 'telat supply';
                 $manualDetail = null;
-
-
 
                 $mistake = Mistake::create([
                     'Id_Request' => $idRequest,
@@ -548,7 +551,6 @@ class UrgentController extends Controller
                 } elseif ($waitingRequest->Shipping_Request !== null) {
                     $category = 'shipping';
                 }
-
 
                 $mistake = Mistake::create([
                     'Id_Request' => $idRequest,

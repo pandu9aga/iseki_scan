@@ -36,13 +36,12 @@
                                     <td>{{ $index + 1 }}</td>
                                     <td>{{ $m->Day_Mistake }}</td>
                                     <td class="font-weight-bold text-danger">{{ $m->PIC }}</td>
-                                    <td>{{ $m->request ? $m->request->Code_Rack : '-' }}</td>
-                                    <td>{{ ($m->request && $m->request->rack) ? $m->request->rack->Name_Item_Rack : '-' }}</td>
-                                    <td>{{ ($m->request && $m->request->member) ? $m->request->display_name : '-' }}</td>
-                                    <td>{{ ($m->request && $m->request->record && $m->request->record->member) ? $m->request->record->display_name : '-' }}
-                                    </td>
-                                    <td>{{ $m->request ? $m->request->Time_Request : '-' }}</td>
-                                    <td>{{ ($m->request && $m->request->record) ? $m->request->record->Time_Record : '-' }}</td>
+                                    <td>{{ $m->Is_Withdrawal ? ($m->urgent ? $m->urgent->Code_Rack : '-') : ($m->request ? $m->request->Code_Rack : '-') }}</td>
+                                    <td>{{ $m->Is_Withdrawal ? '-' : (($m->request && $m->request->rack) ? $m->request->rack->Name_Item_Rack : '-') }}</td>
+                                    <td>{{ $m->Is_Withdrawal ? '-' : (($m->request && $m->request->member) ? $m->request->display_name : '-') }}</td>
+                                    <td>{{ $m->Is_Withdrawal ? '-' : (($m->request && $m->request->record && $m->request->record->member) ? $m->request->record->display_name : '-') }}</td>
+                                    <td>{{ $m->Is_Withdrawal ? ($m->withdrawal ? $m->withdrawal->Date_Withdrawal : '-') : ($m->request ? $m->request->Time_Request : '-') }}</td>
+                                    <td>{{ $m->Is_Withdrawal ? ($m->withdrawal ? $m->withdrawal->Date_Finish_Receiving : '-') : (($m->request && $m->request->record) ? $m->request->record->Time_Record : '-') }}</td>
                                     <td>
                                         @if($m->Category_Mistake == 'lain-lain')
                                             {{ $m->Manual_Category_Detail }}

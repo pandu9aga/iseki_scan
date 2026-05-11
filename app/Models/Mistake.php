@@ -22,10 +22,21 @@ class Mistake extends Model
         'Manual_Category_Detail',
         'Day_Mistake',
         'Status_Mistake',
+        'Is_Withdrawal',
     ];
 
     public function request()
     {
         return $this->belongsTo(Request::class, 'Id_Request', 'Id_Request');
+    }
+
+    public function withdrawal()
+    {
+        return $this->belongsTo(Withdrawal::class, 'Id_Request', 'Id_Withdrawal');
+    }
+
+    public function urgent()
+    {
+        return $this->hasOne(Urgent::class, 'Id_Mistake', 'Id_Mistake');
     }
 }
