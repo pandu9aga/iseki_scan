@@ -47,6 +47,11 @@ class Urgent extends Model
         return $this->belongsTo(Request::class, 'Id_Request', 'Id_Request');
     }
 
+    public function withdrawal()
+    {
+        return $this->belongsTo(Withdrawal::class, 'Id_Request', 'Id_Withdrawal');
+    }
+
     public function mistake()
     {
         return $this->belongsTo(Mistake::class, 'Id_Mistake', 'Id_Mistake');

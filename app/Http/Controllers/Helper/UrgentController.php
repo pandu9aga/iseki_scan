@@ -50,7 +50,7 @@ class UrgentController extends Controller
     public function getData(Request $request)
     {
         if ($request->ajax()) {
-            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'mistake', 'record'])
+            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'withdrawal.rack', 'mistake', 'record'])
                 ->orderBy('Time_Urgent', 'desc');
 
             // Custom Filter logic
@@ -78,6 +78,10 @@ class UrgentController extends Controller
                             $q2->where('Username_User', 'LIKE', "%$keyword%");
                         })
                         ->orWhereHas('requestModel.rack', function ($q2) use ($keyword) {
+                            $q2->where('Name_Item_Rack', 'LIKE', "%$keyword%")
+                                ->orWhere('Code_Item_Rack', 'LIKE', "%$keyword%");
+                        })
+                        ->orWhereHas('withdrawal.rack', function ($q2) use ($keyword) {
                             $q2->where('Name_Item_Rack', 'LIKE', "%$keyword%")
                                 ->orWhere('Code_Item_Rack', 'LIKE', "%$keyword%");
                         });
@@ -129,12 +133,24 @@ class UrgentController extends Controller
                     return '<span class="badge badge-'.$class.'">'.$label.'</span>';
                 })
                 ->addColumn('Type_Tractor', function ($urgent) {
+                    if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+                        return optional(optional($urgent->withdrawal)->rack)->Type_Tractor_Rack ?? '-';
+                    }
                     return optional(optional($urgent->requestModel)->rack)->Type_Tractor_Rack ?? '-';
                 })
                 ->addColumn('Name_Part', function ($urgent) {
+                    if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+                        return optional(optional($urgent->withdrawal)->rack)->Name_Item_Rack ?? '-';
+                    }
                     return optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
                 })
                 ->addColumn('Request_Details', function ($urgent) {
+                    if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+                        if ($urgent->withdrawal) {
+                            return 'Item: '.$urgent->withdrawal->Code_Item_Withdrawal.' - (Withdrawal)';
+                        }
+                        return 'N/A';
+                    }
                     if ($urgent->requestModel) {
                         return 'Item: '.$urgent->requestModel->Code_Item_Rack.' - Sum: '.$urgent->requestModel->Sum_Request;
                     }
@@ -149,6 +165,12 @@ class UrgentController extends Controller
                     return optional($urgent->user)->Username_User ?? '-';
                 })
                 ->addColumn('Request_Time', function ($urgent) {
+                    if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+                        if ($urgent->withdrawal) {
+                            return $urgent->withdrawal->Date_Withdrawal ? $urgent->withdrawal->Date_Withdrawal->format('Y-m-d H:i:s') : '-';
+                        }
+                        return '-';
+                    }
                     if ($urgent->requestModel) {
                         return $urgent->requestModel->Day_Request.' '.$urgent->requestModel->Time_Request;
                     }
@@ -829,7 +851,7 @@ class UrgentController extends Controller
     public function getUnrecordedData(Request $request)
     {
         if ($request->ajax()) {
-            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'mistake'])
+            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'withdrawal.rack', 'mistake'])
                 ->whereDoesntHave('record')
                 ->orderBy('Time_Urgent', 'desc');
 
@@ -858,6 +880,10 @@ class UrgentController extends Controller
                             $q2->where('Username_User', 'LIKE', "%$keyword%");
                         })
                         ->orWhereHas('requestModel.rack', function ($q2) use ($keyword) {
+                            $q2->where('Name_Item_Rack', 'LIKE', "%$keyword%")
+                                ->orWhere('Code_Item_Rack', 'LIKE', "%$keyword%");
+                        })
+                        ->orWhereHas('withdrawal.rack', function ($q2) use ($keyword) {
                             $q2->where('Name_Item_Rack', 'LIKE', "%$keyword%")
                                 ->orWhere('Code_Item_Rack', 'LIKE', "%$keyword%");
                         });
@@ -919,9 +945,18 @@ class UrgentController extends Controller
                     return '<span class="badge badge-'.$class.'">'.$label.'</span>';
                 })
                 ->addColumn('Name_Part', function ($urgent) {
+                    if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+                        return optional(optional($urgent->withdrawal)->rack)->Name_Item_Rack ?? '-';
+                    }
                     return optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
                 })
                 ->addColumn('Request_Details', function ($urgent) {
+                    if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+                        if ($urgent->withdrawal) {
+                            return 'Item: '.$urgent->withdrawal->Code_Item_Withdrawal.' - (Withdrawal)';
+                        }
+                        return 'N/A';
+                    }
                     if ($urgent->requestModel) {
                         return 'Item: '.$urgent->requestModel->Code_Item_Rack.' - Sum: '.$urgent->requestModel->Sum_Request;
                     }
@@ -936,6 +971,12 @@ class UrgentController extends Controller
                     return optional($urgent->user)->Username_User ?? '-';
                 })
                 ->addColumn('Request_Time', function ($urgent) {
+                    if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+                        if ($urgent->withdrawal) {
+                            return $urgent->withdrawal->Date_Withdrawal ? $urgent->withdrawal->Date_Withdrawal->format('Y-m-d H:i:s') : '-';
+                        }
+                        return '-';
+                    }
                     if ($urgent->requestModel) {
                         return $urgent->requestModel->Day_Request.' '.$urgent->requestModel->Time_Request;
                     }
@@ -959,7 +1000,7 @@ class UrgentController extends Controller
     {
         $date = Carbon::today()->format('Y-m-d');
 
-        $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'mistake'])
+        $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'withdrawal.rack', 'mistake'])
             ->whereDoesntHave('record')
             ->orderBy('Time_Urgent', 'desc');
 
@@ -1016,15 +1057,34 @@ class UrgentController extends Controller
                 }
             }
 
-            $namePart = optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
+            $namePart = '-';
+            if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+                $namePart = optional(optional($urgent->withdrawal)->rack)->Name_Item_Rack ?? '-';
+            } else {
+                $namePart = optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
+            }
+
             $pic = $urgent->member ? $urgent->member->Name_Member : '-';
             $reporter = empty($urgent->Id_Type_User)
                 ? (optional($urgent->reporterMember)->Name_Member ?? '-')
                 : (optional($urgent->user)->Username_User ?? '-');
 
-            $codeItem = $urgent->requestModel ? $urgent->requestModel->Code_Item_Rack : '-';
-            $sumReq = $urgent->requestModel ? $urgent->requestModel->Sum_Request : '-';
-            $timeReq = $urgent->requestModel ? ($urgent->requestModel->Day_Request.' '.$urgent->requestModel->Time_Request) : '-';
+            $codeItem = '-';
+            $sumReq = '-';
+            $timeReq = '-';
+            if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+                if ($urgent->withdrawal) {
+                    $codeItem = $urgent->withdrawal->Code_Item_Withdrawal;
+                    $sumReq = '(Withdrawal)';
+                    $timeReq = $urgent->withdrawal->Date_Withdrawal ? $urgent->withdrawal->Date_Withdrawal->format('Y-m-d H:i:s') : '-';
+                }
+            } else {
+                if ($urgent->requestModel) {
+                    $codeItem = $urgent->requestModel->Code_Item_Rack;
+                    $sumReq = $urgent->requestModel->Sum_Request;
+                    $timeReq = $urgent->requestModel->Day_Request.' '.$urgent->requestModel->Time_Request;
+                }
+            }
 
             $sheet->fromArray([
                 $no,

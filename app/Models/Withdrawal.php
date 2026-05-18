@@ -39,4 +39,9 @@ class Withdrawal extends Model
         'Date_Finish_Receiving' => 'datetime',
         'Date_Return' => 'datetime',
     ];
+
+    public function rack()
+    {
+        return $this->belongsTo(Rack::class, 'Code_Item_Withdrawal', 'Code_Item_Rack');
+    }
 }
