@@ -169,7 +169,7 @@
 @section('script')
 <script>
     const PROXY_URL  = 'https://wablas-proxy.isekipandu.workers.dev'; // No trailing slash
-    const WA_TOKEN   = 't5wx1eefCYvMchKePC5OCj0j7UdURmj4omtoaCqfmDtCA4pWpeZycH9.w9A02qKW'; // MUST be TOKEN.SECRET_KEY
+    const WA_TOKEN   = 'NOFl7qr6DjYqG4jiy3MOmecZrzPfqkCeLQh76lpawgIRAi6ZSKfPXOB.c1eWrwl7'; // MUST be TOKEN.SECRET_KEY
     const FETCH_URL  = '{{ route('wa.queue.fetch') }}';
     const SENT_BASE  = '{{ url('/api/wa-queue') }}';
     const SENT_URL   = id => `${SENT_BASE}/${id}/sent`;

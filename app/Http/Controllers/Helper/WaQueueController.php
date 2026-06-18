@@ -9,9 +9,9 @@ class WaQueueController extends Controller
 {
     const WA_GROUP_ID = '120363045467407165@g.us';
 
-    const WA_TOKEN = 't5wx1eefCYvMchKePC5OCj0j7UdURmj4omtoaCqfmDtCA4pWpeZycH9';
+    const WA_TOKEN = 'NOFl7qr6DjYqG4jiy3MOmecZrzPfqkCeLQh76lpawgIRAi6ZSKfPXOB';
 
-    const WA_HOST = 'https://deu.wablas.com/';
+    const WA_HOST = 'https://solo.wablas.com/';
 
     /**
      * Halaman monitoring antrian WA
