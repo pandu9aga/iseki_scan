@@ -457,19 +457,22 @@ class UrgentController extends Controller
             $namePart = $rackModel ? ($rackModel->Name_Item_Rack ?? '-') : '-';
             $idRequest = $waitingRequest->Id_Request;
 
-            // Check if request is less than 24 working hours old (excluding weekends)
-            $requestTime = Carbon::parse($waitingRequest->Day_Request.' '.$waitingRequest->Time_Request);
-            $isLessThan24Hours = $requestTime->diffInHoursFiltered(fn (Carbon $date) => $date->isWeekday(), Carbon::now()) < 24;
+            $requestDate = Carbon::parse($waitingRequest->Day_Request);
+            $urgentDate = Carbon::parse($nowDate);
+            $readyDate = $waitingRequest->Ready_Request !== null ? Carbon::parse($waitingRequest->Ready_Request) : null;
 
-            if ($isLessThan24Hours) {
-                // If < 24 hours, category is "telat request" and PIC is the member responsible
-                [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
+            $pastReadyThreshold = $readyDate !== null && $urgentDate->greaterThanOrEqualTo($readyDate->copy()->addWeekdays(2));
+            $pastRequestThreshold = $urgentDate->greaterThanOrEqualTo($requestDate->copy()->addWeekdays(2));
+
+            if ($pastReadyThreshold && $readyDate->greaterThan($requestDate->copy()->addWeekdays(2))) {
+                // Ready > request + 2wd → MC lambat bikin ready, barang siap > 2 hari → supplier salah
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
 
                 if ($checkDuplicateToday($idMemberTarget)) {
                     return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).');
                 }
 
-                $category = 'telat request';
+                $category = 'telat supply';
                 $manualDetail = null;
 
                 $mistake = Mistake::create([
@@ -503,50 +506,12 @@ class UrgentController extends Controller
                     'category' => $category,
                     'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
                 ]);
-            } elseif ($waitingRequest->Ready_Request !== null) {
-                // Determine target member PIC
-                [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
 
-                if ($checkDuplicateToday($idMemberTarget)) {
-                    return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).');
-                }
+                $pic = $nameMemberTarget;
 
-                $category = 'telat supply';
-                $manualDetail = null;
-
-                $mistake = Mistake::create([
-                    'Id_Request' => $idRequest,
-                    'PIC' => $nameMemberTarget,
-                    'Category_Mistake' => $category,
-                    'Day_Mistake' => $nowDate,
-                    'Status_Mistake' => 0,
-                ]);
-
-                Urgent::create([
-                    'Id_User' => $idMemberLogged, // Storing Member ID as Id_User as requested
-                    'Id_Type_User' => null, // Explicitly empty for members
-                    'Code_Rack' => $codeRack,
-                    'Id_Request' => $idRequest,
-                    'Id_Member' => $idMemberTarget,
-                    'Time_Urgent' => $nowTime,
-                    'Id_Mistake' => $mistake->Id_Mistake,
-                ]);
-
-                // Queue WA notification
-                $reporter = Member::find($idMemberLogged);
-                $this->queueWaMessage([
-                    'time_urgent' => $nowTime,
-                    'code_rack' => $codeRack,
-                    'pic' => $nameMemberTarget,
-                    'reporter' => $reporter ? $reporter->Name_Member : 'Member',
-                    'code_item' => $waitingRequest->Code_Item_Rack,
-                    'name_part' => $namePart,
-                    'sum_request' => $waitingRequest->Sum_Request,
-                    'category' => $category,
-                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
-                ]);
-
-            } else {
+            } elseif ($pastReadyThreshold || ($readyDate === null && $pastRequestThreshold)) {
+                // Ready ada ≤ request+2 & urgent ≥ Ready+2 → MC cepet bikin ready tapi tetap salah
+                // ATAU Ready null & urgent ≥ request+2 → MC tidak bikin ready → MC salah
                 $bossMcMember = Member::where('Name_Member', 'Boss MC')->first();
                 // Check if Boss MC is inactive
                 if ($bossMcMember && $bossMcMember->Status_Non_Active == 1) {
@@ -605,9 +570,54 @@ class UrgentController extends Controller
                     'category' => $category,
                     'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
                 ]);
-            }
 
-            $pic = ($isLessThan24Hours || $waitingRequest->Ready_Request !== null) ? $nameMemberTarget : $nameBossMc;
+                $pic = $nameBossMc;
+
+            } else {
+                // Same business day or next business day → telat request
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
+
+                if ($checkDuplicateToday($idMemberTarget)) {
+                    return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).');
+                }
+
+                $category = 'telat request';
+                $manualDetail = null;
+
+                $mistake = Mistake::create([
+                    'Id_Request' => $idRequest,
+                    'PIC' => $nameMemberTarget,
+                    'Category_Mistake' => $category,
+                    'Day_Mistake' => $nowDate,
+                    'Status_Mistake' => 0,
+                ]);
+
+                Urgent::create([
+                    'Id_User' => $idMemberLogged,
+                    'Id_Type_User' => null,
+                    'Code_Rack' => $codeRack,
+                    'Id_Request' => $idRequest,
+                    'Id_Member' => $idMemberTarget,
+                    'Time_Urgent' => $nowTime,
+                    'Id_Mistake' => $mistake->Id_Mistake,
+                ]);
+
+                // Queue WA notification
+                $reporter = Member::find($idMemberLogged);
+                $this->queueWaMessage([
+                    'time_urgent' => $nowTime,
+                    'code_rack' => $codeRack,
+                    'pic' => $nameMemberTarget,
+                    'reporter' => $reporter ? $reporter->Name_Member : 'Member',
+                    'code_item' => $waitingRequest->Code_Item_Rack,
+                    'name_part' => $namePart,
+                    'sum_request' => $waitingRequest->Sum_Request,
+                    'category' => $category,
+                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
+                ]);
+
+                $pic = $nameMemberTarget;
+            }
 
             $cat = strtolower($category ?? 'telat supply');
             $mDetail = strtolower($manualDetail ?? '');

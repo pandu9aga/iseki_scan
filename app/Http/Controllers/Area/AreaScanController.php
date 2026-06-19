@@ -185,55 +185,15 @@ class AreaScanController extends Controller
             $namePart = $rackModel ? ($rackModel->Name_Item_Rack ?? '-') : '-';
             $idRequest = $waitingRequest->Id_Request;
 
-            // Check if request is less than 24 working hours old (excluding weekends)
-            $requestTime = Carbon::parse($waitingRequest->Day_Request.' '.$waitingRequest->Time_Request);
-            $isLessThan24Hours = $requestTime->diffInHoursFiltered(fn (Carbon $date) => $date->isWeekday(), Carbon::now()) < 24;
+            $requestDate = Carbon::parse($waitingRequest->Day_Request);
+            $urgentDate = Carbon::parse($nowDate);
+            $readyDate = $waitingRequest->Ready_Request !== null ? Carbon::parse($waitingRequest->Ready_Request) : null;
 
-            if ($isLessThan24Hours) {
-                // If < 24 hours, category is "telat request" and PIC is the member responsible
-                [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
+            $pastReadyThreshold = $readyDate !== null && $urgentDate->greaterThanOrEqualTo($readyDate->copy()->addWeekdays(2));
+            $pastRequestThreshold = $urgentDate->greaterThanOrEqualTo($requestDate->copy()->addWeekdays(2));
 
-                if ($checkDuplicateToday($idMemberTarget)) {
-                    return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).');
-                }
-
-                $category = 'telat request';
-                $manualDetail = null;
-
-
-
-                $mistake = Mistake::create([
-                    'Id_Request' => $idRequest,
-                    'PIC' => $nameMemberTarget,
-                    'Category_Mistake' => $category,
-                    'Day_Mistake' => $nowDate,
-                    'Status_Mistake' => 0,
-                ]);
-
-                Urgent::create([
-                    'Id_User' => $idUserLogged,
-                    'Id_Type_User' => session('Id_Type_User'),
-                    'Code_Rack' => $codeRack,
-                    'Id_Request' => $idRequest,
-                    'Id_Member' => $idMemberTarget,
-                    'Time_Urgent' => $nowTime,
-                    'Id_Mistake' => $mistake->Id_Mistake,
-                ]);
-
-                // Queue WA notification
-                $reporter = User::find($idUserLogged);
-                $this->queueWaMessage([
-                    'time_urgent' => $nowTime,
-                    'code_rack' => $codeRack,
-                    'pic' => $nameMemberTarget,
-                    'reporter' => $reporter ? $reporter->Name_User : 'Area User',
-                    'code_item' => $waitingRequest->Code_Item_Rack,
-                    'name_part' => $namePart,
-                    'sum_request' => $waitingRequest->Sum_Request,
-                    'category' => $category,
-                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
-                ]);
-            } elseif ($waitingRequest->Ready_Request !== null) {
+            if ($pastReadyThreshold && $readyDate->greaterThan($requestDate->copy()->addWeekdays(2))) {
+                // Ready > request + 2wd → MC lambat bikin ready, barang siap > 2 hari → supplier salah
                 // "jika Ready_Request not null, maka cari Id_Member rata-rata di records untuk Code_Rack yang sama"
                 [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
 
@@ -280,7 +240,11 @@ class AreaScanController extends Controller
                     'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
                 ]);
 
-            } else {
+                $pic = $nameMemberTarget;
+
+            } elseif ($pastReadyThreshold || ($readyDate === null && $pastRequestThreshold)) {
+                // Ready ada ≤ request+2 & urgent ≥ Ready+2 → MC cepet bikin ready tapi tetap salah
+                // ATAU Ready null & urgent ≥ request+2 → MC tidak bikin ready → MC salah
                 // "sedangkan jika status ready null maka insert ke urgents dan mistakes nya menggunakan Id_member dengan nama Boss MC"
                 $bossMcMember = Member::where('Name_Member', 'Boss MC')->first();
                 // Check if Boss MC is inactive
@@ -294,7 +258,7 @@ class AreaScanController extends Controller
                 }
 
                 if ($checkDuplicateToday()) {
-                    return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).');
+                    return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak oleh Anda hari ini).');
                 }
 
                 $category = 'telat supply mc';
@@ -342,10 +306,56 @@ class AreaScanController extends Controller
                     'category' => $category,
                     'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
                 ]);
-            }
 
-            // Capture data for success modal
-            $pic = ($isLessThan24Hours || $waitingRequest->Ready_Request !== null) ? $nameMemberTarget : $nameBossMc;
+                $pic = $nameBossMc;
+
+            } else {
+                // Same business day or next business day → telat request
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
+
+                if ($checkDuplicateToday($idMemberTarget)) {
+                    return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).');
+                }
+
+                $category = 'telat request';
+                $manualDetail = null;
+
+
+
+                $mistake = Mistake::create([
+                    'Id_Request' => $idRequest,
+                    'PIC' => $nameMemberTarget,
+                    'Category_Mistake' => $category,
+                    'Day_Mistake' => $nowDate,
+                    'Status_Mistake' => 0,
+                ]);
+
+                Urgent::create([
+                    'Id_User' => $idUserLogged,
+                    'Id_Type_User' => session('Id_Type_User'),
+                    'Code_Rack' => $codeRack,
+                    'Id_Request' => $idRequest,
+                    'Id_Member' => $idMemberTarget,
+                    'Time_Urgent' => $nowTime,
+                    'Id_Mistake' => $mistake->Id_Mistake,
+                ]);
+
+                // Queue WA notification
+                $reporter = User::find($idUserLogged);
+                $this->queueWaMessage([
+                    'time_urgent' => $nowTime,
+                    'code_rack' => $codeRack,
+                    'pic' => $nameMemberTarget,
+                    'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                    'code_item' => $waitingRequest->Code_Item_Rack,
+                    'name_part' => $namePart,
+                    'sum_request' => $waitingRequest->Sum_Request,
+                    'category' => $category,
+                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
+                ]);
+
+                $pic = $nameMemberTarget;
+            }
 
             $cat = strtolower($category ?? 'telat supply'); // category is set in the logic above
             $mDetail = strtolower($manualDetail ?? '');
