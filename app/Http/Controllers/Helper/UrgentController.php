@@ -457,9 +457,9 @@ class UrgentController extends Controller
             $namePart = $rackModel ? ($rackModel->Name_Item_Rack ?? '-') : '-';
             $idRequest = $waitingRequest->Id_Request;
 
-            $requestDate = Carbon::parse($waitingRequest->Day_Request);
-            $urgentDate = Carbon::parse($nowDate);
-            $readyDate = $waitingRequest->Ready_Request !== null ? Carbon::parse($waitingRequest->Ready_Request) : null;
+            $requestDate = Carbon::parse($waitingRequest->Day_Request)->startOfDay();
+            $urgentDate = Carbon::parse($nowDate)->startOfDay();
+            $readyDate = $waitingRequest->Ready_Request !== null ? Carbon::parse($waitingRequest->Ready_Request)->startOfDay() : null;
 
             $readyFast = $readyDate !== null && $readyDate->lessThan($requestDate->copy()->addWeekdays(2));
             $pastReady1 = $readyDate !== null && $urgentDate->greaterThanOrEqualTo($readyDate->copy()->addWeekdays(1));
