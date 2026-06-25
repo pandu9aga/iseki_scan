@@ -15,6 +15,7 @@ use App\Models\WaQueue;
 use App\Models\Withdrawal;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -158,6 +159,13 @@ class UrgentController extends Controller
                     return 'N/A';
                 })
                 ->addColumn('Reporter', function ($urgent) {
+                    if ($urgent->Is_Marshalling) {
+                        $employee = DB::connection('rifa')->table('employees')->find($urgent->Id_User);
+                        $name = $employee ? $employee->nama : 'Marshalling User';
+                        $seq = $urgent->Sequence_No_Record ? '<br>Sequence: '.e($urgent->Sequence_No_Record) : '';
+                        return e($name).$seq;
+                    }
+
                     if (empty($urgent->Id_Type_User)) {
                         return optional($urgent->reporterMember)->Name_Member ?? '-';
                     }
@@ -974,6 +982,13 @@ class UrgentController extends Controller
                     return 'N/A';
                 })
                 ->addColumn('Reporter', function ($urgent) {
+                    if ($urgent->Is_Marshalling) {
+                        $employee = DB::connection('rifa')->table('employees')->find($urgent->Id_User);
+                        $name = $employee ? $employee->nama : 'Marshalling User';
+                        $seq = $urgent->Sequence_No_Record ? '<br>Sequence: '.e($urgent->Sequence_No_Record) : '';
+                        return e($name).$seq;
+                    }
+
                     if (empty($urgent->Id_Type_User)) {
                         return optional($urgent->reporterMember)->Name_Member ?? '-';
                     }
@@ -1075,9 +1090,18 @@ class UrgentController extends Controller
             }
 
             $pic = $urgent->member ? $urgent->member->Name_Member : '-';
-            $reporter = empty($urgent->Id_Type_User)
-                ? (optional($urgent->reporterMember)->Name_Member ?? '-')
-                : (optional($urgent->user)->Username_User ?? '-');
+            if ($urgent->Is_Marshalling) {
+                $employee = DB::connection('rifa')->table('employees')->find($urgent->Id_User);
+                $name = $employee ? $employee->nama : 'Marshalling User';
+                $reporter = $name;
+                if ($urgent->Sequence_No_Record) {
+                    $reporter .= ' (Sequence: '.$urgent->Sequence_No_Record.')';
+                }
+            } else {
+                $reporter = empty($urgent->Id_Type_User)
+                    ? (optional($urgent->reporterMember)->Name_Member ?? '-')
+                    : (optional($urgent->user)->Username_User ?? '-');
+            }
 
             $codeItem = '-';
             $sumReq = '-';

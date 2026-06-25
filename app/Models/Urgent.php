@@ -23,6 +23,8 @@ class Urgent extends Model
         'Id_Member',
         'Time_Urgent',
         'Id_Mistake',
+        'Is_Marshalling',
+        'Sequence_No_Record',
     ];
 
     public function member()

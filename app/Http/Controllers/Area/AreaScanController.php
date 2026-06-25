@@ -15,6 +15,7 @@ use App\Models\Withdrawal;
 use App\Models\StockItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request as HttpRequest;
+use Illuminate\Support\Facades\DB;
 
 class AreaScanController extends Controller
 {
@@ -26,7 +27,8 @@ class AreaScanController extends Controller
     public function marshallingEmpty(HttpRequest $request)
     {
         $codeRack = $request->input('code_rack');
-        $idUserLogged = 31;
+        $idMember = $request->input('id_member');
+        $sequenceNoRecord = $request->input('sequence_no_record');
         $idTypeUser = 4;
         $nowDate = Carbon::now()->format('Y-m-d');
         $nowTime = Carbon::now()->format('Y-m-d H:i:s');
@@ -34,6 +36,13 @@ class AreaScanController extends Controller
         if (! $codeRack) {
             return response()->json(['success' => false, 'message' => 'Code Rack tidak boleh kosong']);
         }
+
+        if (! $idMember) {
+            return response()->json(['success' => false, 'message' => 'ID Member tidak boleh kosong']);
+        }
+
+        $reporter = DB::connection('rifa')->table('employees')->find($idMember);
+        $reporterName = $reporter ? $reporter->nama : 'Marshalling User';
 
         $recentUrgent = Urgent::where('Code_Rack', $codeRack)
             ->where('Time_Urgent', '>=', Carbon::now()->subSeconds(5)->format('Y-m-d H:i:s'))
@@ -43,11 +52,11 @@ class AreaScanController extends Controller
             return response()->json(['success' => true, 'message' => 'Scan sedang diproses atau sudah berhasil (Double Input dicegah).']);
         }
 
-        $checkDuplicateToday = function () use ($codeRack, $idUserLogged, $idTypeUser) {
+        $checkDuplicateToday = function () use ($codeRack, $idTypeUser, $idMember) {
             if (Carbon::now()->between('07:00', '17:00')) {
                 $exists = Urgent::where('Code_Rack', $codeRack)
                     ->whereDate('Time_Urgent', Carbon::today())
-                    ->where('Id_User', $idUserLogged)
+                    ->where('Id_User', $idMember)
                     ->where('Id_Type_User', $idTypeUser)
                     ->exists();
 
@@ -83,6 +92,11 @@ class AreaScanController extends Controller
         $waitingRequest = RequestModel::where('Code_Rack', $codeRack)
             ->where('Status_Request', 'Waiting')
             ->first();
+
+        $marshallingUrgentFields = [
+            'Is_Marshalling' => 1,
+            'Sequence_No_Record' => $sequenceNoRecord,
+        ];
 
         if (($stockOverride && $waitingRequest) || $qcOverride || ($telatReturnRackOverride && $waitingRequest)) {
             if ($stockOverride) {
@@ -128,22 +142,21 @@ class AreaScanController extends Controller
                 'Is_Withdrawal' => $isWithdrawal,
             ]);
 
-            Urgent::create([
-                'Id_User' => $idUserLogged,
+            Urgent::create(array_merge([
+                'Id_User' => $idMember,
                 'Id_Type_User' => $idTypeUser,
                 'Code_Rack' => $codeRack,
                 'Id_Request' => $idRequest,
                 'Id_Member' => $idMemberTarget,
                 'Time_Urgent' => $nowTime,
                 'Id_Mistake' => $mistake->Id_Mistake,
-            ]);
+            ], $marshallingUrgentFields));
 
-            $reporter = User::find($idUserLogged);
             $this->queueWaMessage([
                 'time_urgent' => $nowTime,
                 'code_rack' => $codeRack,
                 'pic' => $nameMemberTarget,
-                'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                'reporter' => $reporterName,
                 'code_item' => $codeItem,
                 'name_part' => $namePart,
                 'sum_request' => $waitingRequest ? $waitingRequest->Sum_Request : '-',
@@ -185,22 +198,21 @@ class AreaScanController extends Controller
                     'Status_Mistake' => 0,
                 ]);
 
-                $urgent = Urgent::create([
-                    'Id_User' => $idUserLogged,
+                Urgent::create(array_merge([
+                    'Id_User' => $idMember,
                     'Id_Type_User' => $idTypeUser,
                     'Code_Rack' => $codeRack,
                     'Id_Request' => $idRequest,
                     'Id_Member' => $idMemberTarget,
                     'Time_Urgent' => $nowTime,
                     'Id_Mistake' => $mistake->Id_Mistake,
-                ]);
+                ], $marshallingUrgentFields));
 
-                $reporter = User::find($idUserLogged);
                 $this->queueWaMessage([
                     'time_urgent' => $nowTime,
                     'code_rack' => $codeRack,
                     'pic' => $nameMemberTarget,
-                    'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                    'reporter' => $reporterName,
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'name_part' => $namePart,
                     'sum_request' => $waitingRequest->Sum_Request,
@@ -245,22 +257,21 @@ class AreaScanController extends Controller
                     'Status_Mistake' => 0,
                 ]);
 
-                Urgent::create([
-                    'Id_User' => $idUserLogged,
+                Urgent::create(array_merge([
+                    'Id_User' => $idMember,
                     'Id_Type_User' => $idTypeUser,
                     'Code_Rack' => $codeRack,
                     'Id_Request' => $idRequest,
-                    'Id_Member' => $idBossMc,
+                    'Id_Member' => $idMemberTarget,
                     'Time_Urgent' => $nowTime,
                     'Id_Mistake' => $mistake->Id_Mistake,
-                ]);
+                ], $marshallingUrgentFields));
 
-                $reporter = User::find($idUserLogged);
                 $this->queueWaMessage([
                     'time_urgent' => $nowTime,
                     'code_rack' => $codeRack,
-                    'pic' => $nameBossMc,
-                    'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                    'pic' => $nameMemberTarget,
+                    'reporter' => $reporterName,
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'name_part' => $namePart,
                     'sum_request' => $waitingRequest->Sum_Request,
@@ -288,22 +299,21 @@ class AreaScanController extends Controller
                     'Status_Mistake' => 0,
                 ]);
 
-                Urgent::create([
-                    'Id_User' => $idUserLogged,
+                Urgent::create(array_merge([
+                    'Id_User' => $idMember,
                     'Id_Type_User' => $idTypeUser,
                     'Code_Rack' => $codeRack,
                     'Id_Request' => $idRequest,
                     'Id_Member' => $idMemberTarget,
                     'Time_Urgent' => $nowTime,
                     'Id_Mistake' => $mistake->Id_Mistake,
-                ]);
+                ], $marshallingUrgentFields));
 
-                $reporter = User::find($idUserLogged);
                 $this->queueWaMessage([
                     'time_urgent' => $nowTime,
                     'code_rack' => $codeRack,
                     'pic' => $nameMemberTarget,
-                    'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                    'reporter' => $reporterName,
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'name_part' => $namePart,
                     'sum_request' => $waitingRequest->Sum_Request,
@@ -390,23 +400,22 @@ class AreaScanController extends Controller
                 'Status_Mistake' => 0,
             ]);
 
-            Urgent::create([
-                'Id_User' => $idUserLogged,
+            Urgent::create(array_merge([
+                'Id_User' => $idMember,
                 'Id_Type_User' => $idTypeUser,
                 'Code_Rack' => $codeRack,
                 'Id_Request' => $idRequestNew,
                 'Id_Member' => $idMemberTarget,
                 'Time_Urgent' => $nowTime,
                 'Id_Mistake' => $mistake->Id_Mistake,
-            ]);
+            ], $marshallingUrgentFields));
 
-            $reporter = User::find($idUserLogged);
             $namePart = $rack ? ($rack->Name_Item_Rack ?? '-') : '-';
             $this->queueWaMessage([
                 'time_urgent' => $nowTime,
                 'code_rack' => $codeRack,
                 'pic' => $nameMemberTarget,
-                'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                'reporter' => $reporterName,
                 'code_item' => $codeItemRack,
                 'name_part' => $namePart,
                 'sum_request' => $sumRequest,
