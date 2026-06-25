@@ -23,6 +23,413 @@ class AreaScanController extends Controller
         return view('areas.scan');
     }
 
+    public function marshallingEmpty(HttpRequest $request)
+    {
+        $codeRack = $request->input('code_rack');
+        $idUserLogged = 31;
+        $idTypeUser = 4;
+        $nowDate = Carbon::now()->format('Y-m-d');
+        $nowTime = Carbon::now()->format('Y-m-d H:i:s');
+
+        if (! $codeRack) {
+            return response()->json(['success' => false, 'message' => 'Code Rack tidak boleh kosong']);
+        }
+
+        $recentUrgent = Urgent::where('Code_Rack', $codeRack)
+            ->where('Time_Urgent', '>=', Carbon::now()->subSeconds(5)->format('Y-m-d H:i:s'))
+            ->first();
+
+        if ($recentUrgent) {
+            return response()->json(['success' => true, 'message' => 'Scan sedang diproses atau sudah berhasil (Double Input dicegah).']);
+        }
+
+        $checkDuplicateToday = function () use ($codeRack, $idUserLogged, $idTypeUser) {
+            if (Carbon::now()->between('07:00', '17:00')) {
+                $exists = Urgent::where('Code_Rack', $codeRack)
+                    ->whereDate('Time_Urgent', Carbon::today())
+                    ->where('Id_User', $idUserLogged)
+                    ->where('Id_Type_User', $idTypeUser)
+                    ->exists();
+
+                if ($exists) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        $qcOverride = false;
+        $telatReturnRackOverride = false;
+        $stockOverride = false;
+        $rackForOverride = Rack::where('Code_Rack', $codeRack)->first();
+        if ($rackForOverride) {
+            $activeWithdrawal = Withdrawal::where('Code_Item_Withdrawal', $rackForOverride->Code_Item_Rack)
+                ->whereNull('Date_Return')
+                ->orderBy('Id_Withdrawal', 'desc')
+                ->first();
+            if ($activeWithdrawal) {
+                if ($activeWithdrawal->Oke_Receiving && !$activeWithdrawal->Finish_Receiving) {
+                    $qcOverride = true;
+                } elseif ($activeWithdrawal->Finish_Receiving) {
+                    $telatReturnRackOverride = true;
+                }
+            }
+        }
+        $stockItemCheck = StockItem::where('Code_Rack_Stock_Item', $codeRack)->first();
+        if ($stockItemCheck) {
+            $stockOverride = true;
+        }
+
+        $waitingRequest = RequestModel::where('Code_Rack', $codeRack)
+            ->where('Status_Request', 'Waiting')
+            ->first();
+
+        if (($stockOverride && $waitingRequest) || $qcOverride || ($telatReturnRackOverride && $waitingRequest)) {
+            if ($stockOverride) {
+                $category = 'stock';
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
+                $displayCategory = 'STOCK';
+                $badgeClass = 'secondary';
+            } elseif ($qcOverride) {
+                $category = 'telat qc';
+                $systemMemberQc = Member::where('Name_Member', 'system')->first();
+                $idMemberTarget = $systemMemberQc ? $systemMemberQc->Id_Member : 35;
+                $nameMemberTarget = 'QC';
+                $displayCategory = 'TELAT QC';
+                $badgeClass = 'pink';
+            } else {
+                $category = 'telat return rack';
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
+                $displayCategory = 'TELAT RETURN RACK';
+                $badgeClass = 'secondary';
+            }
+
+            if ($checkDuplicateToday()) {
+                return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada scan untuk Kode Rak oleh Anda hari ini).']);
+            }
+
+            $namePart = $rackForOverride ? ($rackForOverride->Name_Item_Rack ?? '-') : '-';
+            $codeItem = $rackForOverride ? ($rackForOverride->Code_Item_Rack ?? '-') : '-';
+
+            $idRequest = $waitingRequest ? $waitingRequest->Id_Request : null;
+            $isWithdrawal = false;
+
+            if ($qcOverride && $activeWithdrawal) {
+                $idRequest = $activeWithdrawal->Id_Withdrawal;
+                $isWithdrawal = true;
+            }
+
+            $mistake = Mistake::create([
+                'Id_Request' => $idRequest,
+                'PIC' => $nameMemberTarget,
+                'Category_Mistake' => $category,
+                'Day_Mistake' => $nowDate,
+                'Status_Mistake' => 0,
+                'Is_Withdrawal' => $isWithdrawal,
+            ]);
+
+            Urgent::create([
+                'Id_User' => $idUserLogged,
+                'Id_Type_User' => $idTypeUser,
+                'Code_Rack' => $codeRack,
+                'Id_Request' => $idRequest,
+                'Id_Member' => $idMemberTarget,
+                'Time_Urgent' => $nowTime,
+                'Id_Mistake' => $mistake->Id_Mistake,
+            ]);
+
+            $reporter = User::find($idUserLogged);
+            $this->queueWaMessage([
+                'time_urgent' => $nowTime,
+                'code_rack' => $codeRack,
+                'pic' => $nameMemberTarget,
+                'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                'code_item' => $codeItem,
+                'name_part' => $namePart,
+                'sum_request' => $waitingRequest ? $waitingRequest->Sum_Request : '-',
+                'category' => $category,
+                'time_request' => $waitingRequest ? ($waitingRequest->Day_Request.' '.$waitingRequest->Time_Request) : '-',
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Scan Code Rack '.$codeRack.' berhasil diproses.']);
+        }
+
+        if ($waitingRequest) {
+            $rackModel = Rack::where('Code_Rack', $codeRack)->first();
+            $namePart = $rackModel ? ($rackModel->Name_Item_Rack ?? '-') : '-';
+            $idRequest = $waitingRequest->Id_Request;
+
+            $requestDate = Carbon::parse($waitingRequest->Day_Request)->startOfDay();
+            $urgentDate = Carbon::parse($nowDate)->startOfDay();
+            $readyDate = $waitingRequest->Ready_Request !== null ? Carbon::parse($waitingRequest->Ready_Request)->startOfDay() : null;
+
+            $readyFast = $readyDate !== null && $readyDate->lessThan($requestDate->copy()->addWeekdays(2));
+            $pastReady1 = $readyDate !== null && $urgentDate->greaterThanOrEqualTo($readyDate->copy()->addWeekdays(1));
+            $pastReq2 = $urgentDate->greaterThanOrEqualTo($requestDate->copy()->addWeekdays(2));
+
+            if ($readyFast && $pastReady1) {
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
+
+                if ($checkDuplicateToday($idMemberTarget)) {
+                    return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).']);
+                }
+
+                $category = 'telat supply';
+                $manualDetail = null;
+
+                $mistake = Mistake::create([
+                    'Id_Request' => $idRequest,
+                    'PIC' => $nameMemberTarget,
+                    'Category_Mistake' => $category,
+                    'Day_Mistake' => $nowDate,
+                    'Status_Mistake' => 0,
+                ]);
+
+                $urgent = Urgent::create([
+                    'Id_User' => $idUserLogged,
+                    'Id_Type_User' => $idTypeUser,
+                    'Code_Rack' => $codeRack,
+                    'Id_Request' => $idRequest,
+                    'Id_Member' => $idMemberTarget,
+                    'Time_Urgent' => $nowTime,
+                    'Id_Mistake' => $mistake->Id_Mistake,
+                ]);
+
+                $reporter = User::find($idUserLogged);
+                $this->queueWaMessage([
+                    'time_urgent' => $nowTime,
+                    'code_rack' => $codeRack,
+                    'pic' => $nameMemberTarget,
+                    'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                    'code_item' => $waitingRequest->Code_Item_Rack,
+                    'name_part' => $namePart,
+                    'sum_request' => $waitingRequest->Sum_Request,
+                    'category' => $category,
+                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
+                ]);
+
+                $pic = $nameMemberTarget;
+
+            } elseif (($readyDate !== null && !$readyFast) || ($readyDate === null && $pastReq2)) {
+                $bossMcMember = Member::where('Name_Member', 'Boss MC')->first();
+                if ($bossMcMember && $bossMcMember->Status_Non_Active == 1) {
+                    $systemMember = Member::where('Name_Member', 'system')->first();
+                    $idBossMc = $systemMember ? $systemMember->Id_Member : 35;
+                    $nameBossMc = 'system';
+                } else {
+                    $idBossMc = $bossMcMember ? $bossMcMember->Id_Member : 32;
+                    $nameBossMc = 'Boss MC';
+                }
+
+                if ($checkDuplicateToday()) {
+                    return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada scan untuk Kode Rak oleh Anda hari ini).']);
+                }
+
+                $category = 'telat supply mc';
+                $manualDetail = null;
+                if ($waitingRequest->Production_Area_Request !== null) {
+                    $category = 'lain-lain';
+                    $manualDetail = 'produksi';
+                } elseif ($waitingRequest->Design_Changes_Request !== null) {
+                    $category = 'perubahan desain';
+                } elseif ($waitingRequest->Shipping_Request !== null) {
+                    $category = 'shipping';
+                }
+
+                $mistake = Mistake::create([
+                    'Id_Request' => $idRequest,
+                    'PIC' => $nameBossMc,
+                    'Category_Mistake' => $category,
+                    'Manual_Category_Detail' => $manualDetail,
+                    'Day_Mistake' => $nowDate,
+                    'Status_Mistake' => 0,
+                ]);
+
+                Urgent::create([
+                    'Id_User' => $idUserLogged,
+                    'Id_Type_User' => $idTypeUser,
+                    'Code_Rack' => $codeRack,
+                    'Id_Request' => $idRequest,
+                    'Id_Member' => $idBossMc,
+                    'Time_Urgent' => $nowTime,
+                    'Id_Mistake' => $mistake->Id_Mistake,
+                ]);
+
+                $reporter = User::find($idUserLogged);
+                $this->queueWaMessage([
+                    'time_urgent' => $nowTime,
+                    'code_rack' => $codeRack,
+                    'pic' => $nameBossMc,
+                    'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                    'code_item' => $waitingRequest->Code_Item_Rack,
+                    'name_part' => $namePart,
+                    'sum_request' => $waitingRequest->Sum_Request,
+                    'category' => $category,
+                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
+                ]);
+
+                $pic = $nameBossMc;
+
+            } else {
+                [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
+
+                if ($checkDuplicateToday($idMemberTarget)) {
+                    return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).']);
+                }
+
+                $category = 'telat request';
+                $manualDetail = null;
+
+                $mistake = Mistake::create([
+                    'Id_Request' => $idRequest,
+                    'PIC' => $nameMemberTarget,
+                    'Category_Mistake' => $category,
+                    'Day_Mistake' => $nowDate,
+                    'Status_Mistake' => 0,
+                ]);
+
+                Urgent::create([
+                    'Id_User' => $idUserLogged,
+                    'Id_Type_User' => $idTypeUser,
+                    'Code_Rack' => $codeRack,
+                    'Id_Request' => $idRequest,
+                    'Id_Member' => $idMemberTarget,
+                    'Time_Urgent' => $nowTime,
+                    'Id_Mistake' => $mistake->Id_Mistake,
+                ]);
+
+                $reporter = User::find($idUserLogged);
+                $this->queueWaMessage([
+                    'time_urgent' => $nowTime,
+                    'code_rack' => $codeRack,
+                    'pic' => $nameMemberTarget,
+                    'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                    'code_item' => $waitingRequest->Code_Item_Rack,
+                    'name_part' => $namePart,
+                    'sum_request' => $waitingRequest->Sum_Request,
+                    'category' => $category,
+                    'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
+                ]);
+
+                $pic = $nameMemberTarget;
+            }
+
+            $cat = strtolower($category ?? 'telat supply');
+            $mDetail = strtolower($manualDetail ?? '');
+
+            $displayCategory = strtoupper($cat);
+            $badgeClass = 'secondary';
+
+            if ($cat == 'perubahan desain') {
+                $displayCategory = 'DESIGN CHANGE';
+                $badgeClass = 'warning';
+            } elseif ($cat == 'shipping') {
+                $displayCategory = 'SHIPPING';
+                $badgeClass = 'info';
+            } elseif ($cat == 'lain-lain' && $mDetail == 'produksi') {
+                $displayCategory = 'PRODUCTION';
+                $badgeClass = 'primary';
+            } elseif ($cat == 'telat supply' || $cat == 'telat request' || $cat == 'telat supply mc') {
+                $badgeClass = 'secondary';
+            }
+
+            $scanSuccessData = [
+                'category' => $displayCategory,
+                'badge_class' => $badgeClass,
+                'time_request' => $waitingRequest->Time_Request,
+                'sum_request' => $waitingRequest->Sum_Request,
+                'pic' => $pic,
+                'code_rack' => $codeRack,
+            ];
+
+            return response()->json(['success' => true, 'message' => 'Scan Code Rack '.$codeRack.' berhasil diproses.', 'data' => $scanSuccessData]);
+
+        } else {
+            [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
+
+            if ($checkDuplicateToday($idMemberTarget)) {
+                return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).']);
+            }
+
+            $lastReq = RequestModel::where('Code_Rack', $codeRack)->orderBy('Id_Request', 'desc')->first();
+            $sumRequest = 1;
+            if ($lastReq && $lastReq->Sum_Request) {
+                $sumRequest = $lastReq->Sum_Request;
+            }
+
+            $rack = Rack::where('Code_Rack', $codeRack)->first();
+            $codeItemRack = $rack ? $rack->Code_Item_Rack : ($lastReq ? $lastReq->Code_Item_Rack : null);
+
+            if (! $codeItemRack) {
+                return response()->json(['success' => false, 'message' => 'Kode Rack "'.$codeRack.'" tidak ditemukan di Data Rack. Silakan cek kembali atau hubungi Admin.']);
+            }
+
+            $systemMember = Member::where('Name_Member', 'system')->first();
+            $idSystem = $systemMember ? $systemMember->Id_Member : 35;
+
+            $newReq = new RequestModel;
+            $newReq->Day_Request = $nowDate;
+            $newReq->Time_Request = $nowTime;
+            $newReq->Code_Item_Rack = $codeItemRack;
+            $newReq->Code_Rack = $codeRack;
+            $newReq->Id_User = $idSystem;
+            $newReq->Status_Request = 'Waiting';
+            $newReq->Sum_Request = $sumRequest;
+            $newReq->Urgent_Request = 1;
+            $newReq->save();
+
+            $idRequestNew = $newReq->Id_Request;
+
+            $urgentCategory = 'telat request';
+
+            $mistake = Mistake::create([
+                'Id_Request' => $idRequestNew,
+                'PIC' => $nameMemberTarget,
+                'Category_Mistake' => $urgentCategory,
+                'Day_Mistake' => $nowDate,
+                'Status_Mistake' => 0,
+            ]);
+
+            Urgent::create([
+                'Id_User' => $idUserLogged,
+                'Id_Type_User' => $idTypeUser,
+                'Code_Rack' => $codeRack,
+                'Id_Request' => $idRequestNew,
+                'Id_Member' => $idMemberTarget,
+                'Time_Urgent' => $nowTime,
+                'Id_Mistake' => $mistake->Id_Mistake,
+            ]);
+
+            $reporter = User::find($idUserLogged);
+            $namePart = $rack ? ($rack->Name_Item_Rack ?? '-') : '-';
+            $this->queueWaMessage([
+                'time_urgent' => $nowTime,
+                'code_rack' => $codeRack,
+                'pic' => $nameMemberTarget,
+                'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                'code_item' => $codeItemRack,
+                'name_part' => $namePart,
+                'sum_request' => $sumRequest,
+                'category' => $urgentCategory,
+                'time_request' => $nowTime,
+            ]);
+
+            $dispCat = 'TELAT REQUEST';
+            $dispBadge = 'secondary';
+
+            $scanSuccessData = [
+                'category' => $dispCat,
+                'badge_class' => $dispBadge,
+                'time_request' => $nowTime,
+                'sum_request' => $sumRequest,
+                'pic' => $nameMemberTarget,
+                'code_rack' => $codeRack,
+            ];
+
+            return response()->json(['success' => true, 'message' => 'Scan Code Rack '.$codeRack.' berhasil diproses.', 'data' => $scanSuccessData]);
+        }
+    }
+
     public function process(HttpRequest $request)
     {
         $codeRack = $request->input('Code_Rack');

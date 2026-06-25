@@ -341,6 +341,8 @@ Route::get('/urgents/unrecorded/export', [UrgentController::class, 'exportUnreco
 Route::get('/admin', [MainController::class, 'admin'])->name('admin');
 Route::post('/admin/create', [MainController::class, 'create'])->name('admin.create');
 
+Route::post('/api/marshalling-empty', [AreaScanController::class, 'marshallingEmpty']);
+
 Route::middleware(AreaMiddleware::class)->group(function () {
     Route::get('/area/scan', [AreaScanController::class, 'index'])->name('area.scan');
     Route::post('/area/scan/process', [AreaScanController::class, 'process'])->name('area.scan.process');
