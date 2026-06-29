@@ -140,12 +140,55 @@
                 </div>
             </div>
         </div>
+
+        <!-- Data View Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between" style="gap: 8px;">
+                    <h6 class="m-0 font-weight-bold text-primary flex-shrink-0">
+                        <i class="fas fa-database mr-1"></i>Data Record
+                    </h6>
+                    <div class="d-flex align-items-center flex-shrink-0">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="changeDateRec(-1)" title="Sebelumnya">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <input type="date" id="filterDateRec" class="form-control form-control-sm mx-1" style="width:auto; min-width:140px;" onchange="loadRecordData()">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="changeDateRec(1)" title="Selanjutnya">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info ml-1" onclick="setTodayRec()" title="Hari Ini">
+                            <i class="fas fa-calendar-day"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm table-hover" id="recordDataTable" style="font-size:13px;">
+                        <thead class="thead-light">
+                            <tr>
+                                <th class="text-center" style="width:40px;">No</th>
+                                <th>Code Item</th>
+                                <th>Code Rack</th>
+                                <th class="text-center">Sum</th>
+                                <th class="text-center">Correctness</th>
+                                <th>Time</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordDataBody">
+                            <tr><td colspan="7" class="text-center text-muted py-4">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="recordDataInfo" class="text-muted small mt-1"></div>
+            </div>
+        </div>
+
     </div>
+    <!-- /.container-fluid -->
 
-</div>
-<!-- /.container-fluid -->
-
-<!-- QR Code Library -->
+    <!-- QR Code Library -->
 <script src="{{ asset('js/html5-qrcode.min.js') }}"></script>
 <script src="{{ asset('js/jquery.min.js') }}"></script>
 <script src="{{ asset('js/qrcode.min.js') }}"></script>
@@ -313,6 +356,52 @@
         $("#areaModal").modal("hide");
         $("#recordForm").submit();
     }
+</script>
+
+<script>
+function loadRecordData() {
+    var date = document.getElementById('filterDateRec').value;
+    if (!date) return;
+    $.get('{{ route("admin.recording.data") }}', { date: date }, function(res) {
+        var tbody = document.getElementById('recordDataBody');
+        var info = document.getElementById('recordDataInfo');
+        tbody.innerHTML = '';
+        if (res.records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Tidak ada record pada tanggal ini</td></tr>';
+            info.textContent = 'Total: 0 record'; return;
+        }
+        res.records.forEach(function(r, i) {
+            var c = '';
+            if (r.correctness == 1) c = '<span class="badge badge-success">Correct</span>';
+            else if (r.correctness == 2) c = '<span class="badge badge-danger">Incorrect</span>';
+            else c = '<span class="badge badge-secondary">-</span>';
+            tbody.innerHTML += '<tr>' +
+                '<td class="text-center">' + (i + 1) + '</td>' +
+                '<td>' + (r.code_item || '') + '</td>' +
+                '<td>' + (r.code_rack || '') + '</td>' +
+                '<td class="text-center font-weight-bold">' + (r.sum_record || 0) + '</td>' +
+                '<td class="text-center">' + c + '</td>' +
+                '<td class="text-center">' + (r.time ? r.time.substr(0,5) : '-') + '</td>' +
+                '<td>' + (r.user || '-') + '</td></tr>';
+        });
+        info.textContent = 'Total: ' + res.count + ' record(s)';
+    }).fail(function() {
+        document.getElementById('recordDataBody').innerHTML =
+            '<tr><td colspan="7" class="text-center text-danger py-3">Gagal memuat data</td></tr>';
+    });
+}
+function changeDateRec(offset) {
+    var d = new Date(document.getElementById('filterDateRec').value + 'T00:00:00');
+    d.setDate(d.getDate() + offset);
+    document.getElementById('filterDateRec').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    loadRecordData();
+}
+function setTodayRec() {
+    var d = new Date();
+    document.getElementById('filterDateRec').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    loadRecordData();
+}
+document.addEventListener('DOMContentLoaded', function() { setTodayRec(); });
 </script>
 @endsection
 

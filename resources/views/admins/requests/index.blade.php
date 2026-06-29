@@ -3,67 +3,76 @@
 <!-- Begin Page Content -->
 <div class="container-fluid">
     <h1 class="h3 mb-2 text-gray-800">Request</h1>
-    <div class="d-sm-flex align-items-center justify-content-between mb-1">
-        <!-- Earnings (Monthly) Card Example -->
-        <div class="col-xl-4 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col-xl-12">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Choose Day
-                            </div>
-                            <form class="user" action="{{ route('request.submit') }}" method="GET">
-                                @csrf
-                                <div class="row d-flex align-items-center">
-                                    <div class="col-lg-4 col-md-6 mb-1">
-                                        <input name="Day_Request" type="date" class="form-control" value="{{ $dateForInput }}" required>
-                                    </div>
-                                    <div class="col-lg-3 col-md-6 mb-1">
-                                        <select name="Id_User[]" class="form-control" multiple>
-                                            <option value="">All Members</option>
-                                            @foreach($members as $m)
-                                                <option value="{{ $m->id }}" 
-                                                    {{ in_array($m->id, request('Id_User', [])) ? 'selected' : '' }}>
-                                                    {{ $m->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-lg-3 col-md-6 mb-1">
-                                        <select name="statusFilter" class="form-control">
-                                            <option value="">All Status</option>
-                                            <option value="ready" {{ request('statusFilter') == 'ready' ? 'selected' : '' }}>Ready</option>
-                                            <option value="shipping" {{ request('statusFilter') == 'shipping' ? 'selected' : '' }}>Shipping</option>
-                                            <option value="production" {{ request('statusFilter') == 'production' ? 'selected' : '' }}>Production</option>
-                                            <option value="design_change" {{ request('statusFilter') == 'design_change' ? 'selected' : '' }}>Design Change</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-lg-2 col-md-6">
-                                        <button class="d-sm-inline btn btn-md btn-primary shadow-sm" type="submit">
-                                            Apply
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
+    <div class="card border-left-primary shadow mb-4">
+        <div class="card-body py-3">
+            <div class="text-xs font-weight-bold text-primary text-uppercase mb-2">
+                Choose Day
+            </div>
+            <form class="user" action="{{ route('request.submit') }}" method="GET" id="filterForm">
+                @csrf
+                <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
+                    {{-- Date Navigation --}}
+                    <div class="d-flex align-items-center flex-shrink-0">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="changeDate(-1)" title="Sebelumnya">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <input name="Day_Request" id="Day_Request" type="date" class="form-control form-control-sm mx-1" style="width: auto; min-width: 140px;" value="{{ $dateForInput }}" required>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="changeDate(1)" title="Selanjutnya">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info ml-1" onclick="setToday()" title="Hari Ini">
+                            <i class="fas fa-calendar-day"></i>
+                        </button>
+                    </div>
+
+                    {{-- Member Filter --}}
+                    <div style="min-width: 160px; max-width: 250px; flex: 1 1 160px;">
+                        <select name="Id_User[]" class="form-control form-control-sm" multiple>
+                            <option value="">All Members</option>
+                            @foreach($members as $m)
+                                <option value="{{ $m->id }}" 
+                                    {{ in_array($m->id, request('Id_User', [])) ? 'selected' : '' }}>
+                                    {{ $m->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Status Filter --}}
+                    <div style="min-width: 130px; max-width: 180px; flex: 1 1 130px;">
+                        <select name="statusFilter" class="form-control form-control-sm">
+                            <option value="">All Status</option>
+                            <option value="ready" {{ request('statusFilter') == 'ready' ? 'selected' : '' }}>Ready</option>
+                            <option value="shipping" {{ request('statusFilter') == 'shipping' ? 'selected' : '' }}>Shipping</option>
+                            <option value="production" {{ request('statusFilter') == 'production' ? 'selected' : '' }}>Production</option>
+                            <option value="design_change" {{ request('statusFilter') == 'design_change' ? 'selected' : '' }}>Design Change</option>
+                        </select>
+                    </div>
+
+                    {{-- Action Buttons --}}
+                    <div class="d-flex align-items-center flex-shrink-0" style="gap: 6px;">
+                        <button class="btn btn-sm btn-primary shadow-sm" type="submit">
+                            <i class="fas fa-filter fa-sm mr-1"></i>Apply
+                        </button>
+                        <a class="btn btn-sm btn-info shadow-sm" href="{{ route('request.search') }}">
+                            <i class="fas fa-search fa-sm mr-1"></i>Advanced Search
+                        </a>
                     </div>
                 </div>
-            </div>
+            </form>
+
+            {{-- Export --}}
+            <form class="user mt-2" action="{{ route('request.export') }}" method="GET" target="_blank">
+                <input name="Day_Request_Hidden" type="hidden" value="{{ $dateForInput }}">
+                @foreach(request('Id_User', []) as $id)
+                    <input type="hidden" name="Id_User[]" value="{{ $id }}">
+                @endforeach
+                <input type="hidden" name="statusFilter" value="{{ request('statusFilter') }}">
+                <button class="btn btn-sm btn-outline-primary shadow-sm" type="submit">
+                    <i class="fas fa-download fa-sm mr-1"></i>Download Report
+                </button>
+            </form>
         </div>
-        <a class="d-sm-inline-block btn btn-md btn-info shadow-sm" href="{{ route('request.search') }}"">
-            <i class="fas fa-search fa-sm text-white-50"></i> Advanced Search
-        </a>
-        <form class="user my-2" action="{{ route('request.export') }}" method="GET" target="_blank">
-            <input name="Day_Request_Hidden" type="hidden" value="{{ $dateForInput }}">
-            @foreach(request('Id_User', []) as $id)
-                <input type="hidden" name="Id_User[]" value="{{ $id }}">
-            @endforeach
-            <input type="hidden" name="statusFilter" value="{{ request('statusFilter') }}">
-            <button class="d-sm-inline-block btn btn-md btn-primary shadow-sm" type="submit">
-                <i class="fas fa-download fa-sm text-white-50"></i> Download Report
-            </button>
-        </form>
     </div>
 
     {{-- <form action="{{ route('admin_submission.reset') }}" method="POST" class="d-inline">
@@ -195,5 +204,19 @@ $(document).ready(function() {
         allowClear: false
     });
 });
+
+function changeDate(offset) {
+    var input = document.getElementById('Day_Request');
+    var d = new Date(input.value + 'T00:00:00');
+    d.setDate(d.getDate() + offset);
+    input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    document.getElementById('filterForm').submit();
+}
+
+function setToday() {
+    var d = new Date();
+    document.getElementById('Day_Request').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    document.getElementById('filterForm').submit();
+}
 </script>
 @endsection

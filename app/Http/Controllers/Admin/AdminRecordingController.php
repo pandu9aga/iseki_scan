@@ -121,6 +121,32 @@ class AdminRecordingController extends Controller
         ]);
     }
 
+    public function getData(Request $request)
+    {
+        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+
+        $records = Record::whereDate('Day_Record', $date)
+            ->orderBy('Time_Record', 'desc')
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'id' => $r->Id_Record,
+                    'code_item' => $r->Code_Item_Rack,
+                    'code_rack' => $r->Code_Rack,
+                    'sum_record' => $r->Sum_Record,
+                    'time' => $r->Time_Record,
+                    'user' => $r->display_name,
+                    'correctness' => $r->Correctness_Record,
+                ];
+            });
+
+        return response()->json([
+            'date' => $date,
+            'records' => $records,
+            'count' => $records->count(),
+        ]);
+    }
+
     public function checkMultiple(Request $request)
     {
         $codeRack = $request->input('Code_Rack');

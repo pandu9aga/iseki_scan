@@ -167,12 +167,14 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::post('/admin_requesting/create', [AdminRequestingController::class, 'create'])->name('admin.requesting.create');
     Route::get('/admin_requesting/check', [AdminRequestingController::class, 'check'])->name('admin.requesting.check');
     Route::post('/admin_requesting/check-duplicate', [AdminRequestingController::class, 'checkDuplicate'])->name('admin.requesting.checkDuplicate');
+    Route::get('/admin_requesting/data', [AdminRequestingController::class, 'getData'])->name('admin.requesting.data');
 
     // Admin Recording (scan barcode to create record)
     Route::get('/admin_recording', [AdminRecordingController::class, 'index'])->name('admin.recording');
     Route::post('/admin_recording/create', [AdminRecordingController::class, 'create'])->name('admin.recording.create');
     Route::get('/admin_recording/check', [AdminRecordingController::class, 'check'])->name('admin.recording.check');
     Route::post('/admin_recording/check-multiple', [AdminRecordingController::class, 'checkMultiple'])->name('admin.recording.checkMultiple');
+    Route::get('/admin_recording/data', [AdminRecordingController::class, 'getData'])->name('admin.recording.data');
 
     // Admin Withdrawal (with actions)
     Route::get('/admin_withdrawal', [AdminWithdrawalController::class, 'index'])->name('admin.withdrawal');
@@ -218,11 +220,13 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::post('/record/create', [RecordController::class, 'create'])->name('record.create');
     Route::get('/record/check', [RecordController::class, 'check'])->name('record.check');
     Route::post('/record/check-multiple', [RecordController::class, 'checkMultiple'])->name('record.checkMultiple');
+    Route::get('/record/data', [RecordController::class, 'getData'])->name('record.data');
 
     Route::get('/request', [RequestController::class, 'index'])->name('request');
     Route::post('/request/create', [RequestController::class, 'create'])->name('request.create');
     Route::get('/request/check', [RequestController::class, 'check'])->name('request.check');
     Route::post('/request/check-duplicate', [RequestController::class, 'checkDuplicate'])->name('request.checkDuplicate');
+    Route::get('/request/data', [RequestController::class, 'getData'])->name('request.data');
 
     Route::prefix('label')->group(function () {
         Route::get('/', [LabelControlller::class, 'index'])->name('member.label.index');

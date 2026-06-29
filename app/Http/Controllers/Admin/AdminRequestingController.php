@@ -115,6 +115,33 @@ class AdminRequestingController extends Controller
         ]);
     }
 
+    public function getData(Request $request)
+    {
+        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+
+        $requests = RequestModel::whereDate('Day_Request', $date)
+            ->orderBy('Time_Request', 'desc')
+            ->get()
+            ->map(function ($r) {
+                return [
+                    'id' => $r->Id_Request,
+                    'code_item' => $r->Code_Item_Rack,
+                    'code_rack' => $r->Code_Rack,
+                    'sum_request' => $r->Sum_Request,
+                    'area' => $r->Area_Request,
+                    'status' => $r->Status_Request,
+                    'time' => $r->Time_Request,
+                    'user' => $r->display_name,
+                ];
+            });
+
+        return response()->json([
+            'date' => $date,
+            'requests' => $requests,
+            'count' => $requests->count(),
+        ]);
+    }
+
     public function checkDuplicate(Request $request)
     {
         $codeRack = $request->input('Code_Rack');

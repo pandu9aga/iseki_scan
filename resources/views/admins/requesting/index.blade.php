@@ -141,8 +141,53 @@
         </div>
     </div>
 
-</div>
-<!-- /.container-fluid -->
+        <!-- Data View Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between" style="gap: 8px;">
+                    <h6 class="m-0 font-weight-bold text-primary flex-shrink-0">
+                        <i class="fas fa-database mr-1"></i>Data Request
+                    </h6>
+                    <div class="d-flex align-items-center flex-shrink-0">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="changeDateReq(-1)" title="Sebelumnya">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <input type="date" id="filterDateReq" class="form-control form-control-sm mx-1" style="width:auto; min-width:140px;" onchange="loadRequestData()">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="changeDateReq(1)" title="Selanjutnya">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info ml-1" onclick="setTodayReq()" title="Hari Ini">
+                            <i class="fas fa-calendar-day"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm table-hover" id="requestDataTable" style="font-size:13px;">
+                        <thead class="thead-light">
+                            <tr>
+                                <th class="text-center" style="width:40px;">No</th>
+                                <th>Code Item</th>
+                                <th>Code Rack</th>
+                                <th>Area</th>
+                                <th class="text-center">Sum</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Time</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestDataBody">
+                            <tr><td colspan="8" class="text-center text-muted py-4">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="requestDataInfo" class="text-muted small mt-1"></div>
+            </div>
+        </div>
+
+    </div>
+    <!-- /.container-fluid -->
 
 <!-- Modal Duplicate Request Warning -->
 <div class="modal fade" id="duplicateRequestModal" tabindex="-1" role="dialog" aria-labelledby="duplicateRequestModalLabel" aria-hidden="true" style="display:none;">
@@ -380,6 +425,53 @@
         $('#checkConfirmModal').modal('hide');
         document.getElementById('checkForm').submit();
     });
+</script>
+
+<script>
+function loadRequestData() {
+    var date = document.getElementById('filterDateReq').value;
+    if (!date) return;
+    $.get('{{ route("admin.requesting.data") }}', { date: date }, function(res) {
+        var tbody = document.getElementById('requestDataBody');
+        var info = document.getElementById('requestDataInfo');
+        tbody.innerHTML = '';
+        if (res.requests.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Tidak ada request pada tanggal ini</td></tr>';
+            info.textContent = 'Total: 0 request'; return;
+        }
+        res.requests.forEach(function(r, i) {
+            var s = '';
+            if (r.status === 'Waiting') s = '<span class="badge badge-warning">Waiting</span>';
+            else if (r.status === 'Done') s = '<span class="badge badge-success">Done</span>';
+            else s = '<span class="badge badge-secondary">' + (r.status || '-') + '</span>';
+            tbody.innerHTML += '<tr>' +
+                '<td class="text-center">' + (i + 1) + '</td>' +
+                '<td>' + (r.code_item || '') + '</td>' +
+                '<td>' + (r.code_rack || '') + '</td>' +
+                '<td>' + (r.area || '-') + '</td>' +
+                '<td class="text-center font-weight-bold">' + (r.sum_request || 0) + '</td>' +
+                '<td class="text-center">' + s + '</td>' +
+                '<td class="text-center">' + (r.time ? r.time.substr(0,5) : '-') + '</td>' +
+                '<td>' + (r.user || '-') + '</td></tr>';
+        });
+        info.textContent = 'Total: ' + res.count + ' request(s)';
+    }).fail(function() {
+        document.getElementById('requestDataBody').innerHTML =
+            '<tr><td colspan="8" class="text-center text-danger py-3">Gagal memuat data</td></tr>';
+    });
+}
+function changeDateReq(offset) {
+    var d = new Date(document.getElementById('filterDateReq').value + 'T00:00:00');
+    d.setDate(d.getDate() + offset);
+    document.getElementById('filterDateReq').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    loadRequestData();
+}
+function setTodayReq() {
+    var d = new Date();
+    document.getElementById('filterDateReq').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    loadRequestData();
+}
+document.addEventListener('DOMContentLoaded', function() { setTodayReq(); });
 </script>
 
 {{-- Hidden form for Check submission --}}
