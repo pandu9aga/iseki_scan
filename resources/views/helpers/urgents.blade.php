@@ -249,6 +249,7 @@
             var bossMcHtml = generateCardHtml('Boss MC', data.boss_mc, 'warning');
             var qcHtml = generateCardHtml('QC', data.qc, 'pink');
             var dstHtml = generateCardHtml('DST', data.dst, 'info');
+            var reportersHtml = generateReporterCardHtml(data);
 
             var html = `
                 <div class="col-12 mb-2">
@@ -257,6 +258,7 @@
                 ${bossMcHtml}
                 ${qcHtml}
                 ${dstHtml}
+                ${reportersHtml}
             `;
             $(containerId).html(html);
         }
@@ -274,7 +276,7 @@
             }
 
             return `
-                <div class="col-xl-4 col-md-4 mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
                     <div class="card border-left-${colorClass} shadow h-100 py-2">
                         <div class="card-body">
                             <div class="row no-gutters align-items-center mb-3">
@@ -288,6 +290,43 @@
                                 </div>
                                 <div class="col-auto">
                                     <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                            <hr>
+                            ${catHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateReporterCardHtml(data) {
+            var catHtml = '';
+            for(var key in data.reporters) {
+                catHtml += `<div class="d-flex justify-content-between mb-1">
+                                <span class="small font-weight-bold text-gray-800">${key}</span>
+                                <span class="small text-gray-800">${data.reporters[key]}</span>
+                            </div>`;
+            }
+            if(Object.keys(data.reporters).length === 0) {
+                catHtml = '<span class="small text-muted">Blank (0 Items)</span>';
+            }
+
+            return `
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center mb-3">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        REPORTERS
+                                    </div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        Total: ${data.reporters_total}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-gray-300"></i>
                                 </div>
                             </div>
                             <hr>

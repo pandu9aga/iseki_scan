@@ -215,12 +215,12 @@ class UrgentController extends Controller
             $dateUrgent = Carbon::today();
         }
 
-        $dailyUrgents = Urgent::with(['member', 'mistake'])
+        $dailyUrgents = Urgent::with(['member', 'mistake', 'user', 'reporterMember'])
             ->whereDate('Time_Urgent', $dateUrgent)
             ->get();
         $dailyMetrics = $this->calculateMetrics($dailyUrgents);
 
-        $monthlyUrgents = Urgent::with(['member', 'mistake'])
+        $monthlyUrgents = Urgent::with(['member', 'mistake', 'user', 'reporterMember'])
             ->whereYear('Time_Urgent', $dateUrgent->year)
             ->whereMonth('Time_Urgent', $dateUrgent->month)
             ->get();
@@ -240,6 +240,8 @@ class UrgentController extends Controller
             'boss_mc' => ['total' => 0, 'categories' => []],
             'qc' => ['total' => 0, 'categories' => []],
             'dst' => ['total' => 0, 'categories' => []],
+            'reporters' => [],
+            'reporters_total' => 0,
         ];
 
         foreach ($urgents as $urgent) {
@@ -284,7 +286,26 @@ class UrgentController extends Controller
                 $metrics[$bucket]['categories'][$categoryLabel] = 0;
             }
             $metrics[$bucket]['categories'][$categoryLabel]++;
+
+            // Reporter logic
+            $reporterName = '-';
+            if ($urgent->Is_Marshalling) {
+                $employee = DB::connection('rifa')->table('employees')->find($urgent->Id_User);
+                $reporterName = $employee ? $employee->nama : 'Marshalling User';
+            } elseif (empty($urgent->Id_Type_User)) {
+                $reporterName = $urgent->reporterMember ? $urgent->reporterMember->Name_Member : '-';
+            } else {
+                $reporterName = $urgent->user ? $urgent->user->Username_User : '-';
+            }
+
+            if (!isset($metrics['reporters'][$reporterName])) {
+                $metrics['reporters'][$reporterName] = 0;
+            }
+            $metrics['reporters'][$reporterName]++;
+            $metrics['reporters_total']++;
         }
+
+        arsort($metrics['reporters']);
 
         return $metrics;
     }

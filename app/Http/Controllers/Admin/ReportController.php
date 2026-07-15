@@ -250,7 +250,10 @@ class ReportController extends Controller
             $query->where($prefix.'Id_User', $originalId)->where($prefix.'Is_User', 1);
         } else {
             $originalId = strpos($memberId, 'm_') === 0 ? substr($memberId, 2) : $memberId;
-            $query->where($prefix.'Id_User', $originalId)->where($prefix.'Is_User', 0);
+            $query->where($prefix.'Id_User', $originalId)
+                  ->where(function($q) use ($prefix) {
+                      $q->where($prefix.'Is_User', 0)->orWhereNull($prefix.'Is_User');
+                  });
         }
     }
 }
