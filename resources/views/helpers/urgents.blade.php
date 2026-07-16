@@ -296,7 +296,7 @@
 
             var html = `
                 <div class="col-12 mb-2">
-                    <h5 class="text-gray-800 font-weight-bold">${title}</h5>
+                    <h4 class="text-gray-900 font-weight-bold">${title}</h4>
                 </div>
                 ${bossMcHtml}
                 ${qcHtml}
@@ -309,13 +309,13 @@
         function generateCardHtml(title, dat, colorClass) {
             var catHtml = '';
             for(var key in dat.categories) {
-                catHtml += `<div class="d-flex justify-content-between mb-1">
-                                <span class="small font-weight-bold text-gray-800">${key}</span>
-                                <span class="small text-gray-800">${dat.categories[key]}</span>
+                catHtml += `<div class="mb-1 d-flex" style="gap:8px; font-size: 15px;">
+                                <span class="font-weight-bold text-gray-900">${key}:</span>
+                                <span class="text-gray-950 font-weight-bold">${dat.categories[key]}</span>
                             </div>`;
             }
             if(Object.keys(dat.categories).length === 0) {
-                catHtml = '<span class="small text-muted">Blank (0 Items)</span>';
+                catHtml = '<span class="text-muted font-italic" style="font-size: 15px;">Blank (0 Items)</span>';
             }
 
             return `
@@ -324,10 +324,10 @@
                         <div class="card-body">
                             <div class="row no-gutters align-items-center mb-3">
                                 <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-${colorClass} text-uppercase mb-1">
+                                    <div class="text-sm font-weight-bold text-${colorClass} text-uppercase mb-1" style="font-size: 14px;">
                                         PIC: ${title}
                                     </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    <div class="h4 mb-0 font-weight-bold text-gray-900">
                                         Total: ${dat.total}
                                     </div>
                                 </div>
@@ -346,13 +346,13 @@
         function generateReporterCardHtml(data) {
             var catHtml = '';
             for(var key in data.reporters) {
-                catHtml += `<div class="d-flex justify-content-between mb-1">
-                                <span class="small font-weight-bold text-gray-800">${key}</span>
-                                <span class="small text-gray-800">${data.reporters[key]}</span>
+                catHtml += `<div class="mb-1 d-flex" style="gap:8px; font-size: 15px;">
+                                <span class="font-weight-bold text-gray-900">${key}:</span>
+                                <span class="text-gray-950 font-weight-bold">${data.reporters[key]}</span>
                             </div>`;
             }
             if(Object.keys(data.reporters).length === 0) {
-                catHtml = '<span class="small text-muted">Blank (0 Items)</span>';
+                catHtml = '<span class="text-muted font-italic" style="font-size: 15px;">Blank (0 Items)</span>';
             }
 
             return `
@@ -361,10 +361,10 @@
                         <div class="card-body">
                             <div class="row no-gutters align-items-center mb-3">
                                 <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    <div class="text-sm font-weight-bold text-success text-uppercase mb-1" style="font-size: 14px;">
                                         REPORTERS
                                     </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    <div class="h4 mb-0 font-weight-bold text-gray-900">
                                         Total: ${data.reporters_total}
                                     </div>
                                 </div>
