@@ -287,22 +287,24 @@ class UrgentController extends Controller
             }
             $metrics[$bucket]['categories'][$categoryLabel]++;
 
-            // Reporter logic
-            $reporterName = '-';
-            if ($urgent->Is_Marshalling) {
-                $employee = DB::connection('rifa')->table('employees')->find($urgent->Id_User);
-                $reporterName = $employee ? $employee->nama : 'Marshalling User';
-            } elseif (empty($urgent->Id_Type_User)) {
-                $reporterName = $urgent->reporterMember ? $urgent->reporterMember->Name_Member : '-';
-            } else {
-                $reporterName = $urgent->user ? $urgent->user->Username_User : '-';
-            }
+            // Reporter logic only for DST
+            if ($bucket === 'dst') {
+                $reporterName = '-';
+                if ($urgent->Is_Marshalling) {
+                    $employee = DB::connection('rifa')->table('employees')->find($urgent->Id_User);
+                    $reporterName = $employee ? $employee->nama : 'Marshalling User';
+                } elseif (empty($urgent->Id_Type_User)) {
+                    $reporterName = $urgent->reporterMember ? $urgent->reporterMember->Name_Member : '-';
+                } else {
+                    $reporterName = $urgent->user ? $urgent->user->Username_User : '-';
+                }
 
-            if (!isset($metrics['reporters'][$reporterName])) {
-                $metrics['reporters'][$reporterName] = 0;
+                if (!isset($metrics['reporters'][$reporterName])) {
+                    $metrics['reporters'][$reporterName] = 0;
+                }
+                $metrics['reporters'][$reporterName]++;
+                $metrics['reporters_total']++;
             }
-            $metrics['reporters'][$reporterName]++;
-            $metrics['reporters_total']++;
         }
 
         arsort($metrics['reporters']);
