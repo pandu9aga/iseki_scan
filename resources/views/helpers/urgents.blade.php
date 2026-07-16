@@ -54,24 +54,35 @@
         </a>
     </div>
 
-    <!-- Filter Form -->
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Filter Data</h6>
-        </div>
-        <div class="card-body">
-            <div class="form-row">
-                <div class="form-group col-md-4">
-                    <label for="filter_code_rack">Code Rack</label>
-                    <input type="text" class="form-control" id="filter_code_rack" placeholder="Code Rack...">
+    <!-- Filter -->
+    <div class="card shadow-sm mb-4 border-left-primary">
+        <div class="card-body py-2 px-3">
+            <div class="d-flex flex-wrap align-items-center" style="gap:8px;">
+                <div class="d-flex align-items-center flex-grow-1" style="min-width:160px;">
+                    <label class="mb-0 mr-1 text-gray-700 small font-weight-bold" for="filter_code_rack">
+                        <i class="fas fa-qrcode"></i>
+                    </label>
+                    <input type="text" class="form-control form-control-sm" id="filter_code_rack" placeholder="Code Rack" style="min-width:100px;">
                 </div>
-                <div class="form-group col-md-4">
-                    <label for="filter_date_urgent">Date Urgent</label>
-                    <input type="date" class="form-control" id="filter_date_urgent" value="{{ \Carbon\Carbon::today()->format('Y-m-d') }}">
+                <div class="d-flex align-items-center">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-date-prev" title="Sebelumnya">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <input type="date" id="filter_date_urgent" class="form-control form-control-sm mx-1" style="width:auto;min-width:130px;max-width:160px;" value="{{ \Carbon\Carbon::today()->format('Y-m-d') }}">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-date-next" title="Selanjutnya">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info ml-1" id="btn-date-today" title="Hari Ini">
+                        <i class="fas fa-calendar-day"></i>
+                    </button>
                 </div>
-                <div class="form-group col-md-4 d-flex align-items-end">
-                    <button id="btn-filter" class="btn btn-primary mr-2">Filter</button>
-                    <button class="btn btn-secondary" id="btn-reset">Reset</button>
+                <div class="d-flex align-items-center">
+                    <button id="btn-filter" class="btn btn-primary btn-sm mr-1">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" id="btn-reset">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -209,14 +220,46 @@
         // Reset button
         $('#btn-reset').click(function () {
             $('#filter_code_rack').val('');
-            $('#filter_date_urgent').val('{{ \Carbon\Carbon::today()->format("Y-m-d") }}');
+            setTodayDate();
             $('#table_search_keyword').val('');
             table.draw();
             fetchRecap();
         });
 
+        // Date navigation: prev/next/today
+        function formatDate(d) {
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
+        function setTodayDate() {
+            $('#filter_date_urgent').val(formatDate(new Date()));
+        }
+        function applyFilter() {
+            table.draw();
+            fetchRecap();
+        }
+        $('#btn-date-prev').click(function () {
+            var d = new Date($('#filter_date_urgent').val() + 'T00:00:00');
+            d.setDate(d.getDate() - 1);
+            $('#filter_date_urgent').val(formatDate(d));
+            applyFilter();
+        });
+        $('#btn-date-next').click(function () {
+            var d = new Date($('#filter_date_urgent').val() + 'T00:00:00');
+            d.setDate(d.getDate() + 1);
+            $('#filter_date_urgent').val(formatDate(d));
+            applyFilter();
+        });
+        $('#btn-date-today').click(function () {
+            setTodayDate();
+            applyFilter();
+        });
+        // Auto-filter on date change
+        $('#filter_date_urgent').on('change', function () {
+            applyFilter();
+        });
+
         // Enter on inputs
-        $('#filter_code_rack, #filter_date_urgent').on('keypress', function(e) {
+        $('#filter_code_rack').on('keypress', function(e) {
             if(e.which == 13) {
                 table.draw();
                 fetchRecap();
