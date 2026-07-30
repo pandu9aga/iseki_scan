@@ -19,6 +19,8 @@ class Withdrawal extends Model
         'Code_Item_Withdrawal',
         'Oke_Withdrawal',
         'NIK_Withdrawal',
+        'Arrive_Qc',
+        'Date_Arrive_Qc',
         'Oke_Receiving',
         'Date_Receiving',
         'Finish_Receiving',
@@ -33,6 +35,8 @@ class Withdrawal extends Model
     protected $casts = [
         'Date_Withdrawal' => 'datetime',
         'Oke_Withdrawal' => 'boolean',
+        'Arrive_Qc' => 'boolean',
+        'Date_Arrive_Qc' => 'datetime',
         'Oke_Receiving' => 'boolean',
         'Date_Receiving' => 'datetime',
         'Finish_Receiving' => 'boolean',

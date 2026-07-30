@@ -254,6 +254,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     // Member Withdrawal
     Route::get('/user_withdrawal', [UserWithdrawalController::class, 'index'])->name('user.withdrawal');
     Route::post('/user_withdrawal/oke/{id}', [UserWithdrawalController::class, 'oke'])->name('user.withdrawal.oke');
+    Route::post('/user_withdrawal/arrive/{id}', [UserWithdrawalController::class, 'arrive'])->name('user.withdrawal.arrive');
     Route::post('/user_withdrawal/return/{id}', [UserWithdrawalController::class, 'returnRack'])->name('user.withdrawal.return');
     Route::get('/user_withdrawal/export', [UserWithdrawalController::class, 'export'])->name('user.withdrawal.export');
 

@@ -222,10 +222,22 @@ class WithdrawalController extends Controller
 
     /**
      * QC clicks "Diterima" - marks item as received
+     * Guard: Requires Arrive_Qc to be true (DST must confirm arrival at QC first)
      */
     public function receiving($id)
     {
         $withdrawal = Withdrawal::findOrFail($id);
+
+        // Guard: Cegah double-click
+        if ($withdrawal->Oke_Receiving) {
+            return back()->withErrors(['error' => 'Barang sudah diterima sebelumnya.']);
+        }
+
+        // Guard: DST harus sudah konfirmasi sampai di QC
+        if (!$withdrawal->Arrive_Qc) {
+            return back()->withErrors(['error' => 'Barang belum dikonfirmasi sampai di QC oleh DST.']);
+        }
+
         $withdrawal->update([
             'Oke_Receiving' => true,
             'Date_Receiving' => Carbon::now(),
@@ -362,6 +374,7 @@ class WithdrawalController extends Controller
         $headers = [
             'No', 'Date WD', 'Name PIC', 'Item Code', 'Name Item', 'No Rack',
             'Oke DST', 'PIC DST', 'Date Oke',
+            'Sampai di QC', 'Date Sampai QC',
             'Received', 'Date Received', 'Finish', 'Date Finish', 'Description Finish',
             'PIC Return', 'No Rack Return', 'Date Return'
         ];
@@ -371,7 +384,7 @@ class WithdrawalController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:S1')->applyFromArray($headerStyle);
 
         $row = 2;
         foreach ($withdrawals as $index => $w) {
@@ -414,6 +427,8 @@ class WithdrawalController extends Controller
                 $w->Oke_Withdrawal ? 'OK' : 'Pending',
                 $w->Oke_Withdrawal ? $nameDisiapkan : '-',
                 $w->Oke_Withdrawal && $w->Date_Withdrawal ? Carbon::parse($w->Date_Withdrawal)->format('d/m/Y H:i') : '-',
+                $w->Arrive_Qc ? 'Ya' : 'Belum',
+                $w->Date_Arrive_Qc ? Carbon::parse($w->Date_Arrive_Qc)->format('d/m/Y H:i') : '-',
                 $w->Oke_Receiving ? 'Diterima' : '-',
                 $w->Date_Receiving ? Carbon::parse($w->Date_Receiving)->format('d/m/Y H:i') : '-',
                 $w->Finish_Receiving ? 'Selesai' : '-',

@@ -229,10 +229,16 @@
                             {{-- PREPARE BY DST (Action for Admin) --}}
                             <td class="td-dst">
                                 @if($w->Oke_Withdrawal)
-                                <span class="chip chip-active"><i class="fas fa-check mr-1"></i>OK</span><br>
+                                <span class="chip chip-active"><i class="fas fa-check mr-1"></i>OK Siap</span><br>
                                 <small class="text-muted d-block mt-1">
                                     {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
                                 </small>
+                                @if($w->Arrive_Qc)
+                                <span class="chip chip-done mt-1" style="background:#d1ecf1; color:#0c5460;"><i class="fas fa-dolly mr-1"></i>Sampai di QC</span><br>
+                                <small class="text-muted d-block">
+                                    {{ \Carbon\Carbon::parse($w->Date_Arrive_Qc)->format('d/m/y H:i') }}
+                                </small>
+                                @endif
                                 @else
                                 <button class="btn btn-warning btn-action font-weight-bold" data-toggle="modal" data-target="#modalOke{{ $w->Id_Withdrawal }}">
                                     <i class="fas fa-hand-pointer mr-1"></i>OK Siapkan

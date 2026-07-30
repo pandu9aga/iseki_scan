@@ -148,6 +148,40 @@ class UserWithdrawalController extends Controller
         }
     }
 
+    public function arrive($id, Request $request)
+    {
+        $nikMember = session('NIK_Member');
+        if (!$nikMember) {
+            return back()->withErrors(['error' => 'Session expired. Silakan login ulang.']);
+        }
+
+        try {
+            $withdrawal = Withdrawal::findOrFail($id);
+
+            // Guard: Cegah double-click
+            if ($withdrawal->Arrive_Qc) {
+                return back()->withErrors(['error' => 'Item sudah ditaruh di QC sebelumnya.']);
+            }
+            if (!$withdrawal->Oke_Withdrawal) {
+                return back()->withErrors(['error' => 'Item belum disiapkan.']);
+            }
+
+            $withdrawal->update([
+                'Arrive_Qc' => true,
+                'Date_Arrive_Qc' => Carbon::now(),
+            ]);
+
+            $nameMember = session('Name_Member', 'Member');
+            return back()->with('success', 'Barang berhasil ditaruh di QC oleh ' . $nameMember);
+        } catch (\Exception $e) {
+            Log::error('Withdrawal arrive failed: ' . $e->getMessage(), [
+                'withdrawal_id' => $id,
+                'user_nik' => $nikMember
+            ]);
+            return back()->withErrors(['error' => 'Gagal memproses permintaan.']);
+        }
+    }
+
     public function returnRack($id, Request $request)
     {
         // ✅ AMBIL DARI SESSION, BUKAN INPUT!
@@ -285,6 +319,8 @@ class UserWithdrawalController extends Controller
             'Oke DST',
             'PIC DST',
             'Date Oke',
+            'Ditaruh QC',
+            'Date Ditaruh QC',
             'Received',
             'Date Received',
             'Finish',
@@ -343,6 +379,8 @@ class UserWithdrawalController extends Controller
                 $w->Oke_Withdrawal ? 'OK' : 'Pending',
                 $w->Oke_Withdrawal ? $nameDisiapkan : '-',
                 $w->Oke_Withdrawal && $w->Date_Withdrawal ? Carbon::parse($w->Date_Withdrawal)->format('d/m/Y H:i') : '-',
+                $w->Arrive_Qc ? 'Ya' : 'Belum',
+                $w->Date_Arrive_Qc ? Carbon::parse($w->Date_Arrive_Qc)->format('d/m/Y H:i') : '-',
                 $w->Oke_Receiving ? 'Diterima' : '-',
                 $w->Date_Receiving ? Carbon::parse($w->Date_Receiving)->format('d/m/Y H:i') : '-',
                 $w->Finish_Receiving ? 'Selesai' : '-',

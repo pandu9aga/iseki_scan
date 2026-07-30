@@ -77,7 +77,7 @@ class AreaScanController extends Controller
                 ->orderBy('Id_Withdrawal', 'desc')
                 ->first();
             if ($activeWithdrawal) {
-                if ($activeWithdrawal->Oke_Receiving && !$activeWithdrawal->Finish_Receiving) {
+                if (($activeWithdrawal->Arrive_Qc || $activeWithdrawal->Oke_Receiving) && !$activeWithdrawal->Finish_Receiving) {
                     $qcOverride = true;
                 } elseif ($activeWithdrawal->Finish_Receiving) {
                     $telatReturnRackOverride = true;
@@ -487,14 +487,14 @@ class AreaScanController extends Controller
                 ->orderBy('Id_Withdrawal', 'desc')
                 ->first();
             if ($activeWithdrawal) {
-                if ($activeWithdrawal->Oke_Receiving && !$activeWithdrawal->Finish_Receiving) {
-                    // Hanya salah QC jika status sudah "diterima QC" tapi belum selesai
+                if (($activeWithdrawal->Arrive_Qc || $activeWithdrawal->Oke_Receiving) && !$activeWithdrawal->Finish_Receiving) {
+                    // Hanya salah QC jika status sudah "ditaruh di QC" atau "diterima QC" tapi belum selesai
                     $qcOverride = true;
                 } elseif ($activeWithdrawal->Finish_Receiving) {
                     // QC sudah selesai tapi belum dikembalikan DST = salah DST
                     $telatReturnRackOverride = true;
                 }
-                // Jika belum diterima QC (Oke_Receiving = false), jangan override
+                // Jika belum ditaruh/diterima QC, jangan override
                 // Biarkan jatuh ke logika request status biasa (telat supply, telat mc, dll)
             }
         }

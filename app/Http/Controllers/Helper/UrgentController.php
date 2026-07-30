@@ -373,8 +373,8 @@ class UrgentController extends Controller
                 ->orderBy('Id_Withdrawal', 'desc')
                 ->first();
             if ($activeWithdrawal) {
-                if ($activeWithdrawal->Oke_Receiving && ! $activeWithdrawal->Finish_Receiving) {
-                    // Hanya salah QC jika status sudah "diterima QC" tapi belum selesai
+                if (($activeWithdrawal->Arrive_Qc || $activeWithdrawal->Oke_Receiving) && ! $activeWithdrawal->Finish_Receiving) {
+                    // Hanya salah QC jika status sudah "ditaruh di QC" atau "diterima QC" tapi belum selesai
                     $qcOverride = true;
                 } elseif ($activeWithdrawal->Finish_Receiving) {
                     // QC sudah selesai tapi belum dikembalikan DST = salah DST

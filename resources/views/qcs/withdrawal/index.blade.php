@@ -285,10 +285,16 @@
                             {{-- PREPARE BY DST — READ ONLY (QC monitors) --}}
                             <td class="td-dst">
                                 @if($w->Oke_Withdrawal)
-                                <span class="chip chip-done"><i class="fas fa-check mr-1"></i>OK</span><br>
+                                <span class="chip chip-done"><i class="fas fa-check mr-1"></i>OK Siap</span><br>
                                 <small class="text-muted d-block mt-1">
                                     {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
                                 </small>
+                                @if($w->Arrive_Qc)
+                                <span class="chip chip-done mt-1" style="background:#d1ecf1; color:#0c5460;"><i class="fas fa-dolly mr-1"></i>Sampai di QC</span><br>
+                                <small class="text-muted d-block">
+                                    {{ \Carbon\Carbon::parse($w->Date_Arrive_Qc)->format('d/m/y H:i') }}
+                                </small>
+                                @endif
                                 @else
                                 <span class="chip chip-wait">Menunggu</span>
                                 @endif
@@ -302,7 +308,8 @@
                                 <small class="text-muted d-block mt-1">
                                     {{ \Carbon\Carbon::parse($w->Date_Receiving)->format('d/m/y H:i') }}
                                 </small>
-                                @elseif($w->Oke_Withdrawal)
+                                @elseif($w->Arrive_Qc)
+                                {{-- DST sudah konfirmasi sampai di QC, QC bisa terima --}}
                                 <form action="{{ route('qc.withdrawal.receiving', $w->Id_Withdrawal) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-success btn-action"
@@ -310,6 +317,9 @@
                                         <i class="fas fa-hand-holding mr-1"></i>Terima
                                     </button>
                                 </form>
+                                @elseif($w->Oke_Withdrawal)
+                                {{-- DST sudah siapkan tapi belum konfirmasi sampai di QC --}}
+                                <span class="chip chip-wait"><i class="fas fa-clock mr-1"></i>Menunggu DST</span>
                                 @else
                                 <span class="text-muted">-</span>
                                 @endif
