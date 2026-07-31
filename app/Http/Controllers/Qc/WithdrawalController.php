@@ -215,6 +215,7 @@ class WithdrawalController extends Controller
         $withdrawal->update([
             'Oke_Withdrawal' => true,
             'NIK_Withdrawal' => $request->NIK_Withdrawal,
+            'Date_Oke_Withdrawal' => Carbon::now(),
         ]);
 
         return back()->with('success', 'Withdrawal telah disiapkan oleh ' . $member->Name_Member);
@@ -426,7 +427,7 @@ class WithdrawalController extends Controller
                 $rackInfo ? $rackInfo['no'] : '-',
                 $w->Oke_Withdrawal ? 'OK' : 'Pending',
                 $w->Oke_Withdrawal ? $nameDisiapkan : '-',
-                $w->Oke_Withdrawal && $w->Date_Withdrawal ? Carbon::parse($w->Date_Withdrawal)->format('d/m/Y H:i') : '-',
+                $w->Oke_Withdrawal && $w->Date_Oke_Withdrawal ? Carbon::parse($w->Date_Oke_Withdrawal)->format('d/m/Y H:i') : '-',
                 $w->Arrive_Qc ? 'Ya' : 'Belum',
                 $w->Date_Arrive_Qc ? Carbon::parse($w->Date_Arrive_Qc)->format('d/m/Y H:i') : '-',
                 $w->Oke_Receiving ? 'Diterima' : '-',

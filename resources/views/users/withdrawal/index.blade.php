@@ -215,7 +215,7 @@
                                     <span class="chip chip-active mb-1"><i class="fas fa-check mr-1"></i>OK Siap</span><br>
                                     <span class="font-weight-bold" style="font-size:0.75rem;">{{ $w->name_disiapkan ?? '-' }}</span><br>
                                     <small class="text-muted d-block">
-                                        {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
+                                        {{ $w->Date_Oke_Withdrawal ? \Carbon\Carbon::parse($w->Date_Oke_Withdrawal)->format('d/m/y H:i') : ($w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') : '-') }}
                                     </small>
                                 </div>
                                 <div>

@@ -287,7 +287,7 @@
                                 @if($w->Oke_Withdrawal)
                                 <span class="chip chip-done"><i class="fas fa-check mr-1"></i>OK Siap</span><br>
                                 <small class="text-muted d-block mt-1">
-                                    {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
+                                    {{ $w->Date_Oke_Withdrawal ? \Carbon\Carbon::parse($w->Date_Oke_Withdrawal)->format('d/m/y H:i') : ($w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') : '-') }}
                                 </small>
                                 @if($w->Arrive_Qc)
                                 <span class="chip chip-done mt-1" style="background:#d1ecf1; color:#0c5460;"><i class="fas fa-dolly mr-1"></i>Sampai di QC</span><br>

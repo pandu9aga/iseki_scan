@@ -151,12 +151,82 @@ class AdminWithdrawalController extends Controller
                 'Oke_Withdrawal' => true,
                 'NIK_Withdrawal' => $nikWd,
                 'Is_User' => $isUser ? 1 : 0,
+                'Date_Oke_Withdrawal' => Carbon::now(),
             ]);
 
             $username = $isUser ? session('Username_User', 'Admin') . ' (Admin)' : 'Member dengan NIK ' . $nikWd;
             return back()->with('success', 'Withdrawal disiapkan oleh ' . $username);
         } catch (\Exception $e) {
             Log::error('Admin Withdrawal oke failed: ' . $e->getMessage(), [
+                'withdrawal_id' => $id,
+                'admin_id' => $adminId
+            ]);
+            return back()->withErrors(['error' => 'Gagal memproses permintaan.']);
+        }
+    }
+
+    /**
+     * Admin confirm item arrived at QC
+     */
+    public function arrive($id)
+    {
+        $adminId = session('Id_User');
+        if (!$adminId) {
+            return back()->withErrors(['error' => 'Session expired. Silakan login ulang.']);
+        }
+
+        try {
+            $withdrawal = Withdrawal::findOrFail($id);
+
+            // Guard: Cegah double-click
+            if ($withdrawal->Arrive_Qc) {
+                return back()->withErrors(['error' => 'Item sudah ditaruh di QC sebelumnya.']);
+            }
+            if (!$withdrawal->Oke_Withdrawal) {
+                return back()->withErrors(['error' => 'Item belum disiapkan.']);
+            }
+
+            $withdrawal->update([
+                'Arrive_Qc' => true,
+                'Date_Arrive_Qc' => Carbon::now(),
+            ]);
+
+            return back()->with('success', 'Barang berhasil ditaruh di QC.');
+        } catch (\Exception $e) {
+            Log::error('Admin Withdrawal arrive failed: ' . $e->getMessage(), [
+                'withdrawal_id' => $id,
+                'admin_id' => $adminId
+            ]);
+            return back()->withErrors(['error' => 'Gagal memproses permintaan.']);
+        }
+    }
+
+    /**
+     * Admin marks QC process as finished
+     */
+    public function finish($id, Request $request)
+    {
+        $adminId = session('Id_User');
+        if (!$adminId) {
+            return back()->withErrors(['error' => 'Session expired. Silakan login ulang.']);
+        }
+
+        $request->validate([
+            'Desc_Finish' => 'required|string|max:255',
+        ]);
+
+        try {
+            $withdrawal = Withdrawal::findOrFail($id);
+
+            $withdrawal->update([
+                'Finish_Receiving' => true,
+                'Date_Finish_Receiving' => Carbon::now(),
+                'Desc_Finish' => $request->Desc_Finish,
+            ]);
+
+            return back()->with('success', 'QC telah selesai.');
+        } catch (\Exception $e) {
+            Log::error('Admin Withdrawal finish failed: ' . $e->getMessage(), [
                 'withdrawal_id' => $id,
                 'admin_id' => $adminId
             ]);
@@ -366,7 +436,7 @@ class AdminWithdrawalController extends Controller
                 $rackInfo ? $rackInfo['no'] : '-',
                 $w->Oke_Withdrawal ? 'OK' : 'Pending',
                 $w->Oke_Withdrawal ? $nameDisiapkan : '-',
-                $w->Oke_Withdrawal && $w->Date_Withdrawal ? Carbon::parse($w->Date_Withdrawal)->format('d/m/Y H:i') : '-',
+                $w->Oke_Withdrawal && $w->Date_Oke_Withdrawal ? Carbon::parse($w->Date_Oke_Withdrawal)->format('d/m/Y H:i') : '-',
                 $w->Arrive_Qc ? 'Ya' : 'Belum',
                 $w->Date_Arrive_Qc ? Carbon::parse($w->Date_Arrive_Qc)->format('d/m/Y H:i') : '-',
                 $w->Oke_Receiving ? 'Diterima' : '-',

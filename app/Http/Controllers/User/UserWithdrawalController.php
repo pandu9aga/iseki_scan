@@ -135,6 +135,7 @@ class UserWithdrawalController extends Controller
             $withdrawal->update([
                 'Oke_Withdrawal' => true,
                 'NIK_Withdrawal' => $nikMember,
+                'Date_Oke_Withdrawal' => Carbon::now(),
             ]);
 
             $nameMember = session('Name_Member', 'Member');
@@ -378,7 +379,7 @@ class UserWithdrawalController extends Controller
                 $rackInfo ? $rackInfo['no'] : '-',
                 $w->Oke_Withdrawal ? 'OK' : 'Pending',
                 $w->Oke_Withdrawal ? $nameDisiapkan : '-',
-                $w->Oke_Withdrawal && $w->Date_Withdrawal ? Carbon::parse($w->Date_Withdrawal)->format('d/m/Y H:i') : '-',
+                $w->Oke_Withdrawal && $w->Date_Oke_Withdrawal ? Carbon::parse($w->Date_Oke_Withdrawal)->format('d/m/Y H:i') : '-',
                 $w->Arrive_Qc ? 'Ya' : 'Belum',
                 $w->Date_Arrive_Qc ? Carbon::parse($w->Date_Arrive_Qc)->format('d/m/Y H:i') : '-',
                 $w->Oke_Receiving ? 'Diterima' : '-',

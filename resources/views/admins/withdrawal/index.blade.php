@@ -231,13 +231,17 @@
                                 @if($w->Oke_Withdrawal)
                                 <span class="chip chip-active"><i class="fas fa-check mr-1"></i>OK Siap</span><br>
                                 <small class="text-muted d-block mt-1">
-                                    {{ \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') }}
+                                    {{ $w->Date_Oke_Withdrawal ? \Carbon\Carbon::parse($w->Date_Oke_Withdrawal)->format('d/m/y H:i') : ($w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d/m/y H:i') : '-') }}
                                 </small>
                                 @if($w->Arrive_Qc)
                                 <span class="chip chip-done mt-1" style="background:#d1ecf1; color:#0c5460;"><i class="fas fa-dolly mr-1"></i>Sampai di QC</span><br>
                                 <small class="text-muted d-block">
                                     {{ \Carbon\Carbon::parse($w->Date_Arrive_Qc)->format('d/m/y H:i') }}
                                 </small>
+                                @else
+                                <button class="btn btn-info btn-action font-weight-bold mt-1" data-toggle="modal" data-target="#modalArrive{{ $w->Id_Withdrawal }}">
+                                    <i class="fas fa-dolly mr-1"></i>Sampai di QC
+                                </button>
                                 @endif
                                 @else
                                 <button class="btn btn-warning btn-action font-weight-bold" data-toggle="modal" data-target="#modalOke{{ $w->Id_Withdrawal }}">
@@ -269,6 +273,10 @@
                                     <i class="fas fa-comment-alt mr-1"></i>{{ $w->Desc_Finish }}
                                 </small>
                                 @endif
+                                @elseif($w->Oke_Receiving)
+                                <button type="button" class="btn btn-info btn-action font-weight-bold" data-toggle="modal" data-target="#modalFinish{{ $w->Id_Withdrawal }}">
+                                    <i class="fas fa-flag-checkered mr-1"></i>Selesai
+                                </button>
                                 @else
                                 <span class="text-danger font-weight-bold" style="font-size:0.75rem;"><i class="fas fa-times mr-1"></i>Belum Selesai</span>
                                 @endif
@@ -345,6 +353,64 @@
 </div>
 @endif
 
+{{-- Modal Arrive QC --}}
+@if($w->Oke_Withdrawal && !$w->Arrive_Qc)
+<div class="modal fade" id="modalArrive{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <form action="{{ route('admin.withdrawal.arrive', $w->Id_Withdrawal) }}" method="POST">
+                @csrf
+                <div class="modal-header bg-info text-white">
+                    <h6 class="modal-title font-weight-bold">Konfirmasi Sampai di QC</h6>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:0.85rem;" class="mb-0">Apakah Anda yakin sudah menaruh barang <strong>{{ $w->Code_Item_Withdrawal }}</strong> sampai di area QC?</p>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-info btn-sm">
+                        <i class="fas fa-check mr-1"></i>Ya, Sudah
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
+{{-- Modal Finish Description --}}
+@if($w->Oke_Receiving && !$w->Finish_Receiving)
+<div class="modal fade" id="modalFinish{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <form action="{{ route('admin.withdrawal.finish', $w->Id_Withdrawal) }}" method="POST">
+                @csrf
+                <div class="modal-header bg-info text-white">
+                    <h6 class="modal-title font-weight-bold">
+                        <i class="fas fa-flag-checkered mr-1"></i>Selesai — {{ $w->Code_Item_Withdrawal }}
+                    </h6>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group mb-0">
+                        <label style="font-size:0.82rem;font-weight:600;">Keterangan <span class="text-danger">*</span></label>
+                        <textarea name="Desc_Finish" class="form-control" rows="3"
+                            placeholder="Masukkan keterangan ..." maxlength="255" required></textarea>
+                        <small class="text-muted">Keterangan kondisi part terkait</small>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-info btn-sm">
+                        <i class="fas fa-check mr-1"></i>Konfirmasi Selesai
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
 
 {{-- Modal Masuk Rak --}}
 @if($w->Finish_Receiving && !$w->Date_Return)

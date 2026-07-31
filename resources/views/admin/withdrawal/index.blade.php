@@ -79,7 +79,7 @@
                             </td>
                             <td>
                                 @if($w->Oke_Withdrawal)
-                                    {{ $w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d-m-Y H:i') : '-' }}
+                                    {{ $w->Date_Oke_Withdrawal ? \Carbon\Carbon::parse($w->Date_Oke_Withdrawal)->format('d-m-Y H:i') : ($w->Date_Withdrawal ? \Carbon\Carbon::parse($w->Date_Withdrawal)->format('d-m-Y H:i') : '-') }}
                                 @else
                                     -
                                 @endif

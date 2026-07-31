@@ -179,6 +179,8 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     // Admin Withdrawal (with actions)
     Route::get('/admin_withdrawal', [AdminWithdrawalController::class, 'index'])->name('admin.withdrawal');
     Route::post('/admin_withdrawal/oke/{id}', [AdminWithdrawalController::class, 'oke'])->name('admin.withdrawal.oke');
+    Route::post('/admin_withdrawal/arrive/{id}', [AdminWithdrawalController::class, 'arrive'])->name('admin.withdrawal.arrive');
+    Route::post('/admin_withdrawal/finish/{id}', [AdminWithdrawalController::class, 'finish'])->name('admin.withdrawal.finish');
     Route::post('/admin_withdrawal/return/{id}', [AdminWithdrawalController::class, 'returnRack'])->name('admin.withdrawal.return');
     Route::delete('/admin_withdrawal/destroy/{id}', [AdminWithdrawalController::class, 'destroy'])->name('admin.withdrawal.destroy');
     Route::get('/admin_withdrawal/export', [AdminWithdrawalController::class, 'export'])->name('admin.withdrawal.export');
