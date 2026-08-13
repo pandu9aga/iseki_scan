@@ -441,6 +441,12 @@
                         <i class="fa fa-bars"></i>
                     </button>
 
+                    <!-- Advance Request -->
+                    <a class="d-none d-md-inline-block btn btn-sm btn-info shadow-sm mr-3"
+                        href="{{ route('request.search') }}">
+                        <i class="fas fa-search fa-sm mr-1"></i>Advanced Search
+                    </a>
+
                     <!-- Topbar Navbar -->
                     <ul class="navbar-nav ml-auto">
 

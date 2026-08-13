@@ -125,8 +125,11 @@ class AdminCheckController extends Controller
 
         $label = $request->input('Status_Check') . ' Hari Ke Depan';
 
-        $filterParams = array_filter($request->only(['date', 'target_date', 'status', 'checker']));
-        return redirect()->route('admin.check', $filterParams)->with('success', "Check {$label} berhasil disimpan.");
+        return redirect()->route('admin.requesting', [
+            'area' => $request->input('Area_Request'),
+            'code_rack' => $request->input('Code_Rack'),
+            'code_item' => $request->input('Code_Item'),
+        ])->with('success', "Check {$label} berhasil disimpan.");
     }
 
     /**

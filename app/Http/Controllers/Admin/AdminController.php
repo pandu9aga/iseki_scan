@@ -27,16 +27,8 @@ class AdminController extends Controller
 
 
         $now = Carbon::now();
-        // Hitung waktu 1 hari kerja lalu (tanpa Sabtu dan Minggu)
-        $workdaysAgo = $now->copy();
-        $daysCounted = 0;
-        while ($daysCounted < 1) {
-            $workdaysAgo->subDay();
-            // Lewati Sabtu (6) dan Minggu (0)
-            if (!in_array($workdaysAgo->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
-                $daysCounted++;
-            }
-        }
+        // Hitung waktu 1 hari kerja lalu (menggunakan SpecialDate)
+        $workdaysAgo = \App\Models\SpecialDate::subWorkdays($now, 1);
 
         $requests = RequestModel::with('member', 'record')
             ->where('Status_Request', '!=', 'Done')
@@ -83,8 +75,8 @@ class AdminController extends Controller
 
             // Loop per jam sampai mencapai now
             while ($current->lt($now)) {
-                // Lewati Sabtu (6) dan Minggu (0)
-                if (!in_array($current->dayOfWeek, [Carbon::SATURDAY, Carbon::SUNDAY])) {
+                // Lewati non-hari kerja (weekend/libur)
+                if (\App\Models\SpecialDate::isWorkday($current)) {
                     $workingHours++;
                 }
                 $current->addHour();

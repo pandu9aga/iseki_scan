@@ -492,9 +492,9 @@ class UrgentController extends Controller
             $urgentDate = Carbon::parse($nowDate)->startOfDay();
             $readyDate = $waitingRequest->Ready_Request !== null ? Carbon::parse($waitingRequest->Ready_Request)->startOfDay() : null;
 
-            $readyFast = $readyDate !== null && $readyDate->lessThan($requestDate->copy()->addWeekdays(2));
-            $pastReady1 = $readyDate !== null && $urgentDate->greaterThanOrEqualTo($readyDate->copy()->addWeekdays(1));
-            $pastReq2 = $urgentDate->greaterThanOrEqualTo($requestDate->copy()->addWeekdays(2));
+            $readyFast = $readyDate !== null && $readyDate->lessThan(\App\Models\SpecialDate::addWorkdays($requestDate, 2));
+            $pastReady1 = $readyDate !== null && $urgentDate->greaterThanOrEqualTo(\App\Models\SpecialDate::addWorkdays($readyDate, 1));
+            $pastReq2 = $urgentDate->greaterThanOrEqualTo(\App\Models\SpecialDate::addWorkdays($requestDate, 2));
 
             if ($readyFast && $pastReady1) {
                 // MC cepat bikin ready (< request+2wd), barang siap ≥ 1 hari kerja → supplier tidak ambil

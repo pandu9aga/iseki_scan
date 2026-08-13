@@ -433,6 +433,7 @@
         var codeItem = document.getElementById("Code_Item").value;
         document.getElementById('check_Code_Rack').value = codeRack;
         document.getElementById('check_Code_Item').value = codeItem;
+        document.getElementById('check_Area_Request').value = document.getElementById("Area_Request").value;
         document.getElementById('check_Status').value = days;
         $('#checkConfirmModal').modal('hide');
         document.getElementById('checkForm').submit();
@@ -489,6 +490,7 @@ document.addEventListener('DOMContentLoaded', function() { setTodayReq(); });
 {{-- Hidden form for Check submission --}}
 <form id="checkForm" action="{{ route('user.check.store') }}" method="POST" style="display:none;">
     @csrf
+    <input type="hidden" name="Area_Request" id="check_Area_Request">
     <input type="hidden" name="Code_Rack" id="check_Code_Rack">
     <input type="hidden" name="Code_Item" id="check_Code_Item">
     <input type="hidden" name="Status_Check" id="check_Status">

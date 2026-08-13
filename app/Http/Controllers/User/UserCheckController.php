@@ -103,7 +103,8 @@ class UserCheckController extends Controller
 
         $now = Carbon::now();
         $statusDays = intval($request->input('Status_Check'));
-        $targetDate = $now->copy()->addDays($statusDays)->format('Y-m-d');
+        // Hitung target date menggunakan hari kerja (skip weekend & hari libur)
+        $targetDate = \App\Models\SpecialDate::addWorkdays($now, $statusDays)->format('Y-m-d');
 
         // Jika ada check_id, tandai check lama sebagai selesai
         if ($request->has('check_id') && !empty($request->input('check_id'))) {
@@ -124,9 +125,13 @@ class UserCheckController extends Controller
         ]);
 
         $label = $request->input('Status_Check') . ' Hari Ke Depan';
+        $codeRack = $request->input('Code_Rack');
 
-        $filterParams = array_filter($request->only(['date', 'target_date', 'status', 'checker']));
-        return redirect()->route('user.check', $filterParams)->with('success', "Check {$label} berhasil disimpan.");
+        return redirect()->route('request', [
+            'area' => $request->input('Area_Request'),
+            'code_rack' => $codeRack,
+            'code_item' => $request->input('Code_Item'),
+        ])->with('success', "{$codeRack} Check {$label} berhasil disimpan.");
     }
 
     /**
