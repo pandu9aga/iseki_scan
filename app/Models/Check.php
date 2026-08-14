@@ -18,6 +18,8 @@ class Check extends Model
         'Id_User',
         'Status_Check',
         'Is_User',
+        'Auto_Check',
+        'Area_Check',
     ];
 
     // Relasi ke Member

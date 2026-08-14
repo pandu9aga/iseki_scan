@@ -187,6 +187,7 @@ Route::middleware(AdminMiddleware::class)->group(function () {
 
     // Admin Check
     Route::get('/admin_check', [AdminCheckController::class, 'index'])->name('admin.check');
+    Route::get('/admin_check/export', [AdminCheckController::class, 'export'])->name('admin.check.export');
     Route::post('/admin_check/store', [AdminCheckController::class, 'store'])->name('admin.check.store');
 
     // Stock Item
@@ -263,6 +264,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     // User Check
     Route::get('/user_check', [UserCheckController::class, 'index'])->name('user.check');
     Route::post('/user_check/store', [UserCheckController::class, 'store'])->name('user.check.store');
+    Route::post('/user_check/auto-store', [UserCheckController::class, 'autoStore'])->name('user.check.auto_store');
     Route::post('/user_check/{id}/done', [UserCheckController::class, 'markAsDone'])->name('user.check.done');
 });
 

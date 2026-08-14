@@ -119,8 +119,7 @@
                             <input type="hidden" name="check_id" value="{{ $check_id ?? '' }}">
                             <input type="hidden" name="return_to_check" value="{{ !empty($check_id) ? 1 : 0 }}">
                             <input type="hidden" name="date" value="{{ $filter_date ?? '' }}">
-                            <input type="hidden" name="target_date" value="{{ $filter_target_date ?? '' }}">
-                            <input type="hidden" name="status" value="{{ $filter_status ?? '' }}">
+                            <input type="hidden" name="month" value="{{ $filter_month ?? '' }}">
                             <input type="hidden" name="checker" value="{{ $filter_checker ?? '' }}">
 
                             <hr>
@@ -484,8 +483,7 @@ document.addEventListener('DOMContentLoaded', function() { setTodayReq(); });
     <input type="hidden" name="Status_Check" id="check_Status">
     <input type="hidden" name="check_id" value="{{ $check_id ?? '' }}">
     <input type="hidden" name="date" value="{{ $filter_date ?? '' }}">
-    <input type="hidden" name="target_date" value="{{ $filter_target_date ?? '' }}">
-    <input type="hidden" name="status" value="{{ $filter_status ?? '' }}">
+    <input type="hidden" name="month" value="{{ $filter_month ?? '' }}">
     <input type="hidden" name="checker" value="{{ $filter_checker ?? '' }}">
 </form>
 

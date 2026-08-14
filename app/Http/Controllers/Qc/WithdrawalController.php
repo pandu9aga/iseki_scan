@@ -109,10 +109,10 @@ class WithdrawalController extends Controller
             } else {
                 $w->name_return = '-';
             }
-            // Rack info based on Code_Item_Withdrawal
+            // Rack info based on stored snapshot first, fallback to racks table
             $rackInfo = $racksMap[$w->Code_Item_Withdrawal] ?? null;
-            $w->rack_name = $rackInfo ? $rackInfo['name'] : '-';
-            $w->rack_no   = $rackInfo ? $rackInfo['no'] : '-';
+            $w->rack_name = $w->Name_Item_Withdrawal ?? ($rackInfo ? $rackInfo['name'] : '-');
+            $w->rack_no   = $w->No_Rack_Item_Withdrawal ?? ($rackInfo ? $rackInfo['no'] : '-');
         }
 
         return view('qcs.withdrawal.index', compact('withdrawals'));
@@ -168,6 +168,8 @@ class WithdrawalController extends Controller
         Withdrawal::create([
             'Name_Withdrawal' => $request->Name_Withdrawal,
             'Code_Item_Withdrawal' => $request->Code_Item_Withdrawal,
+            'No_Rack_Item_Withdrawal' => !empty($request->No_Rack_Item_Withdrawal) ? $request->No_Rack_Item_Withdrawal : $rack->Code_Rack,
+            'Name_Item_Withdrawal' => !empty($request->Name_Item_Withdrawal) ? $request->Name_Item_Withdrawal : $rack->Name_Item_Rack,
             'Date_Withdrawal' => Carbon::now(),
         ]);
 
@@ -423,8 +425,8 @@ class WithdrawalController extends Controller
                 $w->Date_Withdrawal ? Carbon::parse($w->Date_Withdrawal)->format('d/m/Y H:i') : '-',
                 $w->Name_Withdrawal ?? '-',
                 $w->Code_Item_Withdrawal ?? '-',
-                $rackInfo ? $rackInfo['name'] : '-',
-                $rackInfo ? $rackInfo['no'] : '-',
+                $w->Name_Item_Withdrawal ?? ($rackInfo ? $rackInfo['name'] : '-'),
+                $w->No_Rack_Item_Withdrawal ?? ($rackInfo ? $rackInfo['no'] : '-'),
                 $w->Oke_Withdrawal ? 'OK' : 'Pending',
                 $w->Oke_Withdrawal ? $nameDisiapkan : '-',
                 $w->Oke_Withdrawal && $w->Date_Oke_Withdrawal ? Carbon::parse($w->Date_Oke_Withdrawal)->format('d/m/Y H:i') : '-',

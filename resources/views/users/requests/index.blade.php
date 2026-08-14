@@ -124,8 +124,7 @@
                             <input type="hidden" name="check_id" value="{{ $check_id ?? '' }}">
                             <input type="hidden" name="return_to_check" value="{{ !empty($check_id) ? 1 : 0 }}">
                             <input type="hidden" name="date" value="{{ $filter_date ?? '' }}">
-                            <input type="hidden" name="target_date" value="{{ $filter_target_date ?? '' }}">
-                            <input type="hidden" name="status" value="{{ $filter_status ?? '' }}">
+                            <input type="hidden" name="month" value="{{ $filter_month ?? '' }}">
                             <input type="hidden" name="checker" value="{{ $filter_checker ?? '' }}">
 
                             <hr>
@@ -300,6 +299,48 @@
         document.getElementById("status_code").innerHTML = '';
     }
 
+    // === fungsi simpan check otomatis saat scan (silent, no redirect) ===
+    function autoCheckSave(codeRack, codeItem) {
+        if (!codeRack) return;
+
+        $.ajax({
+            url: '{{ route("user.check.auto_store") }}',
+            method: 'POST',
+            data: {
+                code_rack: codeRack,
+                code_item: codeItem,
+                area: document.getElementById("Area_Request").value || '',
+                _token: $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                // Tampilkan notifikasi kecil tanpa mengganggu alur scan
+                if (response.saved) {
+                    showAutoCheckToast(response.message, 'success');
+                }
+                // Jika sudah ada (false), tidak perlu notif — scan tetap dilanjutkan
+            },
+            error: function() {
+                // Gagal simpan check — abaikan, tidak blok alur scan
+            }
+        });
+    }
+
+    // === toast notifikasi ringan untuk auto-check ===
+    function showAutoCheckToast(message, type) {
+        var toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);' +
+            'background:' + (type === 'success' ? '#28a745' : '#dc3545') + ';' +
+            'color:#fff;padding:10px 22px;border-radius:6px;font-size:14px;' +
+            'z-index:9999;box-shadow:0 2px 10px rgba(0,0,0,.25);opacity:0;transition:opacity .3s;';
+        toast.textContent = '✅ ' + message;
+        document.body.appendChild(toast);
+        setTimeout(function() { toast.style.opacity = '1'; }, 50);
+        setTimeout(function() {
+            toast.style.opacity = '0';
+            setTimeout(function() { toast.remove(); }, 400);
+        }, 3000);
+    }
+
     // === fungsi fetch code item ===
     function fetchCodeItemRack(codeRack) {
         if (!codeRack) return;
@@ -312,25 +353,34 @@
                 _token: $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
-                if(response.code_item) {
-                    document.getElementById("Code_Item").value = response.code_item;
-                    document.getElementById("Type_Tractor").value = response.type_tractor ?? '';
-                    // Setelah berhasil fetch code item, cek stock
+                var codeItem = response.code_item || '';
+                document.getElementById("Code_Item").value = codeItem;
+                document.getElementById("Type_Tractor").value = response.type_tractor ?? '';
+
+                // Step 1: catat check dulu (bukti fisik scan) — selalu berjalan
+                autoCheckSave(codeRack, codeItem);
+
+                // Step 2: baru cek status request ganda
+                // Lanjut cek stock hanya jika tidak ada request ganda
+                checkDuplicateRequest(codeRack, function() {
                     checkStockItem(codeRack);
-                } else {
-                    document.getElementById("Code_Item").value = '';
-                    document.getElementById("Type_Tractor").value = '';
+                });
+
+                // Beri tahu jika item tidak ditemukan (setelah check tetap tercatat)
+                if (!codeItem) {
                     alert('Code Item not found for this Code Rack');
                 }
             },
             error: function() {
+                // Tetap catat check walau gagal fetch item
+                autoCheckSave(codeRack, '');
                 alert('Error fetching Code Item');
             }
         });
     }
 
     // === fungsi cek duplicate request ===
-    function checkDuplicateRequest(codeRack, onClear) {
+    function checkDuplicateRequest(codeRack, onNoDuplicate) {
         if (!codeRack) return;
 
         $.ajax({
@@ -346,14 +396,16 @@
                     var msg = 'Part dengan kode Rack <strong>' + codeRack + '</strong> telah di request oleh <strong>' + response.name + '</strong> pada <strong>' + response.day + ' ' + response.time + '</strong> dan belum di Record.';
                     document.getElementById('duplicateRequestBody').innerHTML = msg;
                     $('#duplicateRequestModal').modal('show');
-                } else {
-                    // Tidak ada duplikat, lanjut fetch code item
-                    fetchCodeItemRack(codeRack);
+                } else if (typeof onNoDuplicate === 'function') {
+                    // Tidak ada duplikat
+                    onNoDuplicate();
                 }
             },
             error: function() {
-                // Jika error cek duplikat, tetap lanjut fetch code item
-                fetchCodeItemRack(codeRack);
+                // Jika error cek duplikat, tetap lanjut
+                if (typeof onNoDuplicate === 'function') {
+                    onNoDuplicate();
+                }
             }
         });
     }
@@ -364,8 +416,8 @@
     function onScanSuccessRack(decodedText, decodedResult) {
         document.getElementById("Code_Rack").value = decodedText;
 
-        // Cek duplikat dulu, baru fetch code item jika tidak ada duplikat
-        checkDuplicateRequest(decodedText);
+        // Catat check dulu (Step 1), baru cek request ganda (Step 2)
+        fetchCodeItemRack(decodedText);
 
         rackScanner.clear();
     }
@@ -378,7 +430,7 @@
     // === saat blur ===
     $("#Code_Rack").on("blur", function () {
         let codeRack = $(this).val();
-        checkDuplicateRequest(codeRack);
+        fetchCodeItemRack(codeRack);
     });
 
     // === fungsi cek stock item ===
@@ -496,8 +548,7 @@ document.addEventListener('DOMContentLoaded', function() { setTodayReq(); });
     <input type="hidden" name="Status_Check" id="check_Status">
     <input type="hidden" name="check_id" value="{{ $check_id ?? '' }}">
     <input type="hidden" name="date" value="{{ $filter_date ?? '' }}">
-    <input type="hidden" name="target_date" value="{{ $filter_target_date ?? '' }}">
-    <input type="hidden" name="status" value="{{ $filter_status ?? '' }}">
+    <input type="hidden" name="month" value="{{ $filter_month ?? '' }}">
     <input type="hidden" name="checker" value="{{ $filter_checker ?? '' }}">
 </form>
 

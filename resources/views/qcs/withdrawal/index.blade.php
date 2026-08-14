@@ -430,6 +430,8 @@
                             <div id="autocomplete-results" class="autocomplete-results"></div>
                         </div>
                         <small class="text-muted">Kode part harus terdaftar di data rak.</small>
+                        <input type="hidden" name="No_Rack_Item_Withdrawal" id="No_Rack_Item_Withdrawal" value="">
+                        <input type="hidden" name="Name_Item_Withdrawal" id="Name_Item_Withdrawal" value="">
                     </div>
                     {{-- Live preview after select --}}
                     <div id="rackPreview" class="alert alert-info py-2 px-3 mt-2" style="display:none; font-size:0.85rem;">
@@ -587,6 +589,8 @@
         function selectItem(item) {
             if (!item) return;
             $input.val(item.item_code);
+            $('#No_Rack_Item_Withdrawal').val(item.rack_no || '');
+            $('#Name_Item_Withdrawal').val(item.part_name || '');
             $results.removeClass('show').empty();
             // Show preview
             $('#prevItemCode').text(item.item_code);
@@ -607,6 +611,8 @@
             $preview.hide();
             $results.removeClass('show').empty();
             $input.val('');
+            $('#No_Rack_Item_Withdrawal').val('');
+            $('#Name_Item_Withdrawal').val('');
         });
 
     });

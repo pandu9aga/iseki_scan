@@ -16,11 +16,10 @@ class RequestController extends Controller
         $code_rack = $request->query('code_rack');
         $code_item = $request->query('code_item');
         $filter_date = $request->query('date');
-        $filter_target_date = $request->query('target_date');
-        $filter_status = $request->query('status');
+        $filter_month = $request->query('month');
         $filter_checker = $request->query('checker');
 
-        return view('users.requests.index', compact('area', 'check_id', 'code_rack', 'code_item', 'filter_date', 'filter_target_date', 'filter_status', 'filter_checker'));
+        return view('users.requests.index', compact('area', 'check_id', 'code_rack', 'code_item', 'filter_date', 'filter_month', 'filter_checker'));
     }
 
 
@@ -80,7 +79,7 @@ class RequestController extends Controller
 
         $newRequest->save();
 
-        $filterParams = array_filter($request->only(['date', 'target_date', 'status', 'checker']));
+        $filterParams = array_filter($request->only(['date', 'month', 'checker']));
 
         if ($request->has('check_id') && !empty($request->input('check_id'))) {
             $check = \App\Models\Check::find($request->input('check_id'));

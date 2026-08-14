@@ -14,26 +14,26 @@ class UserCheckController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Check::whereNotNull('Status_Check');
+        // Otomatis filter "hari ini" berdasarkan tanggal input (Time_Check) jika tanggal tidak dipilih
+        $date  = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $month = $request->input('month'); // format YYYY-MM
 
-        // Filter by input date
-        if ($date = $request->input('date')) {
-            $query->whereDate('Time_Check', $date);
-        }
-
-        // Filter by target check date
-        if ($targetDate = $request->input('target_date')) {
-            $query->whereDate('Status_Check', $targetDate);
-        }
-
-        // Filter status relatif dari HARI INI
-        if ($status = $request->input('status')) {
-            if ($status === 'today') {
-                $query->whereDate('Status_Check', Carbon::today());
-            } elseif (is_numeric($status)) {
-                $query->whereDate('Status_Check', Carbon::today()->addDays((int)$status));
+        // Filter by waktu input (Time_Check): bulanan jika dipilih, selain itu harian
+        $timeFilter = function ($q) use ($date, $month) {
+            if ($month) {
+                $q->whereYear('Time_Check', substr($month, 0, 4))
+                  ->whereMonth('Time_Check', (int)substr($month, 5, 2));
+            } else {
+                $q->whereDate('Time_Check', $date);
             }
-        }
+        };
+
+        // Tampilkan semua check: yang punya target date (Status_Check) ATAU hasil auto-scan (Auto_Check = 1)
+        $query = Check::where(function ($q) {
+            $q->whereNotNull('Status_Check')
+              ->orWhere('Auto_Check', 1);
+        });
+        $timeFilter($query);
 
         // Filter by checker (Id_User)
         if ($checker = $request->input('checker')) {
@@ -54,8 +54,10 @@ class UserCheckController extends Controller
             ? \App\Models\User::whereIn('Id_User', $adminIds)->pluck('Username_User', 'Id_User')->toArray()
             : [];
 
-        // checkerList untuk dropdown - ambil dari semua data TANPA filter agar dropdown konsisten
-        $allChecks = Check::select('Id_User', 'Is_User')->distinct()->get();
+        // checkerList untuk dropdown - hanya checker yang check pada waktu input yang dipilih (harian/bulanan)
+        $allChecks = Check::select('Id_User', 'Is_User');
+        $timeFilter($allChecks);
+        $allChecks = $allChecks->distinct()->get();
         $allMemberIds = $allChecks->filter(fn($c) => !$c->Is_User)->pluck('Id_User')->filter()->unique();
         $allAdminIds  = $allChecks->filter(fn($c) => $c->Is_User)->pluck('Id_User')->filter()->unique();
 
@@ -122,6 +124,7 @@ class UserCheckController extends Controller
             'Id_User' => session('Id_Member'),
             'Status_Check' => $targetDate,
             'Is_User' => 0,
+            'Area_Check' => $request->input('Area_Request'),
         ]);
 
         $label = $request->input('Status_Check') . ' Hari Ke Depan';
@@ -131,7 +134,7 @@ class UserCheckController extends Controller
             'area' => $request->input('Area_Request'),
             'code_rack' => $codeRack,
             'code_item' => $request->input('Code_Item'),
-        ])->with('success', "{$codeRack} Check {$label} berhasil disimpan.");
+        ])->with('success', $codeRack.' '.$label.' berhasil disimpan.');
     }
 
     /**
@@ -143,7 +146,58 @@ class UserCheckController extends Controller
         $check->Status_Check = null;
         $check->save();
 
-        $filterParams = array_filter($request->only(['date', 'target_date', 'status', 'checker']));
+        $filterParams = array_filter($request->only(['date', 'month', 'checker']));
         return redirect()->route('user.check', $filterParams)->with('success', 'Check berhasil ditandai sebagai Selesai.');
+    }
+
+    /**
+     * Auto-record check from barcode scan (AJAX endpoint for user request page).
+     * Saves Code_Rack to checks with Status_Check = NULL.
+     * Prevents double-record: 1 rack = 1 record per user per day.
+     */
+    public function autoStore(Request $request)
+    {
+        $request->validate([
+            'code_rack'  => 'required|string',
+            'code_item'  => 'nullable|string',
+            'area'       => 'nullable|string',
+        ]);
+
+        $idMember  = session('Id_Member');
+        $today     = Carbon::today();
+        $codeRack  = strtoupper($request->input('code_rack'));
+        $codeItem  = substr(($request->input('code_item') ?? ''), 0, 12);
+        $area      = $request->input('area');
+
+        // Cek: apakah user ini sudah scan rak yang sama hari ini (khusus record auto-scan)?
+        $alreadyExists = Check::where('Code_Rack', $codeRack)
+            ->where('Id_User', $idMember)
+            ->where('Is_User', 0)
+            ->where('Auto_Check', 1)
+            ->whereDate('Time_Check', $today)
+            ->exists();
+
+        if ($alreadyExists) {
+            return response()->json([
+                'saved'   => false,
+                'message' => 'Check untuk rak ini sudah tercatat hari ini.',
+            ]);
+        }
+
+        Check::create([
+            'Time_Check'    => Carbon::now(),
+            'Code_Rack'     => $codeRack,
+            'Code_Item_Rack' => $codeItem ?: '',
+            'Id_User'       => $idMember,
+            'Status_Check'  => null,   // Target date null — tidak perlu pilih hari
+            'Is_User'       => 0,
+            'Auto_Check'    => 1,
+            'Area_Check'    => $area,
+        ]);
+
+        return response()->json([
+            'saved'   => true,
+            'message' => $codeRack . ' berhasil dicatat ke Check.',
+        ]);
     }
 }

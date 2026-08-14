@@ -17,29 +17,24 @@
     {{-- Filter --}}
     <div class="card shadow-sm mb-3 border-left-primary">
         <div class="card-body py-2 px-3">
-            <form method="GET" action="{{ route('user.check') }}" class="form-inline d-flex align-items-center flex-wrap">
-                <div class="mr-3 mb-2 mb-md-0 mt-2 mt-md-0 d-flex align-items-center">
-                    <label class="mr-2 font-weight-bold text-gray-700" style="font-size:0.85rem;">
-                        <i class="fas fa-calendar mr-1"></i>Tanggal Input:
-                    </label>
-                    <input type="date" name="date" class="form-control form-control-sm" value="{{ request('date') }}">
-                </div>
-                <div class="mr-3 mb-2 mb-md-0 mt-2 mt-md-0 d-flex align-items-center">
-                    <label class="mr-2 font-weight-bold text-success" style="font-size:0.85rem;">
-                        <i class="fas fa-bullseye mr-1"></i>Target Check:
-                    </label>
-                    <input type="date" name="target_date" class="form-control form-control-sm border-success" value="{{ request('target_date') }}">
-                </div>
-                <div class="mr-3 mb-2 mb-md-0 mt-2 mt-md-0 d-flex align-items-center">
-                    <label class="mr-2 text-gray-700" style="font-size:0.8rem;">Status:</label>
-                    <select name="status" class="form-control form-control-sm" style="min-width: 100px;">
-                        <option value="">Semua</option>
-                        <option value="today" {{ request('status') == 'today' ? 'selected' : '' }}>Hari Ini</option>
-                        <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Besok</option>
-                        <option value="2" {{ request('status') == '2' ? 'selected' : '' }}>2 Hari Lagi</option>
-                        <option value="3" {{ request('status') == '3' ? 'selected' : '' }}>3 Hari Lagi</option>
-                        <option value="4" {{ request('status') == '4' ? 'selected' : '' }}>4 Hari Lagi</option>
-                    </select>
+            <form method="GET" action="{{ route('user.check') }}" id="filterCheckForm" class="form-inline d-flex align-items-center flex-wrap">
+                <div class="mr-3 mb-2 mb-md-0 mt-2 mt-md-0 d-flex align-items-center flex-wrap" style="gap:6px;">
+                    <div class="btn-group btn-group-sm" role="group" style="margin-right:6px;">
+                        <button type="button" class="btn {{ request('month') ? 'btn-outline-primary' : 'btn-primary' }}" onclick="setFilterMode('harian')">Harian</button>
+                        <button type="button" class="btn {{ request('month') ? 'btn-primary' : 'btn-outline-primary' }}" onclick="setFilterMode('bulanan')">Bulanan</button>
+                    </div>
+
+                    <span id="filterHarianGroup" class="d-inline-flex align-items-center" style="gap:4px;{{ request('month') ? 'display:none;' : '' }}">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="moveFilterDate(-1)" title="Sebelumnya"><i class="fas fa-chevron-left"></i></button>
+                        <input type="date" name="date" id="filterDate" class="form-control form-control-sm" value="{{ request('date', \Carbon\Carbon::today()->format('Y-m-d')) }}">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="moveFilterDate(1)" title="Selanjutnya"><i class="fas fa-chevron-right"></i></button>
+                    </span>
+
+                    <span id="filterBulananGroup" class="d-inline-flex align-items-center" style="gap:4px;{{ request('month') ? '' : 'display:none;' }}">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="moveFilterMonth(-1)" title="Bulan Sebelumnya"><i class="fas fa-chevron-left"></i></button>
+                        <input type="month" name="month" id="filterMonth" class="form-control form-control-sm" value="{{ request('month') }}">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="moveFilterMonth(1)" title="Bulan Selanjutnya"><i class="fas fa-chevron-right"></i></button>
+                    </span>
                 </div>
                 <div class="mr-3 mb-2 mb-md-0 mt-2 mt-md-0 d-flex align-items-center">
                     <label class="mr-2 text-gray-700" style="font-size:0.8rem;">Checker:</label>
@@ -52,7 +47,7 @@
                 </div>
                 <div class="mt-2 mt-md-0">
                     <button type="submit" class="btn btn-primary btn-sm mr-1"><i class="fas fa-search"></i> Terapkan</button>
-                    <a href="{{ route('user.check', ['target_date' => \Carbon\Carbon::today()->format('Y-m-d')]) }}" class="btn btn-danger btn-sm mr-1"><i class="fas fa-calendar-day"></i> Cek Hari Ini</a>
+                    <button type="button" class="btn btn-danger btn-sm mr-1" onclick="setFilterToday()"><i class="fas fa-calendar-day"></i> Hari Ini</button>
                     <a href="{{ route('user.check') }}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-sync-alt"></i> Reset</a>
                 </div>
             </form>
@@ -78,6 +73,7 @@
                             <th>Waktu</th>
                             <th>Code Rack</th>
                             <th>Code Item</th>
+                            <th>Area Check</th>
                             <th>Rack Name</th>
                             <th>Status</th>
                             <th>Checker</th>
@@ -91,38 +87,48 @@
                             <td>{{ $c->Time_Check ? \Carbon\Carbon::parse($c->Time_Check)->format('d/m/y H:i') : '-' }}</td>
                             <td><code>{{ $c->Code_Rack }}</code></td>
                             <td>{{ $c->Code_Item_Rack }}</td>
+                            <td>{{ $c->Area_Check ?? '-' }}</td>
                             <td>{{ $c->rack_name }}</td>
                             <td>
                                 @php
-                                    // Status_Check sekarang menyimpan target date (misal 2026-04-26)
                                     $targetDate = \Carbon\Carbon::parse($c->Status_Check)->startOfDay();
                                     $timeCheckDate = \Carbon\Carbon::parse($c->Time_Check)->startOfDay();
                                     $today = \Carbon\Carbon::today();
-                                    
-                                    // Hitung hari status (DATEDIFF)
-                                    $daysDiff = $timeCheckDate->diffInDays($targetDate);
-                                    
-                                    if ($targetDate->equalTo($today)) {
-                                        $badgeText = "Hari Ini";
-                                        $badgeClass = "badge-danger"; 
-                                    } else {
-                                        $badgeText = $targetDate->format('d M Y');
-                                        if ($daysDiff == 1) $badgeClass = "badge-day-1";
-                                        elseif ($daysDiff == 2) $badgeClass = "badge-day-2";
-                                        elseif ($daysDiff == 3) $badgeClass = "badge-day-3";
-                                        else $badgeClass = "badge-day-4";
-                                        
-                                        if ($targetDate->lessThan($today)) {
-                                            $badgeClass = "badge-secondary"; 
-                                        }
-                                    }
                                 @endphp
-                                <span class="badge {{ $badgeClass }} px-2 py-1">{{ $badgeText }}</span>
+                                @if(is_null($c->Status_Check))
+                                    @if($c->Auto_Check == 1)
+                                        <span class="badge badge-info px-2 py-1">Scan</span>
+                                    @else
+                                        <span class="badge badge-secondary px-2 py-1">Selesai</span>
+                                    @endif
+                                @else
+                                    @php
+                                        // Status_Check sekarang menyimpan target date (misal 2026-04-26)
+                                        // Hitung hari status (DATEDIFF)
+                                        $daysDiff = $timeCheckDate->diffInDays($targetDate);
+                                    @endphp
+                                    @if ($targetDate->equalTo($today))
+                                        <span class="badge badge-danger px-2 py-1">Hari Ini</span>
+                                    @else
+                                        @php
+                                            $badgeText = $targetDate->format('d M Y');
+                                            if ($daysDiff == 1) $badgeClass = "badge-day-1";
+                                            elseif ($daysDiff == 2) $badgeClass = "badge-day-2";
+                                            elseif ($daysDiff == 3) $badgeClass = "badge-day-3";
+                                            else $badgeClass = "badge-day-4";
+
+                                            if ($targetDate->lessThan($today)) {
+                                                $badgeClass = "badge-secondary";
+                                            }
+                                        @endphp
+                                        <span class="badge {{ $badgeClass }} px-2 py-1">{{ $badgeText }}</span>
+                                    @endif
+                                @endif
                             </td>
                             <td>{{ $c->checker_name }}</td>
                             <td class="text-center">
                                 @php
-                                    $filterParams = array_filter(request()->only(['date', 'target_date', 'status', 'checker']));
+                                    $filterParams = array_filter(request()->only(['date', 'month', 'checker']));
                                     $reqParams = array_merge(['check_id' => $c->Id_Checks, 'code_rack' => $c->Code_Rack, 'code_item' => $c->Code_Item_Rack], $filterParams);
                                 @endphp
                                 <a href="{{ route('request', $reqParams) }}" class="btn btn-sm btn-info mb-1" title="Request Ulang">
@@ -143,6 +149,70 @@
 <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
 <script>
+function pad2(n) { return String(n).padStart(2, '0'); }
+function fmtDate(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+
+function setFilterMode(mode) {
+    var harian = document.getElementById('filterHarianGroup');
+    var bulanan = document.getElementById('filterBulananGroup');
+    var dateInput = document.getElementById('filterDate');
+    var monthInput = document.getElementById('filterMonth');
+    if (mode === 'bulanan') {
+        if (!monthInput.value) {
+            var now = new Date();
+            monthInput.value = now.getFullYear() + '-' + pad2(now.getMonth() + 1);
+        }
+        harian.style.display = 'none';
+        bulanan.style.display = '';
+        dateInput.disabled = true;
+        monthInput.disabled = false;
+    } else {
+        harian.style.display = '';
+        bulanan.style.display = 'none';
+        dateInput.disabled = false;
+        monthInput.disabled = true;
+    }
+    document.getElementById('filterCheckForm').submit();
+}
+
+function moveFilterDate(offset) {
+    var d = new Date(document.getElementById('filterDate').value + 'T00:00:00');
+    d.setDate(d.getDate() + offset);
+    document.getElementById('filterDate').value = fmtDate(d);
+    document.getElementById('filterCheckForm').submit();
+}
+
+function moveFilterMonth(offset) {
+    var val = document.getElementById('filterMonth').value;
+    var now = new Date();
+    var y, m;
+    if (val) {
+        var p = val.split('-');
+        y = parseInt(p[0], 10); m = parseInt(p[1], 10);
+    } else {
+        y = now.getFullYear(); m = now.getMonth() + 1;
+    }
+    var total = (y * 12) + (m - 1) + offset;
+    y = Math.floor(total / 12);
+    m = (total % 12) + 1;
+    document.getElementById('filterMonth').value = y + '-' + pad2(m);
+    document.getElementById('filterCheckForm').submit();
+}
+
+function setFilterToday() {
+    var now = new Date();
+    document.getElementById('filterDate').value = fmtDate(now);
+    document.getElementById('filterDate').disabled = false;
+    document.getElementById('filterMonth').disabled = true;
+    document.getElementById('filterCheckForm').submit();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var isBulanan = document.getElementById('filterMonth').value ? true : false;
+    document.getElementById('filterDate').disabled = isBulanan;
+    document.getElementById('filterMonth').disabled = !isBulanan;
+});
+
 $(document).ready(function() {
     $('#checkTable').DataTable({
         pageLength: 100,

@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Check;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AdminCheckController extends Controller
 {
@@ -14,26 +17,26 @@ class AdminCheckController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Check::whereNotNull('Status_Check');
+        // Otomatis filter "hari ini" berdasarkan tanggal input (Time_Check) jika tanggal tidak dipilih
+        $date  = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $month = $request->input('month'); // format YYYY-MM
 
-        // Filter by input date
-        if ($date = $request->input('date')) {
-            $query->whereDate('Time_Check', $date);
-        }
-
-        // Filter by target check date
-        if ($targetDate = $request->input('target_date')) {
-            $query->whereDate('Status_Check', $targetDate);
-        }
-
-        // Filter status relatif dari HARI INI
-        if ($status = $request->input('status')) {
-            if ($status === 'today') {
-                $query->whereDate('Status_Check', Carbon::today());
-            } elseif (is_numeric($status)) {
-                $query->whereDate('Status_Check', Carbon::today()->addDays((int)$status));
+        // Filter by waktu input (Time_Check): bulanan jika dipilih, selain itu harian
+        $timeFilter = function ($q) use ($date, $month) {
+            if ($month) {
+                $q->whereYear('Time_Check', substr($month, 0, 4))
+                  ->whereMonth('Time_Check', (int)substr($month, 5, 2));
+            } else {
+                $q->whereDate('Time_Check', $date);
             }
-        }
+        };
+
+        // Tampilkan semua check: yang punya target date (Status_Check) ATAU hasil auto-scan (Auto_Check = 1)
+        $query = Check::where(function ($q) {
+            $q->whereNotNull('Status_Check')
+              ->orWhere('Auto_Check', 1);
+        });
+        $timeFilter($query);
 
         // Filter by checker (Id_User)
         if ($checker = $request->input('checker')) {
@@ -54,8 +57,10 @@ class AdminCheckController extends Controller
             ? \App\Models\User::whereIn('Id_User', $adminIds)->pluck('Username_User', 'Id_User')->toArray()
             : [];
 
-        // checkerList untuk dropdown - ambil dari semua data TANPA filter agar dropdown konsisten
-        $allChecks = Check::select('Id_User', 'Is_User')->distinct()->get();
+        // checkerList untuk dropdown - hanya checker yang check pada waktu input yang dipilih (harian/bulanan)
+        $allChecks = Check::select('Id_User', 'Is_User');
+        $timeFilter($allChecks);
+        $allChecks = $allChecks->distinct()->get();
         $allMemberIds = $allChecks->filter(fn($c) => !$c->Is_User)->pluck('Id_User')->filter()->unique();
         $allAdminIds  = $allChecks->filter(fn($c) => $c->Is_User)->pluck('Id_User')->filter()->unique();
 
@@ -87,7 +92,124 @@ class AdminCheckController extends Controller
             $c->rack_name = $racksMap[$c->Code_Rack] ?? '-';
         }
 
-        return view('admins.checks.index', compact('checks', 'checkerList'));
+        // === Ringkasan checker hari ini (khusus halaman admin) ===
+        $todayChecks = Check::whereDate('Time_Check', Carbon::today())->get();
+        $todayMemberIds = $todayChecks->filter(fn($c) => !$c->Is_User)->pluck('Id_User')->filter()->unique();
+        $todayAdminIds  = $todayChecks->filter(fn($c) => $c->Is_User)->pluck('Id_User')->filter()->unique();
+
+        $todayMembersMap = $todayMemberIds->isNotEmpty()
+            ? \App\Models\Member::whereIn('Id_Member', $todayMemberIds)->pluck('Name_Member', 'Id_Member')->toArray()
+            : [];
+        $todayUsersMap = $todayAdminIds->isNotEmpty()
+            ? \App\Models\User::whereIn('Id_User', $todayAdminIds)->pluck('Username_User', 'Id_User')->toArray()
+            : [];
+
+        $checkerSummary = [];
+        foreach ($todayChecks as $c) {
+            $name = $c->Is_User
+                ? (($todayUsersMap[$c->Id_User] ?? '-') . ' (Admin)')
+                : ($todayMembersMap[$c->Id_User] ?? '-');
+            $checkerSummary[$name] = ($checkerSummary[$name] ?? 0) + 1;
+        }
+        arsort($checkerSummary);
+        $todayTotal = $todayChecks->count();
+
+        return view('admins.checks.index', compact('checks', 'checkerList', 'checkerSummary', 'todayTotal'));
+    }
+
+    /**
+     * Export filtered checks to Excel (newest data on top, oldest at the bottom)
+     */
+    public function export(Request $request)
+    {
+        $date  = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $month = $request->input('month'); // format YYYY-MM
+
+        $timeFilter = function ($q) use ($date, $month) {
+            if ($month) {
+                $q->whereYear('Time_Check', substr($month, 0, 4))
+                  ->whereMonth('Time_Check', (int)substr($month, 5, 2));
+            } else {
+                $q->whereDate('Time_Check', $date);
+            }
+        };
+
+        $query = Check::where(function ($q) {
+            $q->whereNotNull('Status_Check')
+              ->orWhere('Auto_Check', 1);
+        });
+        $timeFilter($query);
+
+        if ($checker = $request->input('checker')) {
+            $query->where('Id_User', $checker);
+        }
+
+        // Terbaru di atas, terlama di bawah
+        $checks = $query->orderBy('Time_Check', 'desc')
+            ->orderBy('Id_Checks', 'desc')
+            ->get();
+
+        $memberIds = $checks->filter(fn($c) => !$c->Is_User)->pluck('Id_User')->filter()->unique();
+        $adminIds  = $checks->filter(fn($c) => $c->Is_User)->pluck('Id_User')->filter()->unique();
+
+        $membersMap = $memberIds->isNotEmpty()
+            ? \App\Models\Member::whereIn('Id_Member', $memberIds)->pluck('Name_Member', 'Id_Member')->toArray()
+            : [];
+
+        $usersMap = $adminIds->isNotEmpty()
+            ? \App\Models\User::whereIn('Id_User', $adminIds)->pluck('Username_User', 'Id_User')->toArray()
+            : [];
+
+        $codes = $checks->pluck('Code_Rack')->filter()->unique();
+        $racksMap = $codes->isNotEmpty()
+            ? \App\Models\Rack::whereIn('Code_Rack', $codes)->pluck('Name_Item_Rack', 'Code_Rack')->toArray()
+            : [];
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = ['No', 'Time Check', 'Area Check', 'Rack', 'Item', 'Name', 'Checker'];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
+        ];
+        $sheet->getStyle('A1:G1')->applyFromArray($headerStyle);
+        $sheet->setAutoFilter('A1:G1');
+
+        $row = 2;
+        $no = 1;
+
+        foreach ($checks as $c) {
+            $checkerName = $c->Is_User
+                ? (($usersMap[$c->Id_User] ?? '-') . ' (Admin)')
+                : ($membersMap[$c->Id_User] ?? '-');
+
+            $sheet->fromArray([
+                $no,
+                $c->Time_Check ? Carbon::parse($c->Time_Check)->format('d/m/y H:i') : '-',
+                $c->Area_Check ?? '-',
+                $c->Code_Rack,
+                $c->Code_Item_Rack,
+                $racksMap[$c->Code_Rack] ?? '-',
+                $checkerName,
+            ], null, 'A' . $row);
+
+            $no++;
+            $row++;
+        }
+
+        foreach (range('A', 'G') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = 'Check_' . ($month ?: $date) . '.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        $filePath = storage_path('app/public/' . $fileName);
+        $writer->save($filePath);
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
     }
 
     /**
@@ -121,6 +243,7 @@ class AdminCheckController extends Controller
             'Id_User' => session('Id_User'),
             'Status_Check' => $targetDate,
             'Is_User' => 1,
+            'Area_Check' => $request->input('Area_Request'),
         ]);
 
         $label = $request->input('Status_Check') . ' Hari Ke Depan';
@@ -129,7 +252,7 @@ class AdminCheckController extends Controller
             'area' => $request->input('Area_Request'),
             'code_rack' => $request->input('Code_Rack'),
             'code_item' => $request->input('Code_Item'),
-        ])->with('success', "Check {$label} berhasil disimpan.");
+        ])->with('success', $request->input('Code_Rack').' '.$label.' berhasil disimpan.');
     }
 
     /**
@@ -141,7 +264,7 @@ class AdminCheckController extends Controller
         $check->Status_Check = null;
         $check->save();
 
-        $filterParams = array_filter($request->only(['date', 'target_date', 'status', 'checker']));
+        $filterParams = array_filter($request->only(['date', 'month', 'checker']));
         return redirect()->route('admin.check', $filterParams)->with('success', 'Check berhasil ditandai sebagai Selesai.');
     }
 }
