@@ -49,7 +49,7 @@ class SumHistoryController extends Controller
             ->addColumn('Selisih', function ($r) {
                 return (int) $r->Sum_Record - (int) $r->Sum_Request;
             })
-            ->orderColumn('rec.Day_Record', 'rec.Day_Record ?, rec.Time_Record ?, rec.Id_Record ?')
+            ->orderColumn('rec.Day_Record', 'rec.Day_Record $1, rec.Time_Record $1, rec.Id_Record $1')
             ->make(true);
     }
 

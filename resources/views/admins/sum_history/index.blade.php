@@ -269,6 +269,7 @@
         var table = $('#sumHistoryTable').DataTable({
             processing: true,
             serverSide: true,
+            order: [[1, 'desc']],
             pageLength: 50,
             lengthMenu: [
                 [10, 25, 50, 100, -1],
