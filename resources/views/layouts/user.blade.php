@@ -243,6 +243,12 @@
             </li>
 
             <li class="nav-item">
+                <a class="nav-link" href="{{ route('sum') }}">
+                    <i class="fas fa-fw fa-balance-scale"></i>
+                    <span>Sum</span></a>
+            </li>
+
+            <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUrgent"
                     aria-expanded="true" aria-controls="collapseUrgent">
                     <i class="fas fa-fw fa-exclamation-triangle"></i>

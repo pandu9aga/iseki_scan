@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Record;
 use App\Models\Request as RequestModel;
+use App\Models\SumMismatch;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,7 @@ class AdminRecordingController extends Controller
         DB::beginTransaction();
         try {
             $Id_Request = null;
+            $matchingRequest = null;
 
             // Jika form mengirim Id_Request → cek request terkait
             if ($request->filled('Id_Request')) {
@@ -61,8 +63,8 @@ class AdminRecordingController extends Controller
                 }
             }
 
-            // Insert record baru
-            Record::create([
+            // Insert record baru (record selalu masuk tabel records + Id_Request)
+            $record = Record::create([
                 'Day_Record' => $date,
                 'Time_Record' => $timeNow,
                 'Code_Item_Rack' => $codeItem,
@@ -74,7 +76,30 @@ class AdminRecordingController extends Controller
                 'Is_User' => 1,          // Flag: ini dari admin
             ]);
 
+            // Auto-deteksi Part Sum Not Match: Sum_Request - Sum_Record >= 5
+            $mismatchCreated = false;
+            if ($Id_Request && $matchingRequest
+                && ($matchingRequest->Sum_Request - $validated['Sum_Record']) >= 5) {
+                SumMismatch::create([
+                    'Id_Request' => $Id_Request,
+                    'Id_Record' => $record->Id_Record,
+                    'Code_Item_Rack' => $codeItem,
+                    'Code_Rack' => $validated['Code_Rack'],
+                    'Sum_Request' => $matchingRequest->Sum_Request,
+                    'Received_Qty' => $validated['Sum_Record'],
+                    'Outstanding_Qty' => $matchingRequest->Sum_Request - $validated['Sum_Record'],
+                    'Status' => 'open',
+                    'Time_Mismatch' => Carbon::now()->format('Y-m-d H:i:s'),
+                    'Reported_By' => $adminId,
+                ]);
+                $mismatchCreated = true;
+            }
+
             DB::commit();
+
+            if ($mismatchCreated) {
+                return redirect()->back()->with('success', 'Record berhasil dibuat. Selisih barang tercatat sebagai "Part Sum Not Match", menunggu MC melengkapi sisa barang.');
+            }
 
             return redirect()->back()->with('success', 'Record berhasil dibuat.');
         } catch (\Throwable $e) {
@@ -159,7 +184,7 @@ class AdminRecordingController extends Controller
         $requests = RequestModel::where('Code_Rack', $codeRack)
             ->where('Code_Item_Rack', 'LIKE', '%'.$codeItem.'%')
             ->where('Status_Request', 'Waiting')
-            ->get(['Id_Request', 'Area_Request']);
+            ->get(['Id_Request', 'Area_Request', 'Sum_Request']);
 
         // 2. Jika tidak ada yang cocok, cek Design_Changes_Request
         if ($requests->isEmpty()) {
@@ -167,7 +192,7 @@ class AdminRecordingController extends Controller
                 ->where('Status_Request', 'Waiting')
                 ->whereNotNull('Design_Changes_Request')
                 ->where('Design_Changes_Request', '!=', '')
-                ->get(['Id_Request', 'Area_Request']);
+                ->get(['Id_Request', 'Area_Request', 'Sum_Request']);
         }
 
         return response()->json([
@@ -176,6 +201,7 @@ class AdminRecordingController extends Controller
                 return [
                     'id' => $r->Id_Request,
                     'area' => $r->Area_Request ?: '',
+                    'sum_request' => $r->Sum_Request,
                 ];
             }),
         ]);

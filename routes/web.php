@@ -17,10 +17,12 @@ use App\Http\Controllers\Admin\MistakeController;
 use App\Http\Controllers\Admin\MonthlyController;
 use App\Http\Controllers\Admin\RackController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SumHistoryController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ValidationController;
 use App\Http\Controllers\Area\AreaScanController;
 use App\Http\Controllers\Helper\UrgentController;
+use App\Http\Controllers\Helper\SumController;
 use App\Http\Controllers\Helper\WaQueueController;
 use App\Http\Controllers\MainController;
 use App\Http\Controllers\Mc\McAchievementController;
@@ -43,6 +45,7 @@ use App\Http\Controllers\User\UserForgotController;
 use App\Http\Controllers\User\UserMistakeController;
 use App\Http\Controllers\User\UserReportController;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\AnyAuthMiddleware;
 use App\Http\Middleware\AreaMiddleware;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\McMiddleware;
@@ -158,6 +161,12 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/prediction/emptiness', [\App\Http\Controllers\Admin\PredictionController::class, 'emptiness'])->name('prediction.emptiness');
 
     Route::get('/admin_urgents', [UrgentController::class, 'index'])->name('admin.urgents');
+    Route::get('/admin_sum', [SumController::class, 'index'])->name('admin.sum');
+
+    // Sum History (selisih request vs datang)
+    Route::get('/admin_sum_history', [SumHistoryController::class, 'index'])->name('admin.sumhistory');
+    Route::get('/api/sum-history/data', [SumHistoryController::class, 'getData'])->name('sumhistory.data');
+    Route::get('/api/sum-history/export', [SumHistoryController::class, 'export'])->name('sumhistory.export');
 
     // WA Queue Monitoring
     Route::get('/wa-queue', [WaQueueController::class, 'index'])->name('wa.queue');
@@ -253,6 +262,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/user_urgents', [UrgentController::class, 'index'])->name('user.urgents');
     Route::get('/user_urgents/scan', [UrgentController::class, 'scan'])->name('user.urgents.scan');
     Route::post('/user_urgents/scan/process', [UrgentController::class, 'processScan'])->name('user.urgents.process');
+    Route::get('/user_sum', [SumController::class, 'index'])->name('sum');
 
     // Member Withdrawal
     Route::get('/user_withdrawal', [UserWithdrawalController::class, 'index'])->name('user.withdrawal');
@@ -304,6 +314,7 @@ Route::middleware(McMiddleware::class)->group(function () {
     Route::get('/mc_forgot', [McForgotController::class, 'index'])->name('mc_forgot');
 
     Route::get('/mc_urgents', [UrgentController::class, 'index'])->name('mc.urgents');
+    Route::get('/mc_sum', [SumController::class, 'index'])->name('mc.sum');
 });
 
 Route::middleware(TransitMiddleware::class)->group(function () {
@@ -346,6 +357,13 @@ Route::post('/api/check-stock-item', function (Request $request) {
 Route::get('/urgents/unrecorded', [UrgentController::class, 'unrecordedIndex'])->name('urgents.unrecorded');
 Route::get('/api/urgents/unrecorded-data', [UrgentController::class, 'getUnrecordedData'])->name('urgents.unrecorded.data');
 Route::get('/urgents/unrecorded/export', [UrgentController::class, 'exportUnrecorded'])->name('urgents.unrecorded.export');
+
+// Sum (Part Sum Not Match) - shared across member/internal user roles
+Route::middleware(AnyAuthMiddleware::class)->group(function () {
+    Route::get('/api/sum/data', [SumController::class, 'getData'])->name('sum.data');
+    Route::post('/sum/ready/{id}', [SumController::class, 'ready'])->name('sum.ready');
+    Route::post('/sum/cancel/{id}', [SumController::class, 'cancel'])->name('sum.cancel');
+});
 
 Route::get('/admin', [MainController::class, 'admin'])->name('admin');
 Route::post('/admin/create', [MainController::class, 'create'])->name('admin.create');

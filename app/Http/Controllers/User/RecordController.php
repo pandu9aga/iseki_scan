@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Record;
 use App\Models\Request as RequestModel;
+use App\Models\SumMismatch;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; // alias supaya tidak bentrok
@@ -43,6 +44,7 @@ class RecordController extends Controller
         DB::beginTransaction();
         try {
             $Id_Request = null;
+            $matchingRequest = null;
 
             // Jika form mengirim Id_Request → cek request terkait
             if ($request->filled('Id_Request')) {
@@ -54,8 +56,8 @@ class RecordController extends Controller
                 }
             }
 
-            // Insert record baru
-            Record::create([
+            // Insert record baru (record selalu masuk tabel records + Id_Request)
+            $record = Record::create([
                 'Day_Record' => $date,
                 'Time_Record' => $timeNow,
                 'Code_Item_Rack' => $codeItem,
@@ -66,13 +68,36 @@ class RecordController extends Controller
                 'Id_Request' => $Id_Request, // bisa null kalau tidak ada
             ]);
 
+            // Auto-deteksi Part Sum Not Match: Sum_Request - Sum_Record >= 5
+            $mismatchCreated = false;
+            if ($Id_Request && $matchingRequest
+                && ($matchingRequest->Sum_Request - $validated['Sum_Record']) >= 5) {
+                SumMismatch::create([
+                    'Id_Request' => $Id_Request,
+                    'Id_Record' => $record->Id_Record,
+                    'Code_Item_Rack' => $codeItem,
+                    'Code_Rack' => $validated['Code_Rack'],
+                    'Sum_Request' => $matchingRequest->Sum_Request,
+                    'Received_Qty' => $validated['Sum_Record'],
+                    'Outstanding_Qty' => $matchingRequest->Sum_Request - $validated['Sum_Record'],
+                    'Status' => 'open',
+                    'Time_Mismatch' => Carbon::now()->format('Y-m-d H:i:s'),
+                    'Reported_By' => $Id_User,
+                ]);
+                $mismatchCreated = true;
+            }
+
             DB::commit();
+
+            if ($mismatchCreated) {
+                return redirect()->back()->with('success', 'Record berhasil dibuat. Selisih barang tercatat sebagai "Part Sum Not Match", menunggu MC melengkapi sisa barang.');
+            }
 
             return redirect()->back()->with('success', 'Record berhasil dibuat.');
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            return redirect()->back()->with('error', 'Gagal membuat record: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Gagal membuat record: ' . $e->getMessage());
         }
     }
 
@@ -83,19 +108,19 @@ class RecordController extends Controller
 
         $exists = DB::table('racks')
             ->where('Code_Rack', $codeRack)
-            ->where('Code_Item_Rack', 'LIKE', '%'.$codeItem.'%')
+            ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
             ->exists();
 
         if (! $exists) {
             $exists = DB::connection('label')->table('rack_part_lists')
                 ->where('rack_no', $codeRack)
-                ->where('item_code', 'LIKE', '%'.$codeItem.'%')
+                ->where('item_code', 'LIKE', '%' . $codeItem . '%')
                 ->exists();
         }
 
         if (! $exists) {
             $exists = RequestModel::where('Code_Rack', $codeRack)
-                ->where('Code_Item_Rack', 'LIKE', '%'.$codeItem.'%')
+                ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
                 ->where('Status_Request', 'Waiting')
                 ->exists();
         }
@@ -149,7 +174,7 @@ class RecordController extends Controller
 
         // 1. Pencocokan berdasarkan code rack dan code item dengan status request waiting
         $requests = RequestModel::where('Code_Rack', $codeRack)
-            ->where('Code_Item_Rack', 'LIKE', '%'.$codeItem.'%')
+            ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
             ->where('Status_Request', 'Waiting')
             ->get(['Id_Request', 'Area_Request']);
 

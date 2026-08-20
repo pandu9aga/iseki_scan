@@ -369,8 +369,7 @@
 
         $("#Code_Item, #Code_Rack").on("blur", checkCorrectness);
 
-        $("#saveBtn").on("click", function () {
-            let form = $("#recordForm");
+        function resolveRequest() {
             let codeItem = $("#Code_Item").val();
             let codeRack = $("#Code_Rack").val();
 
@@ -388,9 +387,7 @@
                     // tidak ada request matching -> tampilkan modal error
                     $("#errorModal").modal("show");
                 } else if (response.count === 1) {
-                    // hanya 1 -> langsung submit
-                    form.append(`<input type="hidden" name="Id_Request" value="${response.requests[0].id}">`);
-                    form.submit();
+                    proceedRecord(response.requests[0].id);
                 } else {
                     // lebih dari 1 -> tampilkan modal
                     let areaOptions = $("#areaOptions");
@@ -406,12 +403,21 @@
                     $("#areaModal").modal("show");
                 }
             });
+        }
+
+        function proceedRecord(idRequest) {
+            let form = $("#recordForm");
+            form.append(`<input type="hidden" name="Id_Request" value="${idRequest}">`);
+            form.submit();
+        }
+
+        $("#saveBtn").on("click", function () {
+            resolveRequest();
         });
 
         function selectArea(idRequest) {
-            $("#recordForm").append(`<input type="hidden" name="Id_Request" value="${idRequest}">`);
+            proceedRecord(idRequest);
             $("#areaModal").modal("hide");
-            $("#recordForm").submit();
         }
 
     </script>

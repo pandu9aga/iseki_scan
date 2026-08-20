@@ -41,10 +41,10 @@ class AdminWithdrawalController extends Controller
         } elseif ($month) {
             $parsedMonth = Carbon::parse($month . '-01');
             $query->whereMonth('Date_Withdrawal', $parsedMonth->format('m'))
-                  ->whereYear('Date_Withdrawal', $parsedMonth->format('Y'));
+                ->whereYear('Date_Withdrawal', $parsedMonth->format('Y'));
         } else {
             $query->whereMonth('Date_Withdrawal', Carbon::now()->format('m'))
-                  ->whereYear('Date_Withdrawal', Carbon::now()->format('Y'));
+                ->whereYear('Date_Withdrawal', Carbon::now()->format('Y'));
         }
 
         $withdrawals = $query->orderBy('Id_Withdrawal', 'desc')->get();
@@ -337,10 +337,10 @@ class AdminWithdrawalController extends Controller
         } elseif ($month) {
             $parsedMonth = Carbon::parse($month . '-01');
             $query->whereMonth('Date_Withdrawal', $parsedMonth->format('m'))
-                  ->whereYear('Date_Withdrawal', $parsedMonth->format('Y'));
+                ->whereYear('Date_Withdrawal', $parsedMonth->format('Y'));
         } else {
             $query->whereMonth('Date_Withdrawal', Carbon::now()->format('m'))
-                  ->whereYear('Date_Withdrawal', Carbon::now()->format('Y'));
+                ->whereYear('Date_Withdrawal', Carbon::now()->format('Y'));
         }
 
         $withdrawals = $query->orderBy('Id_Withdrawal', 'desc')->get();
@@ -381,11 +381,25 @@ class AdminWithdrawalController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         $headers = [
-            'No', 'Date WD', 'Name PIC', 'Item Code', 'Name Item', 'No Rack',
-            'Oke DST', 'PIC DST', 'Date Oke',
-            'Sampai di QC', 'Date Sampai QC',
-            'Received', 'Date Received', 'Finish', 'Date Finish', 'Description Finish',
-            'PIC Return', 'No Rack Return', 'Date Return'
+            'No',
+            'Date WD',
+            'Name PIC',
+            'Item Code',
+            'Name Item',
+            'No Rack',
+            'Oke DST',
+            'PIC DST',
+            'Date Oke',
+            'Sampai di QC',
+            'Date Sampai QC',
+            'Received',
+            'Date Received',
+            'Finish',
+            'Date Finish',
+            'Description Finish',
+            'PIC Return',
+            'No Rack Return',
+            'Date Return'
         ];
         $sheet->fromArray([$headers], null, 'A1');
 

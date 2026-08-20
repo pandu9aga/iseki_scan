@@ -92,29 +92,36 @@ class AdminCheckController extends Controller
             $c->rack_name = $racksMap[$c->Code_Rack] ?? '-';
         }
 
-        // === Ringkasan checker hari ini (khusus halaman admin) ===
-        $todayChecks = Check::whereDate('Time_Check', Carbon::today())->get();
-        $todayMemberIds = $todayChecks->filter(fn($c) => !$c->Is_User)->pluck('Id_User')->filter()->unique();
-        $todayAdminIds  = $todayChecks->filter(fn($c) => $c->Is_User)->pluck('Id_User')->filter()->unique();
+        // === Ringkasan checker sesuai filter (harian/bulanan) — khusus halaman admin ===
+        $summaryQuery = Check::select('Id_User', 'Is_User');
+        $timeFilter($summaryQuery);
+        $periodChecks = $summaryQuery->get();
+        $periodMemberIds = $periodChecks->filter(fn($c) => !$c->Is_User)->pluck('Id_User')->filter()->unique();
+        $periodAdminIds  = $periodChecks->filter(fn($c) => $c->Is_User)->pluck('Id_User')->filter()->unique();
 
-        $todayMembersMap = $todayMemberIds->isNotEmpty()
-            ? \App\Models\Member::whereIn('Id_Member', $todayMemberIds)->pluck('Name_Member', 'Id_Member')->toArray()
+        $periodMembersMap = $periodMemberIds->isNotEmpty()
+            ? \App\Models\Member::whereIn('Id_Member', $periodMemberIds)->pluck('Name_Member', 'Id_Member')->toArray()
             : [];
-        $todayUsersMap = $todayAdminIds->isNotEmpty()
-            ? \App\Models\User::whereIn('Id_User', $todayAdminIds)->pluck('Username_User', 'Id_User')->toArray()
+        $periodUsersMap = $periodAdminIds->isNotEmpty()
+            ? \App\Models\User::whereIn('Id_User', $periodAdminIds)->pluck('Username_User', 'Id_User')->toArray()
             : [];
 
         $checkerSummary = [];
-        foreach ($todayChecks as $c) {
+        foreach ($periodChecks as $c) {
             $name = $c->Is_User
-                ? (($todayUsersMap[$c->Id_User] ?? '-') . ' (Admin)')
-                : ($todayMembersMap[$c->Id_User] ?? '-');
+                ? (($periodUsersMap[$c->Id_User] ?? '-') . ' (Admin)')
+                : ($periodMembersMap[$c->Id_User] ?? '-');
             $checkerSummary[$name] = ($checkerSummary[$name] ?? 0) + 1;
         }
         arsort($checkerSummary);
-        $todayTotal = $todayChecks->count();
+        $summaryTotal = $periodChecks->count();
 
-        return view('admins.checks.index', compact('checks', 'checkerList', 'checkerSummary', 'todayTotal'));
+        $isMonthly = (bool) $month;
+        $summaryLabel = $isMonthly
+            ? Carbon::createFromFormat('Y-m', $month)->format('F Y')
+            : Carbon::parse($date)->format('d M Y');
+
+        return view('admins.checks.index', compact('checks', 'checkerList', 'checkerSummary', 'summaryTotal', 'summaryLabel', 'isMonthly'));
     }
 
     /**

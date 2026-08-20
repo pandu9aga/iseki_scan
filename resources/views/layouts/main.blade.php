@@ -348,6 +348,18 @@
                     <span>Urgent</span></a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.sum') }}">
+                    <i class="fas fa-fw fa-balance-scale"></i>
+                    <span>Sum</span></a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('admin.sumhistory') }}">
+                    <i class="fas fa-fw fa-history"></i>
+                    <span>Rangkuman Sum</span></a>
+            </li>
+
             <!-- Divider -->
             <hr class="sidebar-divider">
 

@@ -29,11 +29,11 @@
 <div class="container-fluid">
     <h1 class="h3 mb-2 text-gray-800"><i class="fas fa-clipboard-check mr-2"></i>Check List</h1>
 
-    {{-- Ringkasan Checker Hari Ini (khusus halaman admin) --}}
+    {{-- Ringkasan Checker sesuai filter tanggal/bulan (khusus halaman admin) --}}
     <div class="card shadow-sm mb-3 border-left-primary">
         <div class="card-header py-3 bg-primary text-white d-flex justify-content-between align-items-center flex-wrap" style="gap:8px;">
-            <h6 class="m-0 font-weight-bold"><i class="fas fa-users mr-2"></i>Checker Hari Ini ({{ \Carbon\Carbon::today()->format('d M Y') }})</h6>
-            <span class="badge badge-light font-weight-bold px-3 py-2"><i class="fas fa-qrcode mr-1"></i>Total Scan: {{ $todayTotal }}</span>
+            <h6 class="m-0 font-weight-bold"><i class="fas fa-users mr-2"></i>Checker {{ $isMonthly ? 'Bulan Ini' : 'Hari Ini' }} ({{ $summaryLabel }})</h6>
+            <span class="badge badge-light font-weight-bold px-3 py-2"><i class="fas fa-qrcode mr-1"></i>Total Scan: {{ $summaryTotal }}</span>
         </div>
         <div class="card-body py-3">
             @if(count($checkerSummary) > 0)
@@ -48,7 +48,7 @@
                     @endforeach
                 </div>
             @else
-                <p class="text-muted text-center mb-0"><i class="fas fa-info-circle mr-1"></i>Belum ada check hari ini.</p>
+                <p class="text-muted text-center mb-0"><i class="fas fa-info-circle mr-1"></i>Belum ada check pada periode ini.</p>
             @endif
         </div>
     </div>

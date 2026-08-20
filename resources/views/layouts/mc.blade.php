@@ -167,6 +167,12 @@
                     <span>Urgent</span></a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('mc.sum') }}">
+                    <i class="fas fa-fw fa-balance-scale"></i>
+                    <span>Sum</span></a>
+            </li>
+
             {{-- <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.validate') }}">
             <i class="fas fa-fw fa-qrcode"></i>

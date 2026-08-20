@@ -98,7 +98,7 @@ class AreaScanController extends Controller
             'Sequence_No_Record' => $sequenceNoRecord,
         ];
 
-        if (($stockOverride && $waitingRequest) || $qcOverride || ($telatReturnRackOverride && $waitingRequest)) {
+        if (($stockOverride && $waitingRequest) || $qcOverride || $telatReturnRackOverride) {
             if ($stockOverride) {
                 $category = 'stock';
                 [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
@@ -128,7 +128,7 @@ class AreaScanController extends Controller
             $idRequest = $waitingRequest ? $waitingRequest->Id_Request : null;
             $isWithdrawal = false;
 
-            if ($qcOverride && $activeWithdrawal) {
+            if (($qcOverride || $telatReturnRackOverride) && $activeWithdrawal) {
                 $idRequest = $activeWithdrawal->Id_Withdrawal;
                 $isWithdrawal = true;
             }
@@ -513,7 +513,7 @@ class AreaScanController extends Controller
         // PRIORITAS 1: Stock → PRIORITAS 2: QC/Return Rack
         // Jika terdeteksi, langsung proses & return (early return)
         // ============================================================
-        if (($stockOverride && $waitingRequest) || $qcOverride || ($telatReturnRackOverride && $waitingRequest)) {
+        if (($stockOverride && $waitingRequest) || $qcOverride || $telatReturnRackOverride) {
             if ($stockOverride) {
                 $category = 'stock';
                 [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
@@ -543,7 +543,7 @@ class AreaScanController extends Controller
             $idRequest = $waitingRequest ? $waitingRequest->Id_Request : null;
             $isWithdrawal = false;
 
-            if ($qcOverride && $activeWithdrawal) {
+            if (($qcOverride || $telatReturnRackOverride) && $activeWithdrawal) {
                 $idRequest = $activeWithdrawal->Id_Withdrawal;
                 $isWithdrawal = true;
             }

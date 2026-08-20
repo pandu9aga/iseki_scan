@@ -9,6 +9,7 @@ use App\Models\Rack;
 use App\Models\Record;
 use App\Models\Request as RequestModel;
 use App\Models\StockItem;
+use App\Models\SumMismatch;
 use App\Models\Urgent;
 use App\Models\User;
 use App\Models\WaQueue;
@@ -128,6 +129,12 @@ class UrgentController extends Controller
                         $label = 'STOCK';
                         $class = 'secondary';
                     } elseif ($cat == 'telat supply' || $cat == 'telat request') {
+                        $class = 'secondary';
+                    } elseif ($cat == 'part sum not match') {
+                        $label = 'PART SUM NOT MATCH';
+                        $class = 'danger';
+                    } elseif ($cat == 'telat supply sum') {
+                        $label = 'TELAT SUPPLY SUM';
                         $class = 'secondary';
                     }
 
@@ -396,10 +403,83 @@ class UrgentController extends Controller
             ->first();
 
         // ============================================================
+        // PRIORITAS 0: Sum Mismatch (Part Sum Not Match) masih OPEN
+        // MC belum melengkapi sisa barang (belum klik "Selesai Kirim") →
+        // scan urgent langsung "part sum not match" (salah MC)
+        // ============================================================
+        $pendingSumMismatch = SumMismatch::where('Code_Rack', $codeRack)
+            ->where('Status', 'open')
+            ->orderByDesc('Id_Sum_Mismatch')
+            ->first();
+
+        if ($pendingSumMismatch) {
+            $bossMcMember = Member::where('Name_Member', 'Boss MC')->first();
+            if ($bossMcMember && $bossMcMember->Status_Non_Active == 1) {
+                $systemMember = Member::where('Name_Member', 'system')->first();
+                $idMcPic = $systemMember ? $systemMember->Id_Member : 35;
+                $nameMcPic = 'system';
+            } else {
+                $idMcPic = $bossMcMember ? $bossMcMember->Id_Member : 32;
+                $nameMcPic = 'Boss MC';
+            }
+
+            if ($checkDuplicateToday()) {
+                return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak oleh Anda hari ini).');
+            }
+
+            $idMismatchRequest = $pendingSumMismatch->Id_Request ?: ($waitingRequest ? $waitingRequest->Id_Request : null);
+            $namePartM = $rackForOverride ? ($rackForOverride->Name_Item_Rack ?? '-') : '-';
+            $codeItemM = $rackForOverride ? ($rackForOverride->Code_Item_Rack ?? '-') : '-';
+
+            $mistake = Mistake::create([
+                'Id_Request' => $idMismatchRequest,
+                'PIC' => $nameMcPic,
+                'Category_Mistake' => 'part sum not match',
+                'Day_Mistake' => $nowDate,
+                'Status_Mistake' => 0,
+            ]);
+
+            Urgent::create([
+                'Id_User' => $idMemberLogged,
+                'Id_Type_User' => null,
+                'Code_Rack' => $codeRack,
+                'Id_Request' => $idMismatchRequest,
+                'Id_Member' => $idMcPic,
+                'Time_Urgent' => $nowTime,
+                'Id_Mistake' => $mistake->Id_Mistake,
+            ]);
+
+            $reporter = Member::find($idMemberLogged);
+            $this->queueWaMessage([
+                'time_urgent' => $nowTime,
+                'code_rack' => $codeRack,
+                'pic' => $nameMcPic,
+                'reporter' => $reporter ? $reporter->Name_Member : 'Member',
+                'code_item' => $codeItemM,
+                'name_part' => $namePartM,
+                'sum_request' => $pendingSumMismatch->Sum_Request,
+                'category' => 'part sum not match',
+                'time_request' => $waitingRequest ? ($waitingRequest->Day_Request.' '.$waitingRequest->Time_Request) : '-',
+            ]);
+
+            return redirect()->back()->with([
+                'success' => 'Urgent Scan Code Rack '.$codeRack.' berhasil diproses (Part Sum Not Match).',
+                'scan_success_data' => [
+                    'category' => 'PART SUM NOT MATCH',
+                    'badge_class' => 'danger',
+                    'time_request' => $waitingRequest ? $waitingRequest->Time_Request : $nowTime,
+                    'sum_request' => $pendingSumMismatch->Sum_Request,
+                    'pic' => $nameMcPic,
+                    'code_rack' => $codeRack,
+                ],
+            ]);
+        }
+
+        // ============================================================
         // PRIORITAS 1: Stock → PRIORITAS 2: QC/Return Rack
         // Jika terdeteksi, langsung proses & return (early return)
         // ============================================================
-        if (($stockOverride && $waitingRequest) || $qcOverride || ($telatReturnRackOverride && $waitingRequest)) {
+        if (($stockOverride && $waitingRequest) || $qcOverride || $telatReturnRackOverride) {
             if ($stockOverride) {
                 $category = 'stock';
                 [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
@@ -429,7 +509,7 @@ class UrgentController extends Controller
             $idRequest = $waitingRequest ? $waitingRequest->Id_Request : null;
             $isWithdrawal = false;
 
-            if ($qcOverride && $activeWithdrawal) {
+            if (($qcOverride || $telatReturnRackOverride) && $activeWithdrawal) {
                 $idRequest = $activeWithdrawal->Id_Withdrawal;
                 $isWithdrawal = true;
             }
@@ -791,6 +871,10 @@ class UrgentController extends Controller
             $category = 'TELAT RETURN RACK - DST';
         } elseif ($data['category'] == 'stock') {
             $category = 'STOCK - DST';
+        } elseif ($data['category'] == 'part sum not match') {
+            $category = 'PART SUM NOT MATCH - MC';
+        } elseif ($data['category'] == 'telat supply sum') {
+            $category = 'TELAT SUPPLY SUM - DST';
         }
         $message = "⚠️ *{$data['code_rack']}* *{$category}*\n";
         $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
@@ -980,6 +1064,12 @@ class UrgentController extends Controller
                         $label = 'STOCK';
                         $class = 'secondary';
                     } elseif ($cat == 'telat supply' || $cat == 'telat request') {
+                        $class = 'secondary';
+                    } elseif ($cat == 'part sum not match') {
+                        $label = 'PART SUM NOT MATCH';
+                        $class = 'danger';
+                    } elseif ($cat == 'telat supply sum') {
+                        $label = 'TELAT SUPPLY SUM';
                         $class = 'secondary';
                     }
 
