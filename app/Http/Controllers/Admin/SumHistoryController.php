@@ -49,6 +49,7 @@ class SumHistoryController extends Controller
             ->addColumn('Selisih', function ($r) {
                 return (int) $r->Sum_Record - (int) $r->Sum_Request;
             })
+            ->orderColumn('rec.Day_Record', 'rec.Day_Record ?, rec.Time_Record ?, rec.Id_Record ?')
             ->make(true);
     }
 
@@ -57,7 +58,11 @@ class SumHistoryController extends Controller
      */
     public function export(Request $request)
     {
-        $query = $this->baseQuery($request)->get();
+        $query = $this->baseQuery($request)
+            ->orderByDesc('rec.Day_Record')
+            ->orderByDesc('rec.Time_Record')
+            ->orderByDesc('rec.Id_Record')
+            ->get();
 
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
