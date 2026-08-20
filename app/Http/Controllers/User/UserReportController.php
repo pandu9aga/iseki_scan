@@ -185,21 +185,6 @@ class UserReportController extends Controller
         return response()->download($filePath)->deleteFileAfterSend(true);
     }
 
-    public function update(Request $request, $id)
-    {
-        $req = Record::findOrFail($id);
-
-        $request->validate([
-            'Sum_Record' => 'required|integer|min:1',
-        ]);
-
-        $req->Sum_Record = $request->Sum_Record;
-        $req->Updated_At_Record = now(); // isi timestamp
-        $req->save();
-
-        return redirect()->back()->with('success', 'Record berhasil diperbarui.');
-    }
-
     public function destroy($id)
     {
         $record = Record::findOrFail($id);

@@ -128,19 +128,7 @@
                                     <td title="{{ $r->rack->Type_Tractor_Rack ?? '-' }}">
                                         {{ \Illuminate\Support\Str::limit($r->rack->Type_Tractor_Rack ?? '-', 20) }}
                                     </td>
-                                    <td>
-                                        <div class="row">
-                                            <div class="col-6">
-                                                {{ $r->Sum_Record }}
-                                            </div>
-                                            <div class="col-6">
-                                                <button class="btn btn-sm btn-primary" data-toggle="modal"
-                                                    data-target="#editModal{{ $r->Id_Record }}">
-                                                    <i class="fas fa-fw fa-pen"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </td>
+                                    <td>{{ $r->Sum_Record }}</td>
                                     <td>{{ $r->Code_Item_Rack }}</td>
                                     <td>{{ $r->rack->Name_Item_Rack ?? '' }}</td>
                                     <td>
@@ -180,36 +168,6 @@
                                         </form>
                                     </td> --}}
                                 </tr>
-                                <div class="modal fade" id="editModal{{ $r->Id_Record }}" tabindex="-1" role="dialog"
-                                    aria-labelledby="editModalLabel{{ $r->Id_Record }}" aria-hidden="true">
-                                    <div class="modal-dialog" role="document">
-                                        <form method="POST" action="{{ route('user_report.update', $r->Id_Record) }}">
-                                            @csrf
-                                            @method('PUT')
-                                            <div class="modal-content">
-                                                <div class="modal-header bg-primary text-white">
-                                                    <h5 class="modal-title" id="editModalLabel{{ $r->Id_Record }}">Edit Record
-                                                    </h5>
-                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&times;</span>
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="form-group">
-                                                        <label>Jumlah Record</label>
-                                                        <input type="number" name="Sum_Record" class="form-control"
-                                                            value="{{ $r->Sum_Record }}" required min="1">
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary"
-                                                        data-dismiss="modal">Batal</button>
-                                                    <button type="submit" class="btn btn-primary">Simpan</button>
-                                                </div>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
                             @endforeach
                         </tbody>
                     </table>

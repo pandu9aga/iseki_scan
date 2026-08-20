@@ -225,7 +225,6 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::get('/user_report', [UserReportController::class, 'index'])->name('user_report');
     Route::get('/user_report/submit', [UserReportController::class, 'submit'])->name('user_report.submit');
     Route::get('/user_report/export', [UserReportController::class, 'export'])->name('user_report.export');
-    Route::put('/user_report/update/{id}', [UserReportController::class, 'update'])->name('user_report.update');
     Route::delete('user_report/{id}', [UserReportController::class, 'destroy'])->name('user_report.destroy');
 
     Route::get('/record', [RecordController::class, 'index'])->name('record');

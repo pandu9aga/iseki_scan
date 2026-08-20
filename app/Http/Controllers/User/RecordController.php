@@ -70,8 +70,10 @@ class RecordController extends Controller
 
             // Auto-deteksi Part Sum Not Match: Sum_Request - Sum_Record >= 5
             $mismatchCreated = false;
-            if ($Id_Request && $matchingRequest
-                && ($matchingRequest->Sum_Request - $validated['Sum_Record']) >= 5) {
+            if (
+                $Id_Request && $matchingRequest
+                && ($matchingRequest->Sum_Request - $validated['Sum_Record']) >= 5
+            ) {
                 SumMismatch::create([
                     'Id_Request' => $Id_Request,
                     'Id_Record' => $record->Id_Record,
