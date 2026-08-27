@@ -3,7 +3,12 @@
 <!-- Begin Page Content -->
 <div class="container-fluid">
 
-    <h1 class="h3 mb-2 text-gray-800">Record</h1>
+    <div class="d-sm-flex align-items-center justify-content-between mb-3">
+        <h1 class="h3 mb-0 text-gray-800">Record</h1>
+        <a href="{{ route('report.ready_waiting') }}" class="btn btn-sm btn-success shadow-sm">
+            <i class="fas fa-clock fa-sm mr-1"></i>Ready - Waiting
+        </a>
+    </div>
 
     {{-- Filter Card --}}
     <div class="card border-left-primary shadow mb-4">
@@ -50,14 +55,19 @@
                 </div>
             </form>
 
-            {{-- Export --}}
-            <form class="user mt-2" action="{{ route('report.export') }}" method="GET" target="_blank">
-                <input name="Day_Record_Hidden" type="hidden" value="{{ $dateForInput }}">
-                <input name="Id_User" type="hidden" value="{{ request('Id_User') }}">
-                <button class="btn btn-sm btn-outline-primary shadow-sm" type="submit">
-                    <i class="fas fa-download fa-sm mr-1"></i>Download Record
-                </button>
-            </form>
+            {{-- Export & Quick Link --}}
+            <div class="d-flex flex-wrap align-items-center mt-2" style="gap: 8px;">
+                <form class="user" action="{{ route('report.export') }}" method="GET" target="_blank">
+                    <input name="Day_Record_Hidden" type="hidden" value="{{ $dateForInput }}">
+                    <input name="Id_User" type="hidden" value="{{ request('Id_User') }}">
+                    <button class="btn btn-sm btn-outline-primary shadow-sm" type="submit">
+                        <i class="fas fa-download fa-sm mr-1"></i>Download Record
+                    </button>
+                </form>
+                <a href="{{ route('report.ready_waiting') }}" class="btn btn-sm btn-outline-success shadow-sm">
+                    <i class="fas fa-clock fa-sm mr-1"></i>Ready - Waiting
+                </a>
+            </div>
         </div>
     </div>
 

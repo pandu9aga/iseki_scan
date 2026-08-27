@@ -99,6 +99,8 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/report', [ReportController::class, 'index'])->name('report');
     Route::get('/report/submit', [ReportController::class, 'submit'])->name('report.submit');
     Route::get('/report/export', [ReportController::class, 'export'])->name('report.export');
+    Route::get('/report/ready-waiting', [ReportController::class, 'readyWaiting'])->name('report.ready_waiting');
+    Route::get('/report/ready-waiting/export', [ReportController::class, 'readyWaitingExport'])->name('report.ready_waiting.export');
 
     Route::get('/monthly', [MonthlyController::class, 'index'])->name('monthly');
     Route::get('/monthly/export', [MonthlyController::class, 'export'])->name('monthly.export');
