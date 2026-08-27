@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Member;
 use App\Models\Record;
+use App\Models\Request as RequestModel;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -205,6 +206,105 @@ class ReportController extends Controller
 
         // Simpan & download
         $fileName = 'Record_'.$date.'.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        $filePath = storage_path('app/public/'.$fileName);
+        $writer->save($filePath);
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    public function readyWaiting(Request $request)
+    {
+        $memberId = $request->input('Id_User');
+
+        $query = RequestModel::with(['member', 'user', 'rack'])
+            ->whereNotNull('Ready_Request')
+            ->where(function ($q) {
+                $q->where('Status_Request', '!=', 'Done')
+                  ->orWhereNull('Status_Request');
+            })
+            ->orderBy('Ready_Request', 'desc');
+
+        if ($memberId) {
+            $this->applyMemberFilter($query, $memberId);
+        }
+
+        $requests = $query->get();
+        $totalRequests = $requests->count();
+        $members = $this->getPeople();
+
+        return view('admins.reports.ready_waiting', compact(
+            'requests', 'totalRequests', 'members'
+        ));
+    }
+
+    public function readyWaitingExport(Request $request)
+    {
+        $memberId = $request->input('Id_User');
+
+        $query = RequestModel::with(['member', 'user', 'rack'])
+            ->whereNotNull('Ready_Request')
+            ->where(function ($q) {
+                $q->where('Status_Request', '!=', 'Done')
+                  ->orWhereNull('Status_Request');
+            })
+            ->orderBy('Ready_Request', 'desc');
+
+        if ($memberId) {
+            $this->applyMemberFilter($query, $memberId);
+        }
+
+        $requests = $query->get();
+
+        // Buat Spreadsheet
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Header kolom
+        $headers = [
+            'No', 'Time Req', 'Rack', 'Item', 'Name Part', 'Time Ready', 'PIC Req',
+        ];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        // Style header
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
+        ];
+        $sheet->getStyle('A1:G1')->applyFromArray($headerStyle);
+        $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
+
+        // Isi data
+        $row = 2;
+        $no = 1;
+
+        foreach ($requests as $req) {
+            $timeReq = trim(($req->Day_Request ?? '').' '.($req->Time_Request ?? ''));
+            $timeReady = $req->Ready_Request ?? '';
+            $namePart = optional($req->rack)->Name_Item_Rack ?? '';
+            $picReq = $req->display_name ?? '';
+
+            $sheet->fromArray([
+                $no,
+                $timeReq,
+                $req->Code_Rack ?? '',
+                $req->Code_Item_Rack ?? '',
+                $namePart,
+                $timeReady,
+                $picReq,
+            ], null, 'A'.$row);
+
+            $no++;
+            $row++;
+        }
+
+        // Auto-size kolom
+        foreach (range('A', 'G') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // Simpan & download
+        $fileName = 'Ready_Waiting_Requests_'.Carbon::today()->format('Y-m-d').'.xlsx';
         $writer = new Xlsx($spreadsheet);
         $filePath = storage_path('app/public/'.$fileName);
         $writer->save($filePath);
