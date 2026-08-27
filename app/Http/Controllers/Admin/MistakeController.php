@@ -30,7 +30,7 @@ class MistakeController extends Controller
             ->get();
 
         $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->get();
-        $categories = ['telat request', 'telat supply', 'telat supply mc', 'shipping', 'perubahan desain', 'lain-lain'];
+        $categories = ['telat request', 'store tengah', 'telat supply', 'telat supply mc', 'shipping', 'perubahan desain', 'lain-lain'];
 
         $reportData = [];
         foreach ($categories as $cat) {
@@ -146,7 +146,7 @@ class MistakeController extends Controller
             ->orderBy('Name_Member')
             ->get();
         
-        $categories = ['telat request', 'telat supply', 'telat supply mc', 'shipping', 'perubahan desain', 'lain-lain'];
+        $categories = ['telat request', 'store tengah', 'telat supply', 'telat supply mc', 'shipping', 'perubahan desain', 'lain-lain'];
         return view('admins.mistakes.add', compact('pics', 'categories'));
     }
 
@@ -221,7 +221,7 @@ class MistakeController extends Controller
             ->get();
 
         $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->get();
-        $categories = ['telat request', 'telat supply', 'telat supply mc', 'shipping', 'perubahan desain', 'lain-lain'];
+        $categories = ['telat request', 'store tengah', 'telat supply', 'telat supply mc', 'shipping', 'perubahan desain', 'lain-lain'];
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
