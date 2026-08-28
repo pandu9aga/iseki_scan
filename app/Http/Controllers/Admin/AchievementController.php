@@ -17,9 +17,18 @@ class AchievementController extends Controller
 {
     public function index(Request $request)
     {
-        $month = $request->input('month', Carbon::now()->format('Y-m'));
+        $selectedDate = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $month = $request->input('month', Carbon::parse($selectedDate)->format('Y-m'));
         $date = Carbon::parse($month);
         $daysInMonth = $date->daysInMonth;
+
+        // Daily summary metrics
+        $totalDailyRequests = RequestModel::whereDate('Day_Request', $selectedDate)->count();
+        $totalDailyReady = RequestModel::whereDate('Day_Request', $selectedDate)->whereNotNull('Ready_Request')->count();
+        $totalDailyShipping = RequestModel::whereDate('Day_Request', $selectedDate)->whereNotNull('Shipping_Request')->count();
+        $totalDailyDesignChanges = RequestModel::whereDate('Day_Request', $selectedDate)->whereNotNull('Design_Changes_Request')->count();
+        $totalDailyRecords = Record::whereDate('Day_Record', $selectedDate)->count();
+        $formattedSelectedDate = Carbon::parse($selectedDate)->locale('en')->isoFormat('dddd, D-MMM-YY');
 
         $people = $this->getPeople();
 
@@ -94,7 +103,19 @@ class AchievementController extends Controller
             return $b['total'] <=> $a['total'];
         });
 
-        return view('admins.achievements.index', compact('requestsData', 'recordsData', 'month', 'daysInMonth'));
+        return view('admins.achievements.index', compact(
+            'requestsData',
+            'recordsData',
+            'month',
+            'daysInMonth',
+            'selectedDate',
+            'formattedSelectedDate',
+            'totalDailyRequests',
+            'totalDailyReady',
+            'totalDailyShipping',
+            'totalDailyDesignChanges',
+            'totalDailyRecords'
+        ));
     }
 
     public function export(Request $request)

@@ -4,14 +4,150 @@
     <div class="container-fluid">
         <div class="d-sm-flex align-items-center justify-content-between mb-4">
             <h1 class="h3 mb-0 text-gray-800">Achievement</h1>
-            <div>
+            <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
                 <form action="{{ route('achievement') }}" method="GET" class="form-inline d-inline">
-                    <input type="month" name="month" class="form-control mr-2" value="{{ $month }}">
-                    <button type="submit" class="btn btn-primary mr-2">Submit</button>
+                    <input type="hidden" name="date" value="{{ $selectedDate }}">
+                    <input type="month" name="month" class="form-control form-control-sm mr-2" value="{{ $month }}">
+                    <button type="submit" class="btn btn-sm btn-primary mr-2">
+                        <i class="fas fa-calendar-alt fa-sm mr-1"></i>Filter Month
+                    </button>
                 </form>
-                <a href="{{ route('achievement.export', ['month' => $month]) }}" class="btn btn-success">
-                    <i class="fas fa-download fa-sm text-white-50"></i> Export Excel
+                <a href="{{ route('achievement.export', ['month' => $month]) }}" class="btn btn-sm btn-success shadow-sm">
+                    <i class="fas fa-download fa-sm text-white-50 mr-1"></i> Export Excel
                 </a>
+            </div>
+        </div>
+
+        {{-- Filter Date Card --}}
+        <div class="card border-left-primary shadow mb-4">
+            <div class="card-body py-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between" style="gap: 10px;">
+                    <div>
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Daily Summary Date
+                        </div>
+                        <form action="{{ route('achievement') }}" method="GET" id="dateFilterForm" class="d-flex flex-wrap align-items-center" style="gap: 6px;">
+                            <input type="hidden" name="month" value="{{ $month }}">
+                            <div class="d-flex align-items-center">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="changeDate(-1)" title="Previous Day">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <input name="date" id="dateInput" type="date" class="form-control form-control-sm mx-1" style="width: auto; min-width: 140px;" value="{{ $selectedDate }}">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="changeDate(1)" title="Next Day">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info ml-1" onclick="setToday()" title="Today">
+                                    <i class="fas fa-calendar-day"></i>
+                                </button>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary shadow-sm">
+                                <i class="fas fa-filter fa-sm mr-1"></i>Apply Date
+                            </button>
+                        </form>
+                    </div>
+                    <div class="text-right">
+                        <span class="badge badge-light border px-3 py-2 text-dark font-weight-bold" style="font-size: 0.95rem;">
+                            <i class="fas fa-calendar-check text-primary mr-1"></i> {{ $formattedSelectedDate }}
+                        </span>
+                    </div>
+                </div>
+                {{-- 5 Summary Cards Row --}}
+                <div class="row mt-3 summary-cards-row">
+                    <!-- Total Request Card -->
+                    <div class="col-6 col-md-4 col-xl mb-2 mb-xl-0">
+                        <div class="card border-left-primary shadow h-100 py-1 py-md-2 summary-stat-card">
+                            <div class="card-body py-2 px-2 px-md-3">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-1 mr-md-2">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1 stat-title" title="Jumlah Request">
+                                            Request
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800 stat-val">{{ $totalDailyRequests }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-bullhorn fa-2x text-gray-300 stat-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ready Card -->
+                    <div class="col-6 col-md-4 col-xl mb-2 mb-xl-0">
+                        <div class="card border-left-success shadow h-100 py-1 py-md-2 summary-stat-card">
+                            <div class="card-body py-2 px-2 px-md-3">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-1 mr-md-2">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1 stat-title" title="Ready">
+                                            Ready
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800 stat-val">{{ $totalDailyReady }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-check-circle fa-2x text-gray-300 stat-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shipping Card -->
+                    <div class="col-6 col-md-4 col-xl mb-2 mb-xl-0">
+                        <div class="card border-left-info shadow h-100 py-1 py-md-2 summary-stat-card">
+                            <div class="card-body py-2 px-2 px-md-3">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-1 mr-md-2">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1 stat-title" title="Shipping">
+                                            Shipping
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800 stat-val">{{ $totalDailyShipping }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-truck fa-2x text-gray-300 stat-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Perubahan Desain Card -->
+                    <div class="col-6 col-md-6 col-xl mb-2 mb-xl-0">
+                        <div class="card border-left-warning shadow h-100 py-1 py-md-2 summary-stat-card">
+                            <div class="card-body py-2 px-2 px-md-3">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-1 mr-md-2">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1 stat-title" title="Perubahan Desain">
+                                            Perubahan Desain
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800 stat-val">{{ $totalDailyDesignChanges }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-pencil-ruler fa-2x text-gray-300 stat-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rekap Record Card -->
+                    <div class="col-6 col-md-6 col-xl mb-2 mb-xl-0">
+                        <div class="card border-left-dark shadow h-100 py-1 py-md-2 summary-stat-card">
+                            <div class="card-body py-2 px-2 px-md-3">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-1 mr-md-2">
+                                        <div class="text-xs font-weight-bold text-dark text-uppercase mb-1 stat-title" title="Rekap Record">
+                                            Record
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-gray-800 stat-val">{{ $totalDailyRecords }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-qrcode fa-2x text-gray-300 stat-icon"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -185,6 +321,42 @@
         tbody tr:not(.sticky-total):hover td.sticky-col {
             background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
         }
+
+        /* Mobile Responsive for Summary Cards */
+        @media (max-width: 767.98px) {
+            .summary-cards-row {
+                margin-top: 0.6rem !important;
+                margin-left: -4px !important;
+                margin-right: -4px !important;
+            }
+            .summary-cards-row > [class*="col-"] {
+                padding-left: 4px !important;
+                padding-right: 4px !important;
+                margin-bottom: 6px !important;
+            }
+            .summary-stat-card {
+                border-left-width: 0.25rem !important;
+                border-radius: 0.35rem !important;
+            }
+            .summary-stat-card .card-body {
+                padding: 0.35rem 0.55rem !important;
+            }
+            .summary-stat-card .stat-title {
+                font-size: 0.62rem !important;
+                line-height: 1.15 !important;
+                margin-bottom: 2px !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .summary-stat-card .stat-val {
+                font-size: 1rem !important;
+                line-height: 1.2 !important;
+            }
+            .summary-stat-card .stat-icon {
+                font-size: 1.15rem !important;
+            }
+        }
     </style>
 @endsection
 
@@ -227,5 +399,22 @@
                 adjustStickyHeaders('achievementTableRecords');
             });
         });
+
+        function changeDate(offset) {
+            var input = document.getElementById('dateInput');
+            if (!input) return;
+            var d = new Date(input.value + 'T00:00:00');
+            d.setDate(d.getDate() + offset);
+            input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            document.getElementById('dateFilterForm').submit();
+        }
+
+        function setToday() {
+            var input = document.getElementById('dateInput');
+            if (!input) return;
+            var d = new Date();
+            input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            document.getElementById('dateFilterForm').submit();
+        }
     </script>
 @endsection
