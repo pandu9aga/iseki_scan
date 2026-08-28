@@ -55,11 +55,11 @@
                 <div class="row mt-3 summary-cards-row">
                     <!-- Total Request Card -->
                     <div class="col-6 col-md-4 col-xl mb-2 mb-xl-0">
-                        <div class="card border-left-primary shadow h-100 py-1 py-md-2 summary-stat-card">
+                        <div class="card border-left-pink shadow h-100 py-1 py-md-2 summary-stat-card">
                             <div class="card-body py-2 px-2 px-md-3">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col mr-1 mr-md-2">
-                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1 stat-title" title="Jumlah Request">
+                                        <div class="text-xs font-weight-bold text-pink text-uppercase mb-1 stat-title" title="Jumlah Request">
                                             Request
                                         </div>
                                         <div class="h5 mb-0 font-weight-bold text-gray-800 stat-val">{{ $totalDailyRequests }}</div>
@@ -131,11 +131,11 @@
 
                     <!-- Rekap Record Card -->
                     <div class="col-6 col-md-6 col-xl mb-2 mb-xl-0">
-                        <div class="card border-left-dark shadow h-100 py-1 py-md-2 summary-stat-card">
+                        <div class="card border-left-navy shadow h-100 py-1 py-md-2 summary-stat-card">
                             <div class="card-body py-2 px-2 px-md-3">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col mr-1 mr-md-2">
-                                        <div class="text-xs font-weight-bold text-dark text-uppercase mb-1 stat-title" title="Rekap Record">
+                                        <div class="text-xs font-weight-bold text-navy text-uppercase mb-1 stat-title" title="Rekap Record">
                                             Record
                                         </div>
                                         <div class="h5 mb-0 font-weight-bold text-gray-800 stat-val">{{ $totalDailyRecords }}</div>
@@ -151,9 +151,67 @@
             </div>
         </div>
 
+        {{-- Daily Summary Table Card --}}
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Achievement Report -
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-table mr-1"></i>Daily Summary - {{ \Carbon\Carbon::parse($month)->format('F Y') }}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="achievementTableDailySummary" width="100%" cellspacing="0">
+                        <thead>
+                            <tr class="text-center text-white">
+                                <th class="sticky-col bg-secondary text-white" style="width: 10%;">Date</th>
+                                <th class="bg-pink text-white" style="width: 18%;">Request</th>
+                                <th class="bg-success text-white" style="width: 18%;">Ready</th>
+                                <th class="bg-info text-white" style="width: 18%;">Shipping</th>
+                                <th class="bg-warning text-white" style="width: 18%;">Perubahan Desain</th>
+                                <th class="bg-navy text-white" style="width: 18%;">Record</th>
+                            </tr>
+                            <tr class="sticky-total" style="background-color: #e3e6f0; font-weight: bold;">
+                                <th class="text-center italic sticky-col"><b>TOTAL</b></th>
+                                <th class="text-center text-pink font-weight-bold">{{ $monthlySummary['totals']['request'] }}</th>
+                                <th class="text-center text-success font-weight-bold">{{ $monthlySummary['totals']['ready'] }}</th>
+                                <th class="text-center text-info font-weight-bold">{{ $monthlySummary['totals']['shipping'] }}</th>
+                                <th class="text-center text-warning font-weight-bold">{{ $monthlySummary['totals']['design_change'] }}</th>
+                                <th class="text-center text-navy font-weight-bold">{{ $monthlySummary['totals']['record'] }}</th>
+                            </tr>
+                        </thead>
+                        <tfoot>
+                            <tr class="sticky-total" style="background-color: #e3e6f0; color: #333; font-weight: bold;">
+                                <th class="text-center">TOTAL</th>
+                                <th class="text-center text-pink">{{ $monthlySummary['totals']['request'] }}</th>
+                                <th class="text-center text-success">{{ $monthlySummary['totals']['ready'] }}</th>
+                                <th class="text-center text-info">{{ $monthlySummary['totals']['shipping'] }}</th>
+                                <th class="text-center text-warning">{{ $monthlySummary['totals']['design_change'] }}</th>
+                                <th class="text-center text-navy">{{ $monthlySummary['totals']['record'] }}</th>
+                            </tr>
+                        </tfoot>
+                        <tbody>
+                            @for($i = 1; $i <= $daysInMonth; $i++)
+                                @php
+                                    $dayData = $monthlySummary['days'][$i];
+                                @endphp
+                                <tr class="hover-row text-center">
+                                    <td class="text-center sticky-col font-weight-bold"><b>{{ $i }}</b></td>
+                                    <td class="font-weight-bold">{{ $dayData['request'] }}</td>
+                                    <td class="font-weight-bold">{{ $dayData['ready'] }}</td>
+                                    <td class="font-weight-bold">{{ $dayData['shipping'] }}</td>
+                                    <td class="font-weight-bold">{{ $dayData['design_change'] }}</td>
+                                    <td class="font-weight-bold">{{ $dayData['record'] }}</td>
+                                </tr>
+                            @endfor
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Member Achievement Report -
                     {{ \Carbon\Carbon::parse($month)->format('F Y') }}
                 </h6>
             </div>
@@ -322,6 +380,83 @@
             background-image: linear-gradient(0deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%);
         }
 
+        /* Custom Pink & Navy styling */
+        .border-left-pink {
+            border-left: 0.25rem solid #df4e97 !important;
+        }
+        .text-pink {
+            color: #df4e97 !important;
+        }
+        .bg-pink {
+            background-color: #df4e97 !important;
+        }
+
+        .border-left-navy {
+            border-left: 0.25rem solid #4e73df !important;
+        }
+        .text-navy {
+            color: #4e73df !important;
+        }
+        .bg-navy {
+            background-color: #4e73df !important;
+        }
+
+        /* Specific for Daily Summary Table Sticky Headers */
+        #achievementTableDailySummary thead tr:nth-child(1) th:nth-child(1) {
+            background-color: #5a5c69 !important;
+            color: #ffffff !important;
+        }
+        #achievementTableDailySummary thead tr:nth-child(1) th:nth-child(2) {
+            background-color: #df4e97 !important; /* Pink Primary */
+            color: #ffffff !important;
+        }
+        #achievementTableDailySummary thead tr:nth-child(1) th:nth-child(3) {
+            background-color: #1cc88a !important;
+            color: #ffffff !important;
+        }
+        #achievementTableDailySummary thead tr:nth-child(1) th:nth-child(4) {
+            background-color: #36b9cc !important;
+            color: #ffffff !important;
+        }
+        #achievementTableDailySummary thead tr:nth-child(1) th:nth-child(5) {
+            background-color: #f6c23e !important;
+            color: #ffffff !important;
+        }
+        #achievementTableDailySummary thead tr:nth-child(1) th:nth-child(6) {
+            background-color: #4e73df !important; /* Biru Navy */
+            color: #ffffff !important;
+        }
+
+        #achievementTableDailySummary thead tr:nth-child(2) th,
+        #achievementTableDailySummary thead tr:nth-child(2) td {
+            background-color: #e3e6f0 !important;
+        }
+
+        #achievementTableDailySummary thead tr:nth-child(2) th.sticky-col,
+        #achievementTableDailySummary thead tr:nth-child(2) td.sticky-col {
+            background-color: #e3e6f0 !important;
+            color: #333333 !important;
+        }
+
+        #achievementTableDailySummary .text-pink {
+            color: #df4e97 !important;
+        }
+        #achievementTableDailySummary .text-navy {
+            color: #4e73df !important;
+        }
+        #achievementTableDailySummary .text-success {
+            color: #1cc88a !important;
+        }
+        #achievementTableDailySummary .text-info {
+            color: #36b9cc !important;
+        }
+        #achievementTableDailySummary .text-warning {
+            color: #f6c23e !important;
+        }
+        #achievementTableDailySummary .text-dark {
+            color: #3a3b45 !important;
+        }
+
         /* Mobile Responsive for Summary Cards */
         @media (max-width: 767.98px) {
             .summary-cards-row {
@@ -371,30 +506,32 @@
                 var row2 = table.querySelector('thead tr:nth-child(2)');
                 var totalRow = table.querySelector('tbody tr.sticky-total');
 
-                if (row1 && row2 && totalRow) {
+                if (row1) {
                     var h1 = row1.getBoundingClientRect().height;
-                    var h2 = row2.getBoundingClientRect().height;
-
-                    // Set top row 1
-                    var ths1 = row1.querySelectorAll('th');
+                    var ths1 = row1.querySelectorAll('th, td');
                     ths1.forEach(function(th) { th.style.top = '0px'; });
 
-                    // Set top row 2
-                    var ths2 = row2.querySelectorAll('th');
-                    ths2.forEach(function(th) { th.style.top = h1 + 'px'; });
+                    if (row2) {
+                        var h2 = row2.getBoundingClientRect().height;
+                        var ths2 = row2.querySelectorAll('th, td');
+                        ths2.forEach(function(th) { th.style.top = h1 + 'px'; });
 
-                    // Set top total row
-                    var tds = totalRow.querySelectorAll('td, th');
-                    tds.forEach(function(td) { td.style.top = (h1 + h2) + 'px'; });
+                        if (totalRow) {
+                            var tds = totalRow.querySelectorAll('td, th');
+                            tds.forEach(function(td) { td.style.top = (h1 + h2) + 'px'; });
+                        }
+                    }
                 }
             }
 
-            // Adjust both tables
+            // Adjust all tables
+            adjustStickyHeaders('achievementTableDailySummary');
             adjustStickyHeaders('achievementTableRequests');
             adjustStickyHeaders('achievementTableRecords');
 
             // Re-adjust on window resize just in case text wraps differently
             window.addEventListener('resize', function() {
+                adjustStickyHeaders('achievementTableDailySummary');
                 adjustStickyHeaders('achievementTableRequests');
                 adjustStickyHeaders('achievementTableRecords');
             });

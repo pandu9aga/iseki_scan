@@ -103,9 +103,12 @@ class AchievementController extends Controller
             return $b['total'] <=> $a['total'];
         });
 
+        $monthlySummary = $this->getMonthlySummary($allRequests, $allRecords, $daysInMonth);
+
         return view('admins.achievements.index', compact(
             'requestsData',
             'recordsData',
+            'monthlySummary',
             'month',
             'daysInMonth',
             'selectedDate',
@@ -156,6 +159,8 @@ class AchievementController extends Controller
             ->whereYear('Day_Record', $date->year)
             ->get();
 
+        $monthlySummary = $this->getMonthlySummary($allRequests, $allRecords, $daysInMonth);
+
         // Process Requests
         foreach ($allRequests as $req) {
             $prefix = ($req->Is_User == 1) ? 'u_' : 'm_';
@@ -198,7 +203,129 @@ class AchievementController extends Controller
         });
 
         $spreadsheet = new Spreadsheet;
-        $sheet = $spreadsheet->getActiveSheet();
+
+        // -------------------------------------------------------------
+        // Sheet 1: Daily Summary
+        // -------------------------------------------------------------
+        $sheet1 = $spreadsheet->getActiveSheet();
+        $sheet1->setTitle('Daily Summary');
+
+        // Header Title
+        $sheet1->setCellValue('A1', 'Daily Summary - '.$date->format('F Y'));
+        $sheet1->mergeCells('A1:F1');
+        $sheet1->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+        $sheet1->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $summaryHeaderStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => '4E73DF'],
+            ],
+            'borders' => [
+                'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
+            ],
+        ];
+
+        $summaryTotalStyle = [
+            'font' => ['bold' => true],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'E3E6F0'],
+            ],
+            'borders' => [
+                'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
+            ],
+        ];
+
+        $summaryContentStyle = [
+            'borders' => [
+                'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
+            ],
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+            ],
+        ];
+
+        // Column headers
+        $summaryHeaders = ['Date', 'Request', 'Ready', 'Shipping', 'Perubahan Desain', 'Record'];
+        $sheet1->fromArray([$summaryHeaders], null, 'A3');
+        $sheet1->getStyle('A3:F3')->applyFromArray($summaryHeaderStyle);
+
+        // Header Background Colors per Column
+        $headerColors = [
+            'A3' => '5A5C69', // Date
+            'B3' => 'E83E8C', // Request (Pink)
+            'C3' => '1CC88A', // Ready
+            'D3' => '36B9CC', // Shipping
+            'E3' => 'F6C23E', // Perubahan Desain
+            'F3' => '4E73DF', // Record (Navy Blue)
+        ];
+        foreach ($headerColors as $cell => $color) {
+            $sheet1->getStyle($cell)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB($color);
+        }
+
+        // Subheader TOTAL
+        $subHeaderTotal = [
+            'TOTAL',
+            $monthlySummary['totals']['request'],
+            $monthlySummary['totals']['ready'],
+            $monthlySummary['totals']['shipping'],
+            $monthlySummary['totals']['design_change'],
+            $monthlySummary['totals']['record'],
+        ];
+        $sheet1->fromArray([$subHeaderTotal], null, 'A4');
+        $sheet1->getStyle('A4:F4')->applyFromArray($summaryTotalStyle);
+        $sheet1->getStyle('B4')->getFont()->getColor()->setRGB('E83E8C');
+        $sheet1->getStyle('C4')->getFont()->getColor()->setRGB('1CC88A');
+        $sheet1->getStyle('D4')->getFont()->getColor()->setRGB('36B9CC');
+        $sheet1->getStyle('E4')->getFont()->getColor()->setRGB('F6C23E');
+        $sheet1->getStyle('F4')->getFont()->getColor()->setRGB('4E73DF');
+
+        // Daily Rows
+        $sRow = 5;
+        for ($i = 1; $i <= $daysInMonth; $i++) {
+            $dayData = $monthlySummary['days'][$i];
+            $sheet1->fromArray([
+                $i,
+                $dayData['request'],
+                $dayData['ready'],
+                $dayData['shipping'],
+                $dayData['design_change'],
+                $dayData['record'],
+            ], null, 'A'.$sRow);
+            $sheet1->getStyle('A'.$sRow.':F'.$sRow)->applyFromArray($summaryContentStyle);
+            $sRow++;
+        }
+
+        // Footer TOTAL
+        $sheet1->fromArray([$subHeaderTotal], null, 'A'.$sRow);
+        $sheet1->getStyle('A'.$sRow.':F'.$sRow)->applyFromArray($summaryTotalStyle);
+        $sheet1->getStyle('B'.$sRow)->getFont()->getColor()->setRGB('E83E8C');
+        $sheet1->getStyle('C'.$sRow)->getFont()->getColor()->setRGB('1CC88A');
+        $sheet1->getStyle('D'.$sRow)->getFont()->getColor()->setRGB('36B9CC');
+        $sheet1->getStyle('E'.$sRow)->getFont()->getColor()->setRGB('F6C23E');
+        $sheet1->getStyle('F'.$sRow)->getFont()->getColor()->setRGB('4E73DF');
+
+        foreach (range('A', 'F') as $col) {
+            $sheet1->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // -------------------------------------------------------------
+        // Sheet 2: Member Achievement
+        // -------------------------------------------------------------
+        $sheet2 = $spreadsheet->createSheet();
+        $sheet2->setTitle('Member Achievement');
+        $sheet = $sheet2;
 
         // Header
         $sheet->setCellValue('A1', 'Achievement Report - '.$date->format('F Y'));
@@ -364,5 +491,60 @@ class AchievementController extends Controller
             });
 
         return $members->concat($users)->sortBy('name')->values();
+    }
+
+    private function getMonthlySummary($allRequests, $allRecords, $daysInMonth)
+    {
+        $monthlySummary = [
+            'days' => [],
+            'totals' => [
+                'request' => 0,
+                'ready' => 0,
+                'shipping' => 0,
+                'design_change' => 0,
+                'record' => 0,
+            ],
+        ];
+
+        for ($i = 1; $i <= $daysInMonth; $i++) {
+            $monthlySummary['days'][$i] = [
+                'request' => 0,
+                'ready' => 0,
+                'shipping' => 0,
+                'design_change' => 0,
+                'record' => 0,
+            ];
+        }
+
+        foreach ($allRequests as $req) {
+            $day = (int) Carbon::parse($req->Day_Request)->format('d');
+            if (isset($monthlySummary['days'][$day])) {
+                $monthlySummary['days'][$day]['request']++;
+                $monthlySummary['totals']['request']++;
+
+                if ($req->Ready_Request !== null) {
+                    $monthlySummary['days'][$day]['ready']++;
+                    $monthlySummary['totals']['ready']++;
+                }
+                if ($req->Shipping_Request !== null) {
+                    $monthlySummary['days'][$day]['shipping']++;
+                    $monthlySummary['totals']['shipping']++;
+                }
+                if ($req->Design_Changes_Request !== null) {
+                    $monthlySummary['days'][$day]['design_change']++;
+                    $monthlySummary['totals']['design_change']++;
+                }
+            }
+        }
+
+        foreach ($allRecords as $rec) {
+            $day = (int) Carbon::parse($rec->Day_Record)->format('d');
+            if (isset($monthlySummary['days'][$day])) {
+                $monthlySummary['days'][$day]['record']++;
+                $monthlySummary['totals']['record']++;
+            }
+        }
+
+        return $monthlySummary;
     }
 }
