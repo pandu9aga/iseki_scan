@@ -49,9 +49,14 @@
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">Urgent List</h1>
-        <a href="{{ route('urgents.unrecorded') }}" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm">
-            <i class="fas fa-list fa-sm text-white-50"></i> View Unrecorded List
-        </a>
+        <div>
+            <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm mr-2" id="btn-export">
+                <i class="fas fa-file-excel fa-sm text-white-50"></i> Export Excel
+            </a>
+            <a href="{{ route('urgents.unrecorded') }}" class="d-none d-sm-inline-block btn btn-sm btn-info shadow-sm">
+                <i class="fas fa-list fa-sm text-white-50"></i> View Unrecorded List
+            </a>
+        </div>
     </div>
 
     <!-- Filter -->
@@ -273,6 +278,23 @@
             searchTimer = setTimeout(function() {
                 table.draw();
             }, 500);
+        });
+
+        // Export button
+        $('#btn-export').click(function(e) {
+            e.preventDefault();
+            var dateUrgent = $('#filter_date_urgent').val();
+            var codeRack = $('#filter_code_rack').val();
+            var keyword = $('#table_search_keyword').val();
+            
+            var url = "{{ route('urgents.export') }}?dateUrgent=" + encodeURIComponent(dateUrgent);
+            if(codeRack) {
+                url += "&codeRack=" + encodeURIComponent(codeRack);
+            }
+            if(keyword) {
+                url += "&keyword=" + encodeURIComponent(keyword);
+            }
+            window.location.href = url;
         });
 
         function fetchRecap() {

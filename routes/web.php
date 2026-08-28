@@ -346,6 +346,7 @@ Route::post('/api/get-code-item', function (Request $request) {
 });
 
 Route::get('/api/urgents/data', [UrgentController::class, 'getData'])->name('urgents.data');
+Route::get('/urgents/export', [UrgentController::class, 'export'])->name('urgents.export');
 Route::get('/api/urgents/recap', [UrgentController::class, 'getRecapData'])->name('urgents.recap');
 
 // Stock Item Check API (accessible from admin & member request pages)
