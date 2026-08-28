@@ -1162,6 +1162,164 @@ class UrgentController extends Controller
     }
 
     /**
+     * Export urgents to excel.
+     */
+    public function export(Request $request)
+    {
+        $date = Carbon::today()->format('Y-m-d');
+
+        $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'withdrawal.rack', 'mistake', 'record'])
+            ->orderBy('Time_Urgent', 'desc');
+
+        if ($codeRack = $request->input('codeRack')) {
+            $query->where('Code_Rack', 'LIKE', '%'.$codeRack.'%');
+        }
+
+        if ($dateUrgent = $request->input('dateUrgent')) {
+            $query->where('Time_Urgent', 'LIKE', '%'.$dateUrgent.'%');
+            $date = $dateUrgent;
+        }
+
+        if ($keyword = $request->input('keyword')) {
+            $query->where(function ($q) use ($keyword) {
+                $q->where('Code_Rack', 'LIKE', "%$keyword%")
+                    ->orWhereHas('member', function ($q2) use ($keyword) {
+                        $q2->where('Name_Member', 'LIKE', "%$keyword%");
+                    })
+                    ->orWhereHas('mistake', function ($q2) use ($keyword) {
+                        $q2->where('Category_Mistake', 'LIKE', "%$keyword%");
+                    })
+                    ->orWhereHas('reporterMember', function ($q2) use ($keyword) {
+                        $q2->where('Name_Member', 'LIKE', "%$keyword%");
+                    })
+                    ->orWhereHas('user', function ($q2) use ($keyword) {
+                        $q2->where('Username_User', 'LIKE', "%$keyword%");
+                    })
+                    ->orWhereHas('requestModel.rack', function ($q2) use ($keyword) {
+                        $q2->where('Name_Item_Rack', 'LIKE', "%$keyword%")
+                            ->orWhere('Code_Item_Rack', 'LIKE', "%$keyword%");
+                    })
+                    ->orWhereHas('withdrawal.rack', function ($q2) use ($keyword) {
+                        $q2->where('Name_Item_Rack', 'LIKE', "%$keyword%")
+                            ->orWhere('Code_Item_Rack', 'LIKE', "%$keyword%");
+                    });
+            });
+        }
+
+        $urgents = $query->get();
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = ['No', 'Time Urgent', 'Category', 'Code Rack', 'Name Part', 'PIC', 'Reporter', 'Code Item', 'Sum Request', 'Time Request', 'Time Record'];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
+        ];
+        $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
+        $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
+
+        $row = 2;
+        $no = 1;
+
+        foreach ($urgents as $urgent) {
+            $category = '-';
+            if ($urgent->mistake) {
+                $cat = strtolower($urgent->mistake->Category_Mistake);
+                $detail = strtolower($urgent->mistake->Manual_Category_Detail);
+
+                if ($cat == 'perubahan desain') {
+                    $category = 'DESIGN CHANGE';
+                } elseif ($cat == 'shipping') {
+                    $category = 'SHIPPING';
+                } elseif ($cat == 'lain-lain' && $detail == 'produksi') {
+                    $category = 'PRODUCTION';
+                } else {
+                    $category = strtoupper($cat);
+                }
+            }
+
+            $namePart = '-';
+            if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+                $namePart = optional(optional($urgent->withdrawal)->rack)->Name_Item_Rack ?? '-';
+            } else {
+                $namePart = optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
+            }
+
+            $pic = $urgent->member ? $urgent->member->Name_Member : '-';
+            if ($urgent->mistake && strtolower($urgent->mistake->Category_Mistake) === 'telat qc') {
+                $pic = 'QC';
+            }
+
+            if ($urgent->Is_Marshalling) {
+                $employee = DB::connection('rifa')->table('employees')->find($urgent->Id_User);
+                $name = $employee ? $employee->nama : 'Marshalling User';
+                $reporter = $name;
+                if ($urgent->Sequence_No_Record) {
+                    $reporter .= ' (Sequence: '.$urgent->Sequence_No_Record.')';
+                }
+            } else {
+                $reporter = empty($urgent->Id_Type_User)
+                    ? (optional($urgent->reporterMember)->Name_Member ?? '-')
+                    : (optional($urgent->user)->Username_User ?? '-');
+            }
+
+            $codeItem = '-';
+            $sumReq = '-';
+            $timeReq = '-';
+            if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+                if ($urgent->withdrawal) {
+                    $codeItem = $urgent->withdrawal->Code_Item_Withdrawal;
+                    $sumReq = '(Withdrawal)';
+                    $timeReq = $urgent->withdrawal->Date_Withdrawal ? $urgent->withdrawal->Date_Withdrawal->format('Y-m-d H:i:s') : '-';
+                }
+            } else {
+                if ($urgent->requestModel) {
+                    $codeItem = $urgent->requestModel->Code_Item_Rack;
+                    $sumReq = $urgent->requestModel->Sum_Request;
+                    $timeReq = $urgent->requestModel->Day_Request.' '.$urgent->requestModel->Time_Request;
+                }
+            }
+
+            $timeRecord = '-';
+            if ($urgent->record) {
+                $timeRecord = $urgent->record->Day_Record.' '.$urgent->record->Time_Record;
+            }
+
+            $sheet->fromArray([
+                $no,
+                $urgent->Time_Urgent,
+                $category,
+                $urgent->Code_Rack,
+                $namePart,
+                $pic,
+                $reporter,
+                $codeItem,
+                $sumReq,
+                $timeReq,
+                $timeRecord,
+            ], null, 'A'.$row);
+
+            $no++;
+            $row++;
+        }
+
+        foreach (range('A', $sheet->getHighestColumn()) as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = 'Urgent_Data_'.$date.'.xlsx';
+        $filePath = storage_path('app/public/'.$fileName);
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filePath);
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    /**
      * Export unrecorded urgents to excel.
      */
     public function exportUnrecorded(Request $request)
