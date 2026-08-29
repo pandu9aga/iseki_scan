@@ -288,8 +288,19 @@ class AreaScanController extends Controller
                     return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).']);
                 }
 
+                $reporterLower = strtolower($reporterName);
+
                 $category = 'telat request';
                 $manualDetail = null;
+
+                if (str_starts_with(strtoupper($codeRack), 'LO') && (
+                    str_contains($reporterLower, 'transmisi') ||
+                    str_contains($reporterLower, 'subengine') ||
+                    str_contains($reporterLower, 'sub engine') ||
+                    str_contains($reporterLower, 'mower')
+                )) {
+                    $category = 'store tengah';
+                }
 
                 $mistake = Mistake::create([
                     'Id_Request' => $idRequest,
@@ -339,7 +350,7 @@ class AreaScanController extends Controller
             } elseif ($cat == 'lain-lain' && $mDetail == 'produksi') {
                 $displayCategory = 'PRODUCTION';
                 $badgeClass = 'primary';
-            } elseif ($cat == 'telat supply' || $cat == 'telat request' || $cat == 'telat supply mc') {
+            } elseif ($cat == 'telat supply' || $cat == 'telat request' || $cat == 'telat supply mc' || $cat == 'store tengah') {
                 $badgeClass = 'secondary';
             }
 
@@ -390,7 +401,17 @@ class AreaScanController extends Controller
 
             $idRequestNew = $newReq->Id_Request;
 
+            $reporterLower = strtolower($reporterName);
             $urgentCategory = 'telat request';
+
+            if (str_starts_with(strtoupper($codeRack), 'LO') && (
+                str_contains($reporterLower, 'transmisi') ||
+                str_contains($reporterLower, 'subengine') ||
+                str_contains($reporterLower, 'sub engine') ||
+                str_contains($reporterLower, 'mower')
+            )) {
+                $urgentCategory = 'store tengah';
+            }
 
             $mistake = Mistake::create([
                 'Id_Request' => $idRequestNew,
@@ -423,7 +444,7 @@ class AreaScanController extends Controller
                 'time_request' => $nowTime,
             ]);
 
-            $dispCat = 'TELAT REQUEST';
+            $dispCat = strtoupper($urgentCategory);
             $dispBadge = 'secondary';
 
             $scanSuccessData = [
@@ -733,10 +754,21 @@ class AreaScanController extends Controller
                     return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).');
                 }
 
+                $reporter = User::find($idUserLogged);
+                $reporterName = $reporter ? $reporter->Name_User : 'Area User';
+                $reporterLower = strtolower($reporterName);
+
                 $category = 'telat request';
                 $manualDetail = null;
 
-
+                if (str_starts_with(strtoupper($codeRack), 'LO') && (
+                    str_contains($reporterLower, 'transmisi') ||
+                    str_contains($reporterLower, 'subengine') ||
+                    str_contains($reporterLower, 'sub engine') ||
+                    str_contains($reporterLower, 'mower')
+                )) {
+                    $category = 'store tengah';
+                }
 
                 $mistake = Mistake::create([
                     'Id_Request' => $idRequest,
@@ -757,12 +789,11 @@ class AreaScanController extends Controller
                 ]);
 
                 // Queue WA notification
-                $reporter = User::find($idUserLogged);
                 $this->queueWaMessage([
                     'time_urgent' => $nowTime,
                     'code_rack' => $codeRack,
                     'pic' => $nameMemberTarget,
-                    'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                    'reporter' => $reporterName,
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'name_part' => $namePart,
                     'sum_request' => $waitingRequest->Sum_Request,
@@ -788,7 +819,7 @@ class AreaScanController extends Controller
             } elseif ($cat == 'lain-lain' && $mDetail == 'produksi') {
                 $displayCategory = 'PRODUCTION';
                 $badgeClass = 'primary';
-            } elseif ($cat == 'telat supply' || $cat == 'telat request' || $cat == 'telat supply mc') {
+            } elseif ($cat == 'telat supply' || $cat == 'telat request' || $cat == 'telat supply mc' || $cat == 'store tengah') {
                 $badgeClass = 'secondary';
             }
 
@@ -846,7 +877,20 @@ class AreaScanController extends Controller
 
             $idRequestNew = $newReq->Id_Request;
 
+            $reporter = User::find($idUserLogged);
+            $reporterName = $reporter ? $reporter->Name_User : 'Area User';
+            $reporterLower = strtolower($reporterName);
+
             $urgentCategory = 'telat request';
+
+            if (str_starts_with(strtoupper($codeRack), 'LO') && (
+                str_contains($reporterLower, 'transmisi') ||
+                str_contains($reporterLower, 'subengine') ||
+                str_contains($reporterLower, 'sub engine') ||
+                str_contains($reporterLower, 'mower')
+            )) {
+                $urgentCategory = 'store tengah';
+            }
 
             $mistake = Mistake::create([
                 'Id_Request' => $idRequestNew,
@@ -867,13 +911,12 @@ class AreaScanController extends Controller
             ]);
 
             // Queue WA notification
-            $reporter = User::find($idUserLogged);
             $namePart = $rack ? ($rack->Name_Item_Rack ?? '-') : '-';
             $this->queueWaMessage([
                 'time_urgent' => $nowTime,
                 'code_rack' => $codeRack,
                 'pic' => $nameMemberTarget,
-                'reporter' => $reporter ? $reporter->Name_User : 'Area User',
+                'reporter' => $reporterName,
                 'code_item' => $codeItemRack,
                 'name_part' => $namePart,
                 'sum_request' => $sumRequest,
@@ -881,7 +924,7 @@ class AreaScanController extends Controller
                 'time_request' => $nowTime,
             ]);
 
-            $dispCat = 'TELAT REQUEST';
+            $dispCat = strtoupper($urgentCategory);
             $dispBadge = 'secondary';
 
             $scanSuccessData = [
@@ -906,7 +949,7 @@ class AreaScanController extends Controller
     private function queueWaMessage(array $data): void
     {
         $category = strtoupper($data['category']);
-        if ($data['category'] == 'telat supply' || $data['category'] == 'telat request') {
+        if ($data['category'] == 'telat supply' || $data['category'] == 'telat request' || $data['category'] == 'store tengah') {
             $category .= ' DST';
         } elseif ($data['category'] == 'shipping' || $data['category'] == 'perubahan desain') {
             $category .= ' - MC';
