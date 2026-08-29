@@ -128,7 +128,20 @@
                                     <td title="{{ $r->rack->Type_Tractor_Rack ?? '-' }}">
                                         {{ \Illuminate\Support\Str::limit($r->rack->Type_Tractor_Rack ?? '-', 20) }}
                                     </td>
-                                    <td>{{ $r->Sum_Record }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <span>{{ $r->Sum_Record }}</span>
+                                            <button class="btn btn-sm btn-link text-warning p-0 ml-2" onclick="openEditSum(
+                                                {{ $r->Id_Record }},
+                                                {{ $r->Sum_Record }},
+                                                '{{ $r->Code_Rack ?? '' }}',
+                                                '{{ $r->Code_Item_Rack ?? '' }}',
+                                                {{ $r->Id_Request ?? 0 }}
+                                            )" title="Edit Sum Record">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                     <td>{{ $r->Code_Item_Rack }}</td>
                                     <td>{{ $r->rack->Name_Item_Rack ?? '' }}</td>
                                     <td>
@@ -156,17 +169,6 @@
                                     <td>{{ optional($r->request)->display_name ?? '' }}</td>
                                     <td>{{ $r->display_name ?? '' }}</td>
                                     <td>{{ $r->Updated_At_Record ?? '' }}</td>
-                                    {{-- <td>
-                                        tombol delete
-                                        <form action="{{ route('user_report.destroy', $r->Id_Record) }}" method="POST"
-                                            onsubmit="return confirm('Yakin mau hapus record ini?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                <i class="fas fa-fw fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </td> --}}
                                 </tr>
                             @endforeach
                         </tbody>
@@ -191,4 +193,86 @@
     <!-- Page level custom scripts -->
     {{--
     <script src="{{asset('js/demo/datatables-demo.js')}}"></script> --}}
+
+    {{-- Modal Edit Sum Record --}}
+    <div class="modal fade" id="editSumModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-1"></i>Edit Sum Record</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2 small text-muted" id="editSumInfo"></div>
+                    <div class="form-group mb-2">
+                        <label class="small font-weight-bold">Sum Record Baru</label>
+                        <input type="number" id="editSumInput" class="form-control" min="1" step="1">
+                    </div>
+                    <div id="editSumAlert" class="alert alert-warning small py-1 px-2 mt-2" style="display:none;"></div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-warning btn-sm" id="editSumSaveBtn">
+                        <i class="fas fa-save mr-1"></i>Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var _editRecordId = null;
+
+        function openEditSum(recordId, currentSum, codeRack, codeItem, idRequest) {
+            _editRecordId = recordId;
+            var info = 'Rack: <strong>' + codeRack + '</strong> &nbsp;|&nbsp; Item: <strong>' + codeItem + '</strong>';
+            if (idRequest && idRequest != 0) {
+                info += '<br><span class="text-info">Terkait request #' + idRequest + ' — perubahan akan mempengaruhi Part Sum Not Match</span>';
+            } else {
+                info += '<br><span class="text-muted">Tidak terkait request, hanya update angka.</span>';
+            }
+            document.getElementById('editSumInfo').innerHTML = info;
+            document.getElementById('editSumInput').value = currentSum;
+            document.getElementById('editSumAlert').style.display = 'none';
+            $('#editSumModal').modal('show');
+            setTimeout(function() { document.getElementById('editSumInput').focus(); }, 400);
+        }
+
+        document.getElementById('editSumSaveBtn').addEventListener('click', function() {
+            var newSum = parseInt(document.getElementById('editSumInput').value);
+            if (!newSum || newSum < 1) {
+                document.getElementById('editSumAlert').textContent = 'Sum harus minimal 1.';
+                document.getElementById('editSumAlert').style.display = 'block';
+                return;
+            }
+            var btn = document.getElementById('editSumSaveBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Menyimpan...';
+
+            $.ajax({
+                url: '{{ url("/record") }}/' + _editRecordId + '/update-sum',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    Sum_Record: newSum
+                },
+                success: function(res) {
+                    $('#editSumModal').modal('hide');
+                    // Reload halaman agar tabel ikut terupdate (termasuk correctness dsb)
+                    location.reload();
+                },
+                error: function(xhr) {
+                    var msg = 'Gagal menyimpan.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                    document.getElementById('editSumAlert').textContent = msg;
+                    document.getElementById('editSumAlert').style.display = 'block';
+                    
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save mr-1"></i>Simpan';
+                }
+            });
+        });
+    </script>
 @endsection

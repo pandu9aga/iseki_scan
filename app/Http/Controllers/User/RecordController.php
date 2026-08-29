@@ -143,27 +143,120 @@ class RecordController extends Controller
     public function getData(Request $request)
     {
         $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $myId = session('Id_Member');
 
         $records = Record::whereDate('Day_Record', $date)
             ->orderBy('Time_Record', 'desc')
             ->get()
-            ->map(function ($r) {
+            ->map(function ($r) use ($myId) {
                 return [
-                    'id' => $r->Id_Record,
-                    'code_item' => $r->Code_Item_Rack,
-                    'code_rack' => $r->Code_Rack,
+                    'id'         => $r->Id_Record,
+                    'code_item'  => $r->Code_Item_Rack,
+                    'code_rack'  => $r->Code_Rack,
                     'sum_record' => $r->Sum_Record,
-                    'time' => $r->Time_Record,
-                    'user' => $r->display_name,
-                    'correctness' => $r->Correctness_Record,
+                    'time'       => $r->Time_Record,
+                    'user'       => $r->display_name,
+                    'correctness'=> $r->Correctness_Record,
+                    'id_request' => $r->Id_Request,
+                    'is_mine'    => ($r->Id_User == $myId && !$r->Is_User),
                 ];
             });
 
         return response()->json([
-            'date' => $date,
+            'date'    => $date,
             'records' => $records,
-            'count' => $records->count(),
+            'count'   => $records->count(),
         ]);
+    }
+
+    /**
+     * Edit Sum_Record dan otomatis recalculate Part Sum Not Match.
+     */
+    public function updateSum(Request $request, $id)
+    {
+        $request->validate([
+            'Sum_Record' => 'required|integer|min:1',
+        ]);
+
+        $myId = session('Id_Member');
+        $record = Record::find($id);
+
+        if (!$record) {
+            return response()->json(['success' => false, 'message' => 'Record tidak ditemukan.'], 404);
+        }
+
+        // Pastikan record ini milik member yang sedang login
+        if ($record->Id_User != $myId || $record->Is_User) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak berhak mengedit record ini.'], 403);
+        }
+
+        $newSum = (int) $request->input('Sum_Record');
+
+        DB::beginTransaction();
+        try {
+            // Update Sum_Record
+            $record->update([
+                'Sum_Record'        => $newSum,
+                'Updated_At_Record' => Carbon::now()->format('Y-m-d H:i:s'),
+            ]);
+
+            // Jika record ini terkait dengan sebuah request, recalculate mismatch
+            if ($record->Id_Request) {
+                $matchingRequest = RequestModel::find($record->Id_Request);
+
+                if ($matchingRequest) {
+                    // Hitung total semua sum_record dari semua record yang punya Id_Request sama
+                    $totalSupplied = Record::where('Id_Request', $record->Id_Request)
+                        ->sum('Sum_Record');
+
+                    $selisih = $matchingRequest->Sum_Request - $totalSupplied;
+
+                    // Cari SumMismatch yang masih open untuk request ini
+                    $existingMismatch = SumMismatch::where('Id_Request', $record->Id_Request)
+                        ->where('Status', 'open')
+                        ->first();
+
+                    if ($selisih >= 5) {
+                        // Masih mismatch
+                        if ($existingMismatch) {
+                            // Update angka di mismatch yang sudah ada
+                            $existingMismatch->update([
+                                'Received_Qty'   => $totalSupplied,
+                                'Outstanding_Qty' => $selisih,
+                                'Updated_At_Sum'  => Carbon::now()->format('Y-m-d H:i:s'),
+                                'Updated_By'      => $myId,
+                            ]);
+                        } else {
+                            // Buat SumMismatch baru (sebelumnya tidak ada karena sum dulu cukup)
+                            SumMismatch::create([
+                                'Id_Request'     => $record->Id_Request,
+                                'Id_Record'      => $record->Id_Record,
+                                'Code_Item_Rack' => $record->Code_Item_Rack,
+                                'Code_Rack'      => $record->Code_Rack,
+                                'Sum_Request'    => $matchingRequest->Sum_Request,
+                                'Received_Qty'   => $totalSupplied,
+                                'Outstanding_Qty' => $selisih,
+                                'Status'         => 'open',
+                                'Time_Mismatch'  => Carbon::now()->format('Y-m-d H:i:s'),
+                                'Reported_By'    => $myId,
+                            ]);
+                        }
+                    } else {
+                        // Selisih < 5: hapus permanen dari tabel sum_mismatches
+                        if ($existingMismatch) {
+                            $existingMismatch->delete();
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Sum Record berhasil diperbarui.']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Gagal: ' . $e->getMessage()], 500);
+        }
     }
 
     public function checkMultiple(Request $request)

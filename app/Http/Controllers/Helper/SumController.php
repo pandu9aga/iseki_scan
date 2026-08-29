@@ -145,12 +145,7 @@ class SumController extends Controller
             return redirect()->back()->with('error', 'Status bukan OPEN, tidak bisa ditandai selesai kirim.');
         }
 
-        $mismatch->update([
-            'Status' => 'closed',
-            'Resolved_At' => Carbon::now()->format('Y-m-d H:i:s'),
-            'Updated_By' => session('Id_User'),
-            'Updated_At_Sum' => Carbon::now()->format('Y-m-d H:i:s'),
-        ]);
+        $mismatch->delete();
 
         return redirect()->back()->with('success', 'Rack '.$mismatch->Code_Rack.' ditandai SELESAI KIRIM. Part Sum Not Match ditutup.');
     }
