@@ -455,11 +455,19 @@
                 if (r.correctness == 1) c = '<span class="badge badge-success">Correct</span>';
                 else if (r.correctness == 2) c = '<span class="badge badge-danger">Incorrect</span>';
                 else c = '<span class="badge badge-secondary">-</span>';
+
+                var editBtn = '';
+                if (r.is_mine) {
+                    editBtn = '<button class="btn btn-sm btn-link text-warning p-0 ml-2" onclick="openEditSum(' +
+                        r.id + ',' + r.sum_record + ',\'' + (r.code_rack || '') + '\',\'' + (r.code_item || '') + '\',' + (r.id_request || 0) + ')" title="Edit Sum">'
+                        + '<i class="fas fa-edit"></i></button>';
+                }
+
                 tbody.innerHTML += '<tr>' +
                     '<td class="text-center">' + (i + 1) + '</td>' +
                     '<td>' + (r.code_item || '') + '</td>' +
                     '<td>' + (r.code_rack || '') + '</td>' +
-                    '<td class="text-center font-weight-bold">' + (r.sum_record || 0) + '</td>' +
+                    '<td class="text-center font-weight-bold"><div class="d-flex justify-content-center align-items-center"><span>' + (r.sum_record || 0) + '</span>' + editBtn + '</div></td>' +
                     '<td class="text-center">' + c + '</td>' +
                     '<td class="text-center">' + (r.time ? r.time.substr(0, 5) : '-') + '</td>' +
                     '<td>' + (r.user || '-') + '</td></tr>';
@@ -485,6 +493,94 @@
     }
     document.addEventListener('DOMContentLoaded', function() {
         setTodayRec();
+    });
+</script>
+
+{{-- Modal Edit Sum Record --}}
+<div class="modal fade" id="editSumModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-edit mr-1"></i>Edit Sum Record</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2 small text-muted" id="editSumInfo"></div>
+                <div class="form-group mb-2">
+                    <label class="small font-weight-bold">Sum Record Baru</label>
+                    <input type="number" id="editSumInput" class="form-control" min="1" step="1">
+                </div>
+                <div id="editSumAlert" class="alert alert-warning small py-1 px-2 mt-2" style="display:none;"></div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-warning btn-sm" id="editSumSaveBtn">
+                    <i class="fas fa-save mr-1"></i>Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var _editRecordId = null;
+
+    function openEditSum(recordId, currentSum, codeRack, codeItem, idRequest) {
+        _editRecordId = recordId;
+        var info = 'Rack: <strong>' + codeRack + '</strong> &nbsp;|&nbsp; Item: <strong>' + codeItem + '</strong>';
+        if (idRequest) {
+            info += '<br><span class="text-info">Terkait request #' + idRequest + ' — perubahan akan mempengaruhi Part Sum Not Match</span>';
+        } else {
+            info += '<br><span class="text-muted">Tidak terkait request, hanya update angka.</span>';
+        }
+        document.getElementById('editSumInfo').innerHTML = info;
+        document.getElementById('editSumInput').value = currentSum;
+        document.getElementById('editSumAlert').style.display = 'none';
+        $('#editSumModal').modal('show');
+        setTimeout(function() { document.getElementById('editSumInput').focus(); }, 400);
+    }
+
+    document.getElementById('editSumSaveBtn').addEventListener('click', function() {
+        var newSum = parseInt(document.getElementById('editSumInput').value);
+        if (!newSum || newSum < 1) {
+            document.getElementById('editSumAlert').textContent = 'Sum harus minimal 1.';
+            document.getElementById('editSumAlert').style.display = 'block';
+            return;
+        }
+        var btn = document.getElementById('editSumSaveBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Menyimpan...';
+
+        $.ajax({
+            url: '/iseki_scan/public/record/' + _editRecordId + '/update-sum',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                Sum_Record: newSum
+            },
+            success: function(res) {
+                $('#editSumModal').modal('hide');
+                loadRecordData();
+                // Tampilkan toast sukses
+                var toast = $('<div class="alert alert-success alert-dismissible fade show" role="alert" style="position:fixed;top:70px;right:20px;z-index:9999;min-width:280px;">'
+                    + '<i class="fas fa-check-circle mr-1"></i>' + res.message
+                    + '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button></div>');
+                $('body').append(toast);
+                setTimeout(function() { toast.alert('close'); }, 3500);
+            },
+            error: function(xhr) {
+                var msg = 'Gagal menyimpan.';
+                if (xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
+                document.getElementById('editSumAlert').textContent = msg;
+                document.getElementById('editSumAlert').style.display = 'block';
+            },
+            complete: function() {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save mr-1"></i>Simpan';
+            }
+        });
     });
 </script>
 @endsection
