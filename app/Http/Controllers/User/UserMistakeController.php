@@ -28,7 +28,7 @@ class UserMistakeController extends Controller
             ->get();
 
         $members = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')->get();
-        $categories = ['telat request', 'telat supply', 'telat supply mc', 'shipping', 'perubahan desain', 'lain-lain'];
+        $categories = ['telat request', 'store tengah', 'telat supply', 'telat supply mc', 'shipping', 'perubahan desain', 'lain-lain'];
 
         $reportData = [];
         foreach ($categories as $cat) {

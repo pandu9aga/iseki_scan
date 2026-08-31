@@ -136,6 +136,9 @@ class UrgentController extends Controller
                     } elseif ($cat == 'telat supply sum') {
                         $label = 'TELAT SUPPLY SUM';
                         $class = 'secondary';
+                    } elseif ($cat == 'store tengah') {
+                        $label = 'STORE TENGAH';
+                        $class = 'secondary';
                     }
 
                     return '<span class="badge badge-'.$class.'">'.$label.'</span>';
@@ -692,8 +695,21 @@ class UrgentController extends Controller
                     return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).');
                 }
 
+                $reporter = Member::find($idMemberLogged);
+                $reporterName = $reporter ? $reporter->Name_Member : 'Member';
+                $reporterLower = strtolower($reporterName);
+
                 $category = 'telat request';
                 $manualDetail = null;
+
+                if (str_starts_with(strtoupper($codeRack), 'LO') && (
+                    str_contains($reporterLower, 'transmisi') ||
+                    str_contains($reporterLower, 'subengine') ||
+                    str_contains($reporterLower, 'sub engine') ||
+                    str_contains($reporterLower, 'mower')
+                )) {
+                    $category = 'store tengah';
+                }
 
                 $mistake = Mistake::create([
                     'Id_Request' => $idRequest,
@@ -714,12 +730,11 @@ class UrgentController extends Controller
                 ]);
 
                 // Queue WA notification
-                $reporter = Member::find($idMemberLogged);
                 $this->queueWaMessage([
                     'time_urgent' => $nowTime,
                     'code_rack' => $codeRack,
                     'pic' => $nameMemberTarget,
-                    'reporter' => $reporter ? $reporter->Name_Member : 'Member',
+                    'reporter' => $reporterName,
                     'code_item' => $waitingRequest->Code_Item_Rack,
                     'name_part' => $namePart,
                     'sum_request' => $waitingRequest->Sum_Request,
@@ -745,7 +760,7 @@ class UrgentController extends Controller
             } elseif ($cat == 'lain-lain' && $mDetail == 'produksi') {
                 $displayCategory = 'PRODUCTION';
                 $badgeClass = 'primary';
-            } elseif ($cat == 'telat supply' || $cat == 'telat request' || $cat == 'telat supply mc') {
+            } elseif ($cat == 'telat supply' || $cat == 'telat request' || $cat == 'telat supply mc' || $cat == 'store tengah') {
                 $badgeClass = 'secondary';
             }
 
@@ -783,23 +798,41 @@ class UrgentController extends Controller
                 return redirect()->back()->with('error', 'Kode Rack "'.$codeRack.'" tidak ditemukan di Data Rack.');
             }
 
-            $systemMember = Member::where('Name_Member', 'system')->first();
-            $idSystem = $systemMember ? $systemMember->Id_Member : 35;
-
-            $newReq = new RequestModel;
-            $newReq->Day_Request = $nowDate;
-            $newReq->Time_Request = $nowTime;
-            $newReq->Code_Item_Rack = $codeItemRack;
-            $newReq->Code_Rack = $codeRack;
-            $newReq->Id_User = $idSystem;
-            $newReq->Status_Request = 'Waiting';
-            $newReq->Sum_Request = $sumRequest;
-            $newReq->Urgent_Request = 1;
-            $newReq->save();
-
-            $idRequestNew = $newReq->Id_Request;
+            $reporter = Member::find($idMemberLogged);
+            $reporterName = $reporter ? $reporter->Name_Member : 'Member';
+            $reporterLower = strtolower($reporterName);
 
             $urgentCategory = 'telat request';
+
+            if (str_starts_with(strtoupper($codeRack), 'LO') && (
+                str_contains($reporterLower, 'transmisi') ||
+                str_contains($reporterLower, 'subengine') ||
+                str_contains($reporterLower, 'sub engine') ||
+                str_contains($reporterLower, 'mower')
+            )) {
+                $urgentCategory = 'store tengah';
+            }
+
+            $idRequestNew = null;
+            if ($urgentCategory !== 'store tengah') {
+                $systemMember = Member::where('Name_Member', 'system')->first();
+                $idSystem = $systemMember ? $systemMember->Id_Member : 35;
+
+                $newReq = new RequestModel;
+                $newReq->Day_Request = $nowDate;
+                $newReq->Time_Request = $nowTime;
+                $newReq->Code_Item_Rack = $codeItemRack;
+                $newReq->Code_Rack = $codeRack;
+                $newReq->Id_User = $idSystem;
+                $newReq->Status_Request = 'Waiting';
+                $newReq->Sum_Request = $sumRequest;
+                $newReq->Urgent_Request = 1;
+                $newReq->save();
+
+                $idRequestNew = $newReq->Id_Request;
+            } else {
+                $idRequestNew = $lastReq ? $lastReq->Id_Request : null;
+            }
 
             $mistake = Mistake::create([
                 'Id_Request' => $idRequestNew,
@@ -820,13 +853,12 @@ class UrgentController extends Controller
             ]);
 
             // Queue WA notification
-            $reporter = Member::find($idMemberLogged);
             $namePart = $rack ? ($rack->Name_Item_Rack ?? '-') : '-';
             $this->queueWaMessage([
                 'time_urgent' => $nowTime,
                 'code_rack' => $codeRack,
                 'pic' => $nameMemberTarget,
-                'reporter' => $reporter ? $reporter->Name_Member : 'Member',
+                'reporter' => $reporterName,
                 'code_item' => $codeItemRack,
                 'name_part' => $namePart,
                 'sum_request' => $sumRequest,
@@ -834,7 +866,7 @@ class UrgentController extends Controller
                 'time_request' => $nowTime,
             ]);
 
-            $dispCat = 'TELAT REQUEST';
+            $dispCat = strtoupper($urgentCategory);
             $dispBadge = 'secondary';
 
             $scanSuccessData = [
@@ -859,7 +891,7 @@ class UrgentController extends Controller
     private function queueWaMessage(array $data): void
     {
         $category = strtoupper($data['category']);
-        if ($data['category'] == 'telat supply' || $data['category'] == 'telat request') {
+        if ($data['category'] == 'telat supply' || $data['category'] == 'telat request' || $data['category'] == 'store tengah') {
             $category .= ' DST';
         } elseif ($data['category'] == 'shipping' || $data['category'] == 'perubahan desain') {
             $category .= ' - MC';
@@ -1070,6 +1102,9 @@ class UrgentController extends Controller
                         $class = 'danger';
                     } elseif ($cat == 'telat supply sum') {
                         $label = 'TELAT SUPPLY SUM';
+                        $class = 'secondary';
+                    } elseif ($cat == 'store tengah') {
+                        $label = 'STORE TENGAH';
                         $class = 'secondary';
                     }
 
