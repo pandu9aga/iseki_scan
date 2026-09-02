@@ -26,6 +26,7 @@
     <style>
         /* Fix Navbar Mobile agar tampil rapi dan sub-menu tidak terpotong */
         @media (max-width: 768px) {
+
             /* Sembunyikan sidebar secara default di mobile */
             #accordionSidebar {
                 display: none;
@@ -36,12 +37,14 @@
             /* Munculkan sidebar saat burger button diklik (class sidebar-toggled dihapus) */
             body:not(.sidebar-toggled) #accordionSidebar {
                 display: block !important;
-                position: absolute !important; /* Gunakan absolute agar tidak memotong popup dan bisa discroll halaman */
+                position: absolute !important;
+                /* Gunakan absolute agar tidak memotong popup dan bisa discroll halaman */
                 top: 0;
                 left: 0;
                 height: auto !important;
                 min-height: 100vh;
-                overflow: visible !important; /* Agar popup/fly-out tidak terpotong */
+                overflow: visible !important;
+                /* Agar popup/fly-out tidak terpotong */
             }
 
             /* Sub-menu (collapse) jadi popup ke samping kanan */
@@ -90,7 +93,7 @@
                 top: 10px;
                 right: 10px;
                 color: white;
-                background: rgba(0,0,0,0.2);
+                background: rgba(0, 0, 0, 0.2);
                 border-radius: 50%;
                 width: 30px;
                 height: 30px;
@@ -158,19 +161,19 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc_submission') }}">
                     <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Request</span></a>
+                    <span>1. Request</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.urgents') }}">
                     <i class="fas fa-fw fa-exclamation-circle"></i>
-                    <span>Urgent</span></a>
+                    <span>2. Urgent</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.sum') }}">
                     <i class="fas fa-fw fa-balance-scale"></i>
-                    <span>Sum</span></a>
+                    <span>3. Sum</span></a>
             </li>
 
             {{-- <li class="nav-item">
@@ -194,19 +197,19 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.missing.mc') }}">
                     <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing MC</span></a>
+                    <span>4. Missing MC</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.missing.estimation') }}">
                     <i class="fas fa-fw fa-clock"></i>
-                    <span>Missing Estimation</span></a>
+                    <span>5. Missing Estimation</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc.oke.estimation') }}">
                     <i class="fas fa-fw fa-check-circle"></i>
-                    <span>Oke Estimation</span></a>
+                    <span>6. Oke Estimation</span></a>
             </li>
 
 
@@ -221,19 +224,19 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc_achievement') }}">
                     <i class="fas fa-fw fa-trophy"></i>
-                    <span>Achievement</span></a>
+                    <span>7.Achievement</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc_mistake') }}">
                     <i class="fas fa-fw fa-flag"></i>
-                    <span>Mistake</span></a>
+                    <span>8. Mistake</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mc_forgot') }}">
                     <i class="fas fa-fw fa-question-circle"></i>
-                    <span>Forgot</span></a>
+                    <span>9/ Forgot</span></a>
             </li>
 
             <!-- Divider -->
@@ -384,7 +387,11 @@
             $(document).off('click', '#sidebarToggle, #sidebarToggleTop');
             $(document).on('click', '#sidebarToggle, #sidebarToggleTop', function(e) {
                 e.stopPropagation();
-                if (sidebarOpen) { closeSidebar(); } else { openSidebar(); }
+                if (sidebarOpen) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
             });
 
             $(document).on('click', '#closeSidebarMobile', function(e) {
@@ -394,7 +401,8 @@
 
             $(window).off('resize');
             $(window).on('resize', function() {
-                if ($(window).width() < 768 && sidebarOpen) { /* keep open */ }
+                if ($(window).width() < 768 && sidebarOpen) {
+                    /* keep open */ }
             });
 
             $('#navbarBackdrop').off('click touchstart');

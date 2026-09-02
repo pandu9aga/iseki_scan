@@ -17,18 +17,9 @@ class AchievementController extends Controller
 {
     public function index(Request $request)
     {
-        $selectedDate = $request->input('date', Carbon::today()->format('Y-m-d'));
-        $month = $request->input('month', Carbon::parse($selectedDate)->format('Y-m'));
+        $month = $request->input('month', Carbon::now()->format('Y-m'));
         $date = Carbon::parse($month);
         $daysInMonth = $date->daysInMonth;
-
-        // Daily summary metrics
-        $totalDailyRequests = RequestModel::whereDate('Day_Request', $selectedDate)->count();
-        $totalDailyReady = RequestModel::whereDate('Day_Request', $selectedDate)->whereNotNull('Ready_Request')->count();
-        $totalDailyShipping = RequestModel::whereDate('Day_Request', $selectedDate)->whereNotNull('Shipping_Request')->count();
-        $totalDailyDesignChanges = RequestModel::whereDate('Day_Request', $selectedDate)->whereNotNull('Design_Changes_Request')->count();
-        $totalDailyRecords = Record::whereDate('Day_Record', $selectedDate)->count();
-        $formattedSelectedDate = Carbon::parse($selectedDate)->locale('en')->isoFormat('dddd, D-MMM-YY');
 
         $people = $this->getPeople();
 
@@ -110,14 +101,7 @@ class AchievementController extends Controller
             'recordsData',
             'monthlySummary',
             'month',
-            'daysInMonth',
-            'selectedDate',
-            'formattedSelectedDate',
-            'totalDailyRequests',
-            'totalDailyReady',
-            'totalDailyShipping',
-            'totalDailyDesignChanges',
-            'totalDailyRecords'
+            'daysInMonth'
         ));
     }
 
@@ -356,7 +340,7 @@ class AchievementController extends Controller
         ];
 
         // Request Table Header
-        $sheet->setCellValue('A3', 'REQUESTS');
+        $sheet->setCellValue('A3', 'REQUESTS & CHECKS');
         $sheet->getStyle('A3')->getFont()->setBold(true);
 
         $sheet->setCellValue('A4', 'Name');
@@ -387,18 +371,11 @@ class AchievementController extends Controller
                 $chkCount = $data['days_check'][$i];
                 $totalCount = $reqCount + $chkCount;
 
-                if ($totalCount > 0) {
-                    $sheet->setCellValue($col1.$row, $totalCount);
-                    $sheet->mergeCells($col1.$row.':'.$col1.($row + 1));
+                $sheet->setCellValue($col1.$row, $totalCount);
+                $sheet->mergeCells($col1.$row.':'.$col1.($row + 1));
 
-                    $sheet->setCellValue($col2.$row, $reqCount);
-                    $sheet->setCellValue($col2.($row + 1), $chkCount);
-                } else {
-                    $sheet->setCellValue($col1.$row, 0);
-                    $sheet->mergeCells($col1.$row.':'.$col1.($row + 1));
-                    $sheet->setCellValue($col2.$row, 0);
-                    $sheet->setCellValue($col2.($row + 1), 0);
-                }
+                $sheet->setCellValue($col2.$row, $reqCount);
+                $sheet->setCellValue($col2.($row + 1), $chkCount);
             }
             $row += 2;
         }
@@ -419,13 +396,12 @@ class AchievementController extends Controller
         $sheet->setCellValue('A'.$row, 'Name');
         $sheet->setCellValue('B'.$row, 'Total');
         for ($i = 1; $i <= $daysInMonth; $i++) {
-            $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2) - 1);
-            $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2));
-            $sheet->setCellValue($col1.$row, $i);
-            $sheet->mergeCells($col1.$row.':'.$col2.$row);
+            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + $i);
+            $sheet->setCellValue($col.$row, $i);
         }
 
-        $sheet->getStyle('A'.$row.':'.$lastColLetter.$row)->applyFromArray($headerStyle);
+        $lastColLetterRec = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + $daysInMonth);
+        $sheet->getStyle('A'.$row.':'.$lastColLetterRec.$row)->applyFromArray($headerStyle);
 
         $row++;
         $startRowRec = $row;
@@ -433,10 +409,8 @@ class AchievementController extends Controller
             $sheet->setCellValue('A'.$row, $data['name']);
             $sheet->setCellValue('B'.$row, $data['total']);
             for ($i = 1; $i <= $daysInMonth; $i++) {
-                $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2) - 1);
-                $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2));
-                $sheet->setCellValue($col1.$row, $data['days'][$i]);
-                $sheet->mergeCells($col1.$row.':'.$col2.$row);
+                $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + $i);
+                $sheet->setCellValue($col.$row, $data['days'][$i]);
             }
             $row++;
         }
@@ -444,8 +418,8 @@ class AchievementController extends Controller
 
         if ($endRowRec >= $startRowRec) {
             $sheet->getStyle('A'.$startRowRec.':A'.$endRowRec)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
-            $sheet->getStyle('B'.$startRowRec.':'.$lastColLetter.$endRowRec)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('A'.$startRowRec.':'.$lastColLetter.$endRowRec)->applyFromArray($contentStyle);
+            $sheet->getStyle('B'.$startRowRec.':'.$lastColLetterRec.$endRowRec)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A'.$startRowRec.':'.$lastColLetterRec.$endRowRec)->applyFromArray($contentStyle);
         }
 
         // Autofit column width for name

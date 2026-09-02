@@ -53,6 +53,7 @@
 
         /* Fix Navbar Mobile agar tampil rapi dan sub-menu tidak terpotong */
         @media (max-width: 768px) {
+
             /* Sembunyikan sidebar secara default di mobile */
             #accordionSidebar {
                 display: none;
@@ -63,12 +64,14 @@
             /* Munculkan sidebar saat burger button diklik (class sidebar-toggled dihapus) */
             body:not(.sidebar-toggled) #accordionSidebar {
                 display: block !important;
-                position: absolute !important; /* Gunakan absolute agar tidak memotong popup dan bisa discroll halaman */
+                position: absolute !important;
+                /* Gunakan absolute agar tidak memotong popup dan bisa discroll halaman */
                 top: 0;
                 left: 0;
                 height: auto !important;
                 min-height: 100vh;
-                overflow: visible !important; /* Agar popup/fly-out tidak terpotong */
+                overflow: visible !important;
+                /* Agar popup/fly-out tidak terpotong */
             }
 
             /* Sub-menu (collapse) jadi popup ke samping kanan */
@@ -117,7 +120,7 @@
                 top: 10px;
                 right: 10px;
                 color: white;
-                background: rgba(0,0,0,0.2);
+                background: rgba(0, 0, 0, 0.2);
                 border-radius: 50%;
                 width: 30px;
                 height: 30px;
@@ -138,12 +141,20 @@
 
     <!-- Dynamic Favicon -->
     <script src="/iseki_pro_app/js/dynamic-favicon.js"></script>
-    <script>document.addEventListener("DOMContentLoaded", function() { setDynamicFavicon("qr_code", "Part"); });</script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            setDynamicFavicon("qr_code", "Part");
+        });
+    </script>
 
     <!-- Dynamic Favicon Assets -->
     <link rel="stylesheet" href="/iseki_pro_app/css/icon.css">
     <script src="/iseki_pro_app/js/dynamic-favicon.js"></script>
-    <script>document.addEventListener("DOMContentLoaded", function() { setDynamicFavicon("qr_code", "Part"); });</script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            setDynamicFavicon("qr_code", "Part");
+        });
+    </script>
 </head>
 
 <body id="page-top" class="sidebar-toggled">
@@ -174,7 +185,7 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('home') }}">
                     <i class="fas fa-fw fa-home"></i>
-                    <span>Home</span></a>
+                    <span>1. Home</span></a>
             </li>
 
             <!-- Divider -->
@@ -190,7 +201,7 @@
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseRequest"
                     aria-expanded="true" aria-controls="collapseRequest">
                     <i class="fas fa-fw fa-bullhorn"></i>
-                    <span>Request</span>
+                    <span>2. Request</span>
                 </a>
                 <div id="collapseRequest" class="collapse" aria-labelledby="headingRequest"
                     data-parent="#accordionSidebar">
@@ -239,20 +250,20 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('record') }}">
                     <i class="fas fa-fw fa-qrcode"></i>
-                    <span>Record</span></a>
+                    <span>3. Record</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('sum') }}">
                     <i class="fas fa-fw fa-balance-scale"></i>
-                    <span>Sum</span></a>
+                    <span>4. Sum</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUrgent"
                     aria-expanded="true" aria-controls="collapseUrgent">
                     <i class="fas fa-fw fa-exclamation-triangle"></i>
-                    <span>Urgent</span>
+                    <span>5. Urgent</span>
                 </a>
                 <div id="collapseUrgent" class="collapse" aria-labelledby="headingUrgent"
                     data-parent="#accordionSidebar">
@@ -276,34 +287,34 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('submission') }}">
                     <i class="fas fa-fw fa-file"></i>
-                    <span>Requesting</span></a>
+                    <span>6. Requesting</span></a>
             </li>
 
             <!-- Nav Item - Recording -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user_report') }}">
                     <i class="fas fa-fw fa-file-image"></i>
-                    <span>Recording</span></a>
+                    <span>7. Recording</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user.oke.estimation') }}">
                     <i class="fas fa-fw fa-check-circle"></i>
-                    <span>Oke Estimation</span></a>
+                    <span>8. Oke Estimation</span></a>
             </li>
 
             <!-- Nav Item - Check -->
             <li class="nav-item {{ request()->routeIs('user.check') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('user.check') }}">
                     <i class="fas fa-fw fa-clipboard-check"></i>
-                    <span>Check</span></a>
+                    <span>9. Check</span></a>
             </li>
 
             <!-- Nav Item - Withdrawal -->
             <li class="nav-item {{ request()->routeIs('user.withdrawal') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('user.withdrawal') }}">
                     <i class="fas fa-fw fa-exchange-alt"></i>
-                    <span>Withdrawal</span></a>
+                    <span>10. Withdrawal</span></a>
             </li>
 
             <!-- Divider -->
@@ -317,7 +328,7 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('member.label.index') }}">
                     <i class="fas fa-solid fa-tags"></i>
-                    <span>Label</span></a>
+                    <span>11. Label</span></a>
             </li>
 
             <!-- Divider -->
@@ -331,19 +342,19 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user_achievement') }}">
                     <i class="fas fa-fw fa-trophy"></i>
-                    <span>Achievement</span></a>
+                    <span>12. Achievement</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user_mistake') }}">
                     <i class="fas fa-fw fa-flag"></i>
-                    <span>Mistake</span></a>
+                    <span>13. Mistake</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user_forgot') }}">
                     <i class="fas fa-fw fa-question-circle"></i>
-                    <span>Forgot</span></a>
+                    <span>14. Forgot</span></a>
             </li>
 
             <!-- Divider -->
@@ -455,11 +466,14 @@
     @yield('script')
 
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             if (typeof $.fn.DataTable !== 'undefined' && !$.fn.DataTable.isDataTable('#dataTable')) {
                 $('#dataTable').DataTable({
                     pageLength: 100,
-                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+                    lengthMenu: [
+                        [10, 25, 50, 100, -1],
+                        [10, 25, 50, 100, "All"]
+                    ]
                 });
             }
         });

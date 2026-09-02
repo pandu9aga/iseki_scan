@@ -47,6 +47,7 @@
 
         /* Fix Navbar Mobile agar tampil rapi dan sub-menu tidak terpotong */
         @media (max-width: 768px) {
+
             /* Sembunyikan sidebar secara default di mobile */
             #accordionSidebar {
                 display: none;
@@ -57,12 +58,14 @@
             /* Munculkan sidebar saat burger button diklik (class sidebar-toggled dihapus) */
             body:not(.sidebar-toggled) #accordionSidebar {
                 display: block !important;
-                position: absolute !important; /* Gunakan absolute agar tidak memotong popup dan bisa discroll halaman */
+                position: absolute !important;
+                /* Gunakan absolute agar tidak memotong popup dan bisa discroll halaman */
                 top: 0;
                 left: 0;
                 height: auto !important;
                 min-height: 100vh;
-                overflow: visible !important; /* Agar popup/fly-out tidak terpotong */
+                overflow: visible !important;
+                /* Agar popup/fly-out tidak terpotong */
             }
 
             /* Sub-menu (collapse) jadi popup ke samping kanan */
@@ -111,7 +114,7 @@
                 top: 10px;
                 right: 10px;
                 color: white;
-                background: rgba(0,0,0,0.2);
+                background: rgba(0, 0, 0, 0.2);
                 border-radius: 50%;
                 width: 30px;
                 height: 30px;
@@ -131,12 +134,20 @@
 
     <!-- Dynamic Favicon -->
     <script src="/iseki_pro_app/js/dynamic-favicon.js"></script>
-    <script>document.addEventListener("DOMContentLoaded", function() { setDynamicFavicon("qr_code", "Part"); });</script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            setDynamicFavicon("qr_code", "Part");
+        });
+    </script>
 
     <!-- Dynamic Favicon Assets -->
     <link rel="stylesheet" href="/iseki_pro_app/css/icon.css">
     <script src="/iseki_pro_app/js/dynamic-favicon.js"></script>
-    <script>document.addEventListener("DOMContentLoaded", function() { setDynamicFavicon("qr_code", "Part"); });</script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            setDynamicFavicon("qr_code", "Part");
+        });
+    </script>
 </head>
 
 <body id="page-top" class="sidebar-toggled">
@@ -167,7 +178,7 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('dashboard') }}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
-                    <span>Dashboard</span></a>
+                    <span>1. Dashboard</span></a>
             </li>
 
             <!-- Divider -->
@@ -183,7 +194,7 @@
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseRequesting"
                     aria-expanded="true" aria-controls="collapseRequesting">
                     <i class="fas fa-fw fa-bullhorn"></i>
-                    <span>Requesting</span>
+                    <span>2. Requesting</span>
                 </a>
                 <div id="collapseRequesting" class="collapse" aria-labelledby="headingRequesting"
                     data-parent="#accordionSidebar">
@@ -232,7 +243,7 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.recording') }}">
                     <i class="fas fa-fw fa-qrcode"></i>
-                    <span>Recording</span></a>
+                    <span>3. Recording</span></a>
             </li>
 
             <!-- Divider -->
@@ -254,7 +265,7 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin_request') }}">
                     <i class="fas fa-fw fa-bullhorn"></i>
-                    <span>Request</span></a>
+                    <span>4. Request</span></a>
             </li>
 
             <!-- Nav Item - Monthly -->
@@ -268,14 +279,14 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('report') }}">
                     <i class="fas fa-fw fa-qrcode"></i>
-                    <span>Record</span></a>
+                    <span>5.Record</span></a>
             </li>
 
             <!-- Nav Item - Check -->
             <li class="nav-item {{ request()->routeIs('admin.check') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('admin.check') }}">
                     <i class="fas fa-fw fa-clipboard-check"></i>
-                    <span>Check</span></a>
+                    <span>6. Check</span></a>
             </li>
 
             <!-- Divider -->
@@ -290,7 +301,7 @@
             <li class="nav-item {{ request()->routeIs('admin.withdrawal') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('admin.withdrawal') }}">
                     <i class="fas fa-fw fa-exchange-alt"></i>
-                    <span>Withdrawal</span></a>
+                    <span>7. Withdrawal</span></a>
             </li>
 
             <!-- Divider -->
@@ -321,43 +332,43 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('missing') }}">
                     <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing DST</span></a>
+                    <span>8. Missing DST</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('missing.mc') }}">
                     <i class="fas fa-fw fa-ban"></i>
-                    <span>Missing MC</span></a>
+                    <span>9. Missing MC</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.missing.estimation') }}">
                     <i class="fas fa-fw fa-clock"></i>
-                    <span>Missing Estimation</span></a>
+                    <span>10. Missing Estimation</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.oke.estimation') }}">
                     <i class="fas fa-fw fa-check-circle"></i>
-                    <span>Oke Estimation</span></a>
+                    <span>11.Oke Estimation</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.urgents') }}">
                     <i class="fas fa-fw fa-exclamation-circle"></i>
-                    <span>Urgent</span></a>
+                    <span>12. Urgent</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.sum') }}">
                     <i class="fas fa-fw fa-balance-scale"></i>
-                    <span>Sum</span></a>
+                    <span>13. Sum</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.sumhistory') }}">
                     <i class="fas fa-fw fa-history"></i>
-                    <span>Rangkuman Sum</span></a>
+                    <span>14.Rangkuman Sum</span></a>
             </li>
 
             <!-- Divider -->
@@ -371,19 +382,19 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('achievement') }}">
                     <i class="fas fa-fw fa-trophy"></i>
-                    <span>Achievement</span></a>
+                    <span>15. Achievement</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('mistake') }}">
                     <i class="fas fa-fw fa-flag"></i>
-                    <span>Mistake</span></a>
+                    <span>16. Mistake</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('forgot') }}">
                     <i class="fas fa-fw fa-question-circle"></i>
-                    <span>Forgot</span></a>
+                    <span>17. Forgot</span></a>
             </li>
 
             <!-- Divider -->
@@ -394,38 +405,45 @@
                 Data
             </div>
 
+            <!-- Nav Item - Work Schedule -->
+            <li class="nav-item {{ request()->routeIs('admin.work_schedule') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.work_schedule') }}">
+                    <i class="fas fa-fw fa-calendar-alt"></i>
+                    <span>18. Work Schedule</span></a>
+            </li>
+
             <!-- Nav Item - User -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user') }}">
                     <i class="fas fa-fw fa-user"></i>
-                    <span>User</span></a>
+                    <span>19. User</span></a>
             </li>
 
             <!-- Nav Item - Member -->
             <li class="nav-item">
                 <a class="nav-link" href="{{route('member')}}">
                     <i class="fas fa-fw fa-user-circle"></i>
-                    <span>Member</span></a>
+                    <span>20. Member</span></a>
             </li>
 
             <!-- Nav Item - Report -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('rack') }}">
                     <i class="fas fa-fw fa-table"></i>
-                    <span>Rack</span></a>
+                    <span>21. Rack</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('wa.queue') }}">
                     <i class="fab fa-fw fa-whatsapp"></i>
-                    <span>WA Queue</span></a>
+                    <span>22. WA Queue</span></a>
             </li>
 
             <!-- Nav Item - Stock Item -->
             <li class="nav-item {{ request()->routeIs('stock_item') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('stock_item') }}">
                     <i class="fas fa-fw fa-boxes"></i>
-                    <span>Stock Item</span></a>
+                    <span>23. Stock Item</span></a>
             </li>
 
             <!-- Divider -->
@@ -583,7 +601,11 @@
             $(document).off('click', '#sidebarToggle, #sidebarToggleTop');
             $(document).on('click', '#sidebarToggle, #sidebarToggleTop', function(e) {
                 e.stopPropagation();
-                if (sidebarOpen) { closeSidebar(); } else { openSidebar(); }
+                if (sidebarOpen) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
             });
 
             $(document).on('click', '#closeSidebarMobile', function(e) {
@@ -593,7 +615,9 @@
 
             $(window).off('resize');
             $(window).on('resize', function() {
-                if ($(window).width() < 768 && sidebarOpen) { /* keep open */ }
+                if ($(window).width() < 768 && sidebarOpen) {
+                    /* keep open */
+                }
             });
 
             $('#navbarBackdrop').off('click touchstart');

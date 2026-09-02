@@ -110,6 +110,9 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/validation/submit', [ValidationController::class, 'submit'])->name('validation.submit');
     Route::get('/validation/export', [ValidationController::class, 'export'])->name('validation.export');
 
+    Route::get('/work_schedule', [\App\Http\Controllers\Admin\WorkScheduleController::class, 'index'])->name('admin.work_schedule');
+    Route::post('/work_schedule/update', [\App\Http\Controllers\Admin\WorkScheduleController::class, 'update'])->name('admin.work_schedule.update');
+
     Route::get('/member', [MemberController::class, 'index'])->name('member');
     Route::get('/member/add', [MemberController::class, 'add'])->name('member.add');
     Route::post('/member/create', [MemberController::class, 'create'])->name('member.create');

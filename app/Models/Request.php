@@ -16,6 +16,7 @@ class Request extends Model
     protected $fillable = [
         'Day_Request',
         'Time_Request',
+        'Actual_Submitted_At',
         'Code_Item_Rack',
         'Code_Rack',
         'Id_User',

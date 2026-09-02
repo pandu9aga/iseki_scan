@@ -26,8 +26,7 @@ class RequestController extends Controller
 
     public function create(Request $request)
     {
-        $date = Carbon::today()->format('Y-m-d');
-        $timeNow = Carbon::now()->format('H:i:s');
+        $now = Carbon::now();
         $Id_User = session('Id_Member');
 
         $request->validate([
@@ -57,9 +56,24 @@ class RequestController extends Controller
             return redirect()->back()->with('error', 'Item ini sudah pernah direquest dan masih menunggu.');
         }
 
+        // Tentukan waktu efektif: Urgent bypass cutoff, non-urgent pakai aturan 15:30
+        $isUrgent = $request->has('Urgent_Request') && $request->input('Urgent_Request');
+        $shifted = false;
+
+        if ($isUrgent) {
+            $date = $now->format('Y-m-d');
+            $timeNow = $now->format('H:i:s');
+        } else {
+            $effective = \App\Models\SpecialDate::resolveEffectiveRequestTime($now);
+            $date = $effective['date'];
+            $timeNow = $effective['time'];
+            $shifted = $effective['shifted'];
+        }
+
         $newRequest = new RequestModel();
         $newRequest->Day_Request = $date;
         $newRequest->Time_Request = $timeNow;
+        $newRequest->Actual_Submitted_At = $now;
         $newRequest->Code_Item_Rack = $codeItem;
         $newRequest->Code_Rack = $request->input('Code_Rack');
         $newRequest->Id_User = $Id_User;
@@ -75,7 +89,7 @@ class RequestController extends Controller
         }
 
         // tambahkan urgent_request
-        $newRequest->Urgent_Request = $request->has('Urgent_Request') ? 1 : 0;
+        $newRequest->Urgent_Request = $isUrgent ? 1 : 0;
 
         $newRequest->save();
 
@@ -92,8 +106,16 @@ class RequestController extends Controller
             }
         }
 
+        // Flash message: beritahu user jika request digeser
+        if ($shifted) {
+            $msg = 'Request melewati jam 15:30, dicatat sebagai request tanggal '
+                . Carbon::parse($date)->translatedFormat('d F Y') . ' jam 07:45.';
+        } else {
+            $msg = 'Request berhasil dibuat.';
+        }
+
         // return redirect()->route('submission')->with('success', 'Request berhasil dibuat.');
-        return redirect()->back()->with('success', 'Request berhasil dibuat.');
+        return redirect()->back()->with('success', $msg);
     }
 
     public function check(Request $request)
