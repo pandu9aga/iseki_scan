@@ -9,6 +9,8 @@ use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\DB;
 
 class AdminCheckController extends Controller
 {
@@ -273,5 +275,178 @@ class AdminCheckController extends Controller
 
         $filterParams = array_filter($request->only(['date', 'month', 'checker']));
         return redirect()->route('admin.check', $filterParams)->with('success', 'Check berhasil ditandai sebagai Selesai.');
+    }
+
+    public function search()
+    {
+        if (request()->ajax()) {
+            $query = Check::with(['member', 'user', 'rack']);
+
+            if ($statusFilter = request('statusFilter')) {
+                if ($statusFilter === 'scan') {
+                    $query->whereNull('Status_Check')->where('Auto_Check', 1);
+                } elseif ($statusFilter === 'selesai') {
+                    $query->whereNull('Status_Check')->where('Auto_Check', '!=', 1);
+                } elseif ($statusFilter === 'pending') {
+                    $query->whereNotNull('Status_Check');
+                }
+            }
+
+            return DataTables::eloquent($query)
+                ->editColumn('Time_Check', function ($c) {
+                    return $c->Time_Check ? Carbon::parse($c->Time_Check)->format('Y-m-d H:i') : '-';
+                })
+                ->addColumn('Name_Item', function ($c) {
+                    return optional($c->rack)->Name_Item_Rack ?? '-';
+                })
+                ->addColumn('Status_Display', function ($c) {
+                    if (is_null($c->Status_Check)) {
+                        if ($c->Auto_Check == 1) {
+                            return '<span class="badge badge-info px-2 py-1">Scan</span>';
+                        } else {
+                            return '<span class="badge badge-secondary px-2 py-1">Selesai</span>';
+                        }
+                    } else {
+                        $targetDate = Carbon::parse($c->Status_Check)->startOfDay();
+                        $timeCheckDate = Carbon::parse($c->Time_Check)->startOfDay();
+                        $today = Carbon::today();
+                        
+                        $daysDiff = $timeCheckDate->diffInDays($targetDate);
+                        
+                        if ($targetDate->equalTo($today)) {
+                            return '<span class="badge badge-danger px-2 py-1">Hari Ini</span>';
+                        } else {
+                            $badgeText = $targetDate->format('d M Y');
+                            if ($daysDiff == 1) $badgeClass = "badge-success";
+                            elseif ($daysDiff == 2) $badgeClass = "badge-info";
+                            elseif ($daysDiff == 3) $badgeClass = "badge-warning";
+                            else $badgeClass = "badge-danger";
+
+                            if ($targetDate->lessThan($today)) {
+                                $badgeClass = "badge-secondary";
+                            }
+                            return '<span class="badge ' . $badgeClass . ' px-2 py-1">' . $badgeText . '</span>';
+                        }
+                    }
+                })
+                ->addColumn('checker_name', function ($c) {
+                    if ($c->Is_User == 1) {
+                        return (optional($c->user)->Name_User ?? optional($c->user)->Username_User ?? '-') . ' (Admin)';
+                    }
+                    return optional($c->member)->Name_Member ?? '-';
+                })
+                ->rawColumns(['Status_Display'])
+                ->make(true);
+        }
+
+        // Get members and admins for filter
+        $members = \App\Models\Member::where('Status_Non_Active', '!=', 1)
+            ->orWhereNull('Status_Non_Active')
+            ->orderBy('Name_Member')
+            ->get(['Id_Member', 'Name_Member'])
+            ->map(function ($m) {
+                return (object) [
+                    'id' => 'm_'.$m->Id_Member,
+                    'name' => $m->Name_Member,
+                ];
+            });
+
+        $users = \App\Models\User::where('Status_Non_Active', '!=', 1)
+            ->orWhereNull('Status_Non_Active')
+            ->orderBy('Username_User')
+            ->get(['Id_User', 'Username_User', 'Name_User'])
+            ->map(function ($u) {
+                return (object) [
+                    'id' => 'u_'.$u->Id_User,
+                    'name' => ($u->Name_User ?? $u->Username_User) . ' (Admin)',
+                ];
+            });
+
+        $people = $members->concat($users)->sortBy('name')->values();
+
+        return view('admins.checks.search', compact('people'));
+    }
+
+    public function exportSearch(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = Carbon::parse($request->input('start_date'))->format('Y-m-d');
+        $endDate = Carbon::parse($request->input('end_date'))->format('Y-m-d');
+        $statusFilter = $request->input('status');
+
+        $query = Check::with(['member', 'user', 'rack'])
+            ->whereDate('Time_Check', '>=', $startDate)
+            ->whereDate('Time_Check', '<=', $endDate)
+            ->orderBy('Time_Check', 'desc');
+
+        if ($statusFilter) {
+            if ($statusFilter === 'scan') {
+                $query->whereNull('Status_Check')->where('Auto_Check', 1);
+            } elseif ($statusFilter === 'selesai') {
+                $query->whereNull('Status_Check')->where('Auto_Check', '!=', 1);
+            } elseif ($statusFilter === 'pending') {
+                $query->whereNotNull('Status_Check');
+            }
+        }
+
+        $checks = $query->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = ['No', 'Time Check', 'Area Check', 'Rack', 'Item', 'Name', 'Checker', 'Status'];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
+        ];
+        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
+        $sheet->setAutoFilter('A1:H1');
+
+        $row = 2;
+        $no = 1;
+
+        foreach ($checks as $c) {
+            $checkerName = $c->Is_User == 1 
+                ? ((optional($c->user)->Name_User ?? optional($c->user)->Username_User ?? '-') . ' (Admin)')
+                : (optional($c->member)->Name_Member ?? '-');
+
+            $statusLabel = '';
+            if (is_null($c->Status_Check)) {
+                $statusLabel = $c->Auto_Check == 1 ? 'Scan' : 'Selesai';
+            } else {
+                $statusLabel = Carbon::parse($c->Status_Check)->format('d M Y');
+            }
+
+            $sheet->fromArray([
+                $no,
+                $c->Time_Check ? Carbon::parse($c->Time_Check)->format('Y-m-d H:i') : '-',
+                $c->Area_Check ?? '-',
+                $c->Code_Rack,
+                $c->Code_Item_Rack,
+                optional($c->rack)->Name_Item_Rack ?? '-',
+                $checkerName,
+                $statusLabel
+            ], null, 'A' . $row);
+
+            $no++;
+            $row++;
+        }
+
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = "Check_Search_{$startDate}_to_{$endDate}.xlsx";
+        $writer = new Xlsx($spreadsheet);
+        $filePath = storage_path('app/public/' . $fileName);
+        $writer->save($filePath);
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
     }
 }

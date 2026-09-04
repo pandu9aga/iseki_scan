@@ -201,6 +201,8 @@ Route::middleware(AdminMiddleware::class)->group(function () {
 
     // Admin Check
     Route::get('/admin_check', [AdminCheckController::class, 'index'])->name('admin.check');
+    Route::get('/admin_check/search', [AdminCheckController::class, 'search'])->name('admin.check.search');
+    Route::get('/admin_check/export-search', [AdminCheckController::class, 'exportSearch'])->name('admin.check.export_search');
     Route::get('/admin_check/export', [AdminCheckController::class, 'export'])->name('admin.check.export');
     Route::post('/admin_check/store', [AdminCheckController::class, 'store'])->name('admin.check.store');
 

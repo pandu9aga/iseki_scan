@@ -37,18 +37,18 @@
         </div>
         <div class="card-body py-3">
             @if(count($checkerSummary) > 0)
-                <div class="row">
-                    @foreach($checkerSummary as $name => $count)
-                    <div class="col-6 col-md-3 col-lg-2 mb-2">
-                        <div class="border rounded p-2 text-center bg-light" style="height:100%;">
-                            <div class="h4 font-weight-bold text-primary mb-0">{{ $count }}</div>
-                            <div class="small text-muted text-truncate" title="{{ $name }}">{{ $name }}</div>
-                        </div>
+            <div class="row">
+                @foreach($checkerSummary as $name => $count)
+                <div class="col-6 col-md-3 col-lg-2 mb-2">
+                    <div class="border rounded p-2 text-center bg-light" style="height:100%;">
+                        <div class="h4 font-weight-bold text-primary mb-0">{{ $count }}</div>
+                        <div class="small text-muted text-truncate" title="{{ $name }}">{{ $name }}</div>
                     </div>
-                    @endforeach
                 </div>
+                @endforeach
+            </div>
             @else
-                <p class="text-muted text-center mb-0"><i class="fas fa-info-circle mr-1"></i>Belum ada check pada periode ini.</p>
+            <p class="text-muted text-center mb-0"><i class="fas fa-info-circle mr-1"></i>Belum ada check pada periode ini.</p>
             @endif
         </div>
     </div>
@@ -88,6 +88,7 @@
                     <button type="submit" class="btn btn-primary btn-sm mr-1"><i class="fas fa-search"></i> Terapkan</button>
                     <button type="button" class="btn btn-danger btn-sm mr-1" onclick="setFilterToday()"><i class="fas fa-calendar-day"></i> Hari Ini</button>
                     <a href="{{ route('admin.check') }}" class="btn btn-outline-secondary btn-sm mr-1"><i class="fas fa-sync-alt"></i> Reset</a>
+                    <a href="{{ route('admin.check.search') }}" class="btn btn-info btn-sm mr-1"><i class="fas fa-search-plus"></i> Advanced Check</a>
                     <a href="{{ route('admin.check.export', request()->only(['date', 'month', 'checker'])) }}" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Export Excel</a>
                 </div>
             </form>
@@ -113,9 +114,9 @@
                             <th>Waktu</th>
                             <th>Code Rack</th>
                             <th>Code Item</th>
-                            <th>Area Check</th>
                             <th>Rack Name</th>
                             <th>Status</th>
+                            <th>Area Check</th>
                             <th>Checker</th>
                             <th class="text-center">Aksi</th>
                         </tr>
@@ -127,49 +128,50 @@
                             <td>{{ $c->Time_Check ? \Carbon\Carbon::parse($c->Time_Check)->format('d/m/y H:i') : '-' }}</td>
                             <td><code>{{ $c->Code_Rack }}</code></td>
                             <td>{{ $c->Code_Item_Rack }}</td>
-                            <td>{{ $c->Area_Check ?? '-' }}</td>
+
                             <td>{{ $c->rack_name }}</td>
                             <td>
                                 @php
-                                    $timeCheckDate = \Carbon\Carbon::parse($c->Time_Check)->startOfDay();
-                                    $today = \Carbon\Carbon::today();
+                                $timeCheckDate = \Carbon\Carbon::parse($c->Time_Check)->startOfDay();
+                                $today = \Carbon\Carbon::today();
                                 @endphp
                                 @if(is_null($c->Status_Check))
-                                    @if($c->Auto_Check == 1)
-                                        <span class="badge badge-info px-2 py-1">Scan</span>
-                                    @else
-                                        <span class="badge badge-secondary px-2 py-1">Selesai</span>
-                                    @endif
+                                @if($c->Auto_Check == 1)
+                                <span class="badge badge-info px-2 py-1">Scan</span>
                                 @else
-                                    @php
-                                        // Status_Check sekarang menyimpan target date (misal 2026-04-26)
-                                        $targetDate = \Carbon\Carbon::parse($c->Status_Check)->startOfDay();
-                                        // Hitung hari status (DATEDIFF)
-                                        $daysDiff = $timeCheckDate->diffInDays($targetDate);
-                                    @endphp
-                                    @if ($targetDate->equalTo($today))
-                                        <span class="badge badge-danger px-2 py-1">Hari Ini</span>
-                                    @else
-                                        @php
-                                            $badgeText = $targetDate->format('d M Y');
-                                            if ($daysDiff == 1) $badgeClass = "badge-day-1";
-                                            elseif ($daysDiff == 2) $badgeClass = "badge-day-2";
-                                            elseif ($daysDiff == 3) $badgeClass = "badge-day-3";
-                                            else $badgeClass = "badge-day-4";
+                                <span class="badge badge-secondary px-2 py-1">Selesai</span>
+                                @endif
+                                @else
+                                @php
+                                // Status_Check sekarang menyimpan target date (misal 2026-04-26)
+                                $targetDate = \Carbon\Carbon::parse($c->Status_Check)->startOfDay();
+                                // Hitung hari status (DATEDIFF)
+                                $daysDiff = $timeCheckDate->diffInDays($targetDate);
+                                @endphp
+                                @if ($targetDate->equalTo($today))
+                                <span class="badge badge-danger px-2 py-1">Hari Ini</span>
+                                @else
+                                @php
+                                $badgeText = $targetDate->format('d M Y');
+                                if ($daysDiff == 1) $badgeClass = "badge-day-1";
+                                elseif ($daysDiff == 2) $badgeClass = "badge-day-2";
+                                elseif ($daysDiff == 3) $badgeClass = "badge-day-3";
+                                else $badgeClass = "badge-day-4";
 
-                                            if ($targetDate->lessThan($today)) {
-                                                $badgeClass = "badge-secondary";
-                                            }
-                                        @endphp
-                                        <span class="badge {{ $badgeClass }} px-2 py-1">{{ $badgeText }}</span>
-                                    @endif
+                                if ($targetDate->lessThan($today)) {
+                                $badgeClass = "badge-secondary";
+                                }
+                                @endphp
+                                <span class="badge {{ $badgeClass }} px-2 py-1">{{ $badgeText }}</span>
+                                @endif
                                 @endif
                             </td>
+                            <td>{{ $c->Area_Check ?? '-' }}</td>
                             <td>{{ $c->checker_name }}</td>
                             <td class="text-center">
                                 @php
-                                    $filterParams = array_filter(request()->only(['date', 'month', 'checker']));
-                                    $reqParams = array_merge(['check_id' => $c->Id_Checks, 'code_rack' => $c->Code_Rack, 'code_item' => $c->Code_Item_Rack], $filterParams);
+                                $filterParams = array_filter(request()->only(['date', 'month', 'checker']));
+                                $reqParams = array_merge(['check_id' => $c->Id_Checks, 'code_rack' => $c->Code_Rack, 'code_item' => $c->Code_Item_Rack], $filterParams);
                                 @endphp
                                 <a href="{{ route('admin.requesting', $reqParams) }}" class="btn btn-sm btn-info mb-1" title="Request Ulang">
                                     <i class="fas fa-paper-plane"></i> Req
@@ -189,8 +191,13 @@
 <script src="{{ asset('vendor/datatables/jquery.dataTables.min.js') }}"></script>
 <script src="{{ asset('vendor/datatables/dataTables.bootstrap4.min.js') }}"></script>
 <script>
-    function pad2(n) { return String(n).padStart(2, '0'); }
-    function fmtDate(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+    function pad2(n) {
+        return String(n).padStart(2, '0');
+    }
+
+    function fmtDate(d) {
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
 
     function setFilterMode(mode) {
         var harian = document.getElementById('filterHarianGroup');
@@ -228,9 +235,11 @@
         var y, m;
         if (val) {
             var p = val.split('-');
-            y = parseInt(p[0], 10); m = parseInt(p[1], 10);
+            y = parseInt(p[0], 10);
+            m = parseInt(p[1], 10);
         } else {
-            y = now.getFullYear(); m = now.getMonth() + 1;
+            y = now.getFullYear();
+            m = now.getMonth() + 1;
         }
         var total = (y * 12) + (m - 1) + offset;
         y = Math.floor(total / 12);
