@@ -215,6 +215,8 @@ class ReportController extends Controller
 
     public function readyWaiting(Request $request)
     {
+        $date = $request->input('Day_Record');
+        $dateForInput = $date ? Carbon::parse($date)->format('Y-m-d') : null;
         $memberId = $request->input('Id_User');
 
         $query = RequestModel::with(['member', 'user', 'rack'])
@@ -224,6 +226,10 @@ class ReportController extends Controller
                   ->orWhereNull('Status_Request');
             })
             ->orderBy('Ready_Request', 'desc');
+
+        if ($dateForInput) {
+            $query->whereDate('Day_Request', $dateForInput);
+        }
 
         if ($memberId) {
             $this->applyMemberFilter($query, $memberId);
@@ -233,13 +239,25 @@ class ReportController extends Controller
         $totalRequests = $requests->count();
         $members = $this->getPeople();
 
+        // Rekap per PIC Request
+        $picSummary = $requests->groupBy(function ($item) {
+            return $item->display_name ?: 'Unknown';
+        })->map(function ($group, $name) {
+            return [
+                'name' => $name,
+                'count' => $group->count(),
+            ];
+        })->sortByDesc('count')->values();
+
         return view('admins.reports.ready_waiting', compact(
-            'requests', 'totalRequests', 'members'
+            'requests', 'totalRequests', 'members', 'picSummary', 'dateForInput'
         ));
     }
 
     public function readyWaitingExport(Request $request)
     {
+        $date = $request->input('Day_Record');
+        $dateForInput = $date ? Carbon::parse($date)->format('Y-m-d') : null;
         $memberId = $request->input('Id_User');
 
         $query = RequestModel::with(['member', 'user', 'rack'])
@@ -249,6 +267,10 @@ class ReportController extends Controller
                   ->orWhereNull('Status_Request');
             })
             ->orderBy('Ready_Request', 'desc');
+
+        if ($dateForInput) {
+            $query->whereDate('Day_Request', $dateForInput);
+        }
 
         if ($memberId) {
             $this->applyMemberFilter($query, $memberId);

@@ -5,7 +5,7 @@
 
     <div class="d-sm-flex align-items-center justify-content-between mb-3">
         <h1 class="h3 mb-0 text-gray-800">Record</h1>
-        <a href="{{ route('report.ready_waiting') }}" class="btn btn-sm btn-success shadow-sm">
+        <a href="{{ route('report.ready_waiting', ['Day_Record' => $dateForInput]) }}" class="btn btn-sm btn-success shadow-sm">
             <i class="fas fa-clock fa-sm mr-1"></i>Ready - Waiting
         </a>
     </div>
@@ -64,7 +64,7 @@
                         <i class="fas fa-download fa-sm mr-1"></i>Download Record
                     </button>
                 </form>
-                <a href="{{ route('report.ready_waiting') }}" class="btn btn-sm btn-outline-success shadow-sm">
+                <a href="{{ route('report.ready_waiting', ['Day_Record' => $dateForInput]) }}" class="btn btn-sm btn-outline-success shadow-sm">
                     <i class="fas fa-clock fa-sm mr-1"></i>Ready - Waiting
                 </a>
             </div>
