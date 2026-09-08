@@ -357,6 +357,14 @@
                     <span>14. Forgot</span></a>
             </li>
 
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('user.rack') }}">
+                    <i class="fas fa-fw fa-table"></i>
+                    <span>15. Rack</span></a>
+            </li>
+
+
+
             <!-- Divider -->
             <hr class="sidebar-divider">
 

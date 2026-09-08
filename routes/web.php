@@ -44,6 +44,7 @@ use App\Http\Controllers\User\UserAchievementController;
 use App\Http\Controllers\User\UserForgotController;
 use App\Http\Controllers\User\UserMistakeController;
 use App\Http\Controllers\User\UserReportController;
+use App\Http\Controllers\User\UserRackController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AnyAuthMiddleware;
 use App\Http\Middleware\AreaMiddleware;
@@ -283,6 +284,9 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::post('/user_check/store', [UserCheckController::class, 'store'])->name('user.check.store');
     Route::post('/user_check/auto-store', [UserCheckController::class, 'autoStore'])->name('user.check.auto_store');
     Route::post('/user_check/{id}/done', [UserCheckController::class, 'markAsDone'])->name('user.check.done');
+
+    // User Rack
+    Route::get('/user_rack', [UserRackController::class, 'index'])->name('user.rack');
 });
 
 Route::middleware(McMiddleware::class)->group(function () {
