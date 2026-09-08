@@ -210,13 +210,13 @@ class SpecialDate extends Model
     // ─── Request Cutoff Logic ────────────────────────────────────────
 
     const REQUEST_CUTOFF_TIME = '15:30:00';
-    const NEXT_DAY_REQUEST_TIME = '07:45:00';
+    const NEXT_DAY_REQUEST_TIME = '07:00:00';
 
     /**
      * Tentukan "waktu efektif" sebuah request.
      * 
-     * - Jika hari ini BUKAN hari kerja → geser ke hari kerja berikutnya jam 07:45
-     * - Jika submit >= cutoff (15:30) → geser ke hari kerja berikutnya jam 07:45
+     * - Jika hari ini BUKAN hari kerja → geser ke hari kerja berikutnya jam 07:00
+     * - Jika submit >= cutoff (15:30) → geser ke hari kerja berikutnya jam 07:00
      * - Selain itu → dianggap normal (hari ini, jam submit asli)
      *
      * @param Carbon $now  Waktu submit asli

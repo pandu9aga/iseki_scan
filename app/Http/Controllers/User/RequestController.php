@@ -109,7 +109,7 @@ class RequestController extends Controller
         // Flash message: beritahu user jika request digeser
         if ($shifted) {
             $msg = 'Request melewati jam 15:30, dicatat sebagai request tanggal '
-                . Carbon::parse($date)->translatedFormat('d F Y') . ' jam 07:45.';
+                . Carbon::parse($date)->translatedFormat('d F Y') . ' jam 07:00.';
         } else {
             $msg = 'Request berhasil dibuat.';
         }
