@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Member;
 use App\Models\Request as RequestModel;
 use App\Models\Record;
+use App\Models\BranchRecord;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class UserAchievementController extends Controller
 {
@@ -22,6 +22,7 @@ class UserAchievementController extends Controller
         
         $requestsData = [];
         $recordsData = [];
+        $branchRecordsData = [];
         
         foreach ($members as $member) {
             // Requests
@@ -42,7 +43,7 @@ class UserAchievementController extends Controller
                 'days' => $daysReq
             ];
             
-            // Records
+            // Records Biasa
             $userRecords = Record::where('Id_User', $member->Id_Member)
                 ->whereMonth('Day_Record', $date->month)
                 ->whereYear('Day_Record', $date->year)
@@ -59,17 +60,39 @@ class UserAchievementController extends Controller
                 'total' => $userRecords->count(),
                 'days' => $daysRec
             ];
+
+            // Branch Records
+            $userBranchRecords = BranchRecord::where('Id_User', $member->Id_Member)
+                ->whereMonth('Day_Branch_Record', $date->month)
+                ->whereYear('Day_Branch_Record', $date->year)
+                ->get();
+            
+            $daysBranch = array_fill(1, $daysInMonth, 0);
+            foreach ($userBranchRecords as $br) {
+                $day = (int) Carbon::parse($br->Day_Branch_Record)->format('d');
+                $daysBranch[$day]++;
+            }
+            
+            $branchRecordsData[$member->Id_Member] = [
+                'name' => $member->Name_Member,
+                'total' => $userBranchRecords->count(),
+                'days' => $daysBranch
+            ];
         }
 
-        // Sort by total descending
+        // Sort requests by total descending
         uasort($requestsData, function ($a, $b) {
             return $b['total'] <=> $a['total'];
         });
         
-        uasort($recordsData, function ($a, $b) {
+        // Sort records by combined (Record + BranchRecord) total descending
+        uasort($recordsData, function ($a, $b) use ($branchRecordsData) {
+            $memberIdA = array_search($a, $GLOBALS['temp_records_ref'] ?? []);
+            $totalA = $a['total'] + ($branchRecordsData[$memberIdA]['total'] ?? 0);
+            $totalB = $b['total'] + ($branchRecordsData[$memberIdA]['total'] ?? 0);
             return $b['total'] <=> $a['total'];
         });
-        
-        return view('users.achievements.index', compact('requestsData', 'recordsData', 'month', 'daysInMonth'));
+
+        return view('users.achievements.index', compact('requestsData', 'recordsData', 'branchRecordsData', 'month', 'daysInMonth'));
     }
 }

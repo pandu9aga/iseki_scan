@@ -289,6 +289,13 @@
                     <span>6. Check</span></a>
             </li>
 
+            <!-- Nav Item - Branch Record -->
+            <li class="nav-item {{ request()->routeIs('admin.branch_record') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.branch_record') }}">
+                    <i class="fas fa-fw fa-qrcode"></i>
+                    <span>7. Branch Record</span></a>
+            </li>
+
             <!-- Divider -->
             <hr class="sidebar-divider">
 

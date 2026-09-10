@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Check;
 use App\Models\Member;
 use App\Models\Record;
+use App\Models\BranchRecord;
 use App\Models\Request as RequestModel;
 use App\Models\User;
 use Carbon\Carbon;
@@ -26,6 +27,7 @@ class AchievementController extends Controller
         // Initial setup for data arrays
         $requestsData = [];
         $recordsData = [];
+        $branchRecordsData = [];
         foreach ($people as $person) {
             $requestsData[$person->id] = [
                 'name' => $person->name,
@@ -34,6 +36,11 @@ class AchievementController extends Controller
                 'days_check' => array_fill(1, $daysInMonth, 0),
             ];
             $recordsData[$person->id] = [
+                'name' => $person->name,
+                'total' => 0,
+                'days' => array_fill(1, $daysInMonth, 0),
+            ];
+            $branchRecordsData[$person->id] = [
                 'name' => $person->name,
                 'total' => 0,
                 'days' => array_fill(1, $daysInMonth, 0),
@@ -52,6 +59,12 @@ class AchievementController extends Controller
         $allRecords = Record::whereMonth('Day_Record', $date->month)
             ->whereYear('Day_Record', $date->year)
             ->get();
+
+        $allBranchRecords = BranchRecord::whereMonth('Day_Branch_Record', $date->month)
+            ->whereYear('Day_Branch_Record', $date->year)
+            ->get();
+
+        $monthlySummary = $this->getMonthlySummary($allRequests, $allRecords, $allBranchRecords, $daysInMonth);
 
         // Process Requests
         foreach ($allRequests as $req) {
@@ -85,6 +98,16 @@ class AchievementController extends Controller
             }
         }
 
+        // Process Branch Records
+        foreach ($allBranchRecords as $br) {
+            $key = 'm_' . $br->Id_User;
+            if (isset($branchRecordsData[$key])) {
+                $day = (int) Carbon::parse($br->Day_Branch_Record)->format('d');
+                $branchRecordsData[$key]['days'][$day]++;
+                $branchRecordsData[$key]['total']++;
+            }
+        }
+
         // Sort by total descending
         uasort($requestsData, function ($a, $b) {
             return $b['total'] <=> $a['total'];
@@ -94,11 +117,14 @@ class AchievementController extends Controller
             return $b['total'] <=> $a['total'];
         });
 
-        $monthlySummary = $this->getMonthlySummary($allRequests, $allRecords, $daysInMonth);
+        uasort($branchRecordsData, function ($a, $b) {
+            return $b['total'] <=> $a['total'];
+        });
 
         return view('admins.achievements.index', compact(
             'requestsData',
             'recordsData',
+            'branchRecordsData',
             'monthlySummary',
             'month',
             'daysInMonth'
@@ -116,6 +142,7 @@ class AchievementController extends Controller
         // Initial setup for data arrays
         $requestsData = [];
         $recordsData = [];
+        $branchRecordsData = [];
         foreach ($people as $person) {
             $requestsData[$person->id] = [
                 'name' => $person->name,
@@ -128,9 +155,13 @@ class AchievementController extends Controller
                 'total' => 0,
                 'days' => array_fill(1, $daysInMonth, 0),
             ];
+            $branchRecordsData[$person->id] = [
+                'name' => $person->name,
+                'total' => 0,
+                'days' => array_fill(1, $daysInMonth, 0),
+            ];
         }
 
-        // Fetch all data for the month in bulk
         $allRequests = RequestModel::whereMonth('Day_Request', $date->month)
             ->whereYear('Day_Request', $date->year)
             ->get();
@@ -143,9 +174,10 @@ class AchievementController extends Controller
             ->whereYear('Day_Record', $date->year)
             ->get();
 
-        $monthlySummary = $this->getMonthlySummary($allRequests, $allRecords, $daysInMonth);
+        $allBranchRecords = BranchRecord::whereMonth('Day_Branch_Record', $date->month)
+            ->whereYear('Day_Branch_Record', $date->year)
+            ->get();
 
-        // Process Requests
         foreach ($allRequests as $req) {
             $prefix = ($req->Is_User == 1) ? 'u_' : 'm_';
             $key = $prefix.$req->Id_User;
@@ -156,7 +188,6 @@ class AchievementController extends Controller
             }
         }
 
-        // Process Checks
         foreach ($allChecks as $check) {
             $prefix = ($check->Is_User == 1) ? 'u_' : 'm_';
             $key = $prefix.$check->Id_User;
@@ -166,7 +197,6 @@ class AchievementController extends Controller
             }
         }
 
-        // Process Records
         foreach ($allRecords as $rec) {
             $prefix = ($rec->Is_User == 1) ? 'u_' : 'm_';
             $key = $prefix.$rec->Id_User;
@@ -177,174 +207,53 @@ class AchievementController extends Controller
             }
         }
 
-        // Sort by total descending
-        uasort($requestsData, function ($a, $b) {
-            return $b['total'] <=> $a['total'];
-        });
+        foreach ($allBranchRecords as $br) {
+            $key = 'm_' . $br->Id_User;
+            if (isset($branchRecordsData[$key])) {
+                $day = (int) Carbon::parse($br->Day_Branch_Record)->format('d');
+                $branchRecordsData[$key]['days'][$day]++;
+                $branchRecordsData[$key]['total']++;
+            }
+        }
 
-        uasort($recordsData, function ($a, $b) {
-            return $b['total'] <=> $a['total'];
-        });
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        $spreadsheet = new Spreadsheet;
-
-        // -------------------------------------------------------------
-        // Sheet 1: Daily Summary
-        // -------------------------------------------------------------
-        $sheet1 = $spreadsheet->getActiveSheet();
-        $sheet1->setTitle('Daily Summary');
-
-        // Header Title
-        $sheet1->setCellValue('A1', 'Daily Summary - '.$date->format('F Y'));
-        $sheet1->mergeCells('A1:F1');
-        $sheet1->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-        $sheet1->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-
-        $summaryHeaderStyle = [
+        // Styling definitions
+        $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-            'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
-            ],
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
                 'startColor' => ['rgb' => '4E73DF'],
             ],
-            'borders' => [
-                'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
-            ],
-        ];
-
-        $summaryTotalStyle = [
-            'font' => ['bold' => true],
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
                 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
-            ],
-            'fill' => [
-                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'E3E6F0'],
-            ],
-            'borders' => [
-                'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
-            ],
-        ];
-
-        $summaryContentStyle = [
-            'borders' => [
-                'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
-            ],
-            'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
-            ],
-        ];
-
-        // Column headers
-        $summaryHeaders = ['Date', 'Request', 'Ready', 'Shipping', 'Perubahan Desain', 'Record'];
-        $sheet1->fromArray([$summaryHeaders], null, 'A3');
-        $sheet1->getStyle('A3:F3')->applyFromArray($summaryHeaderStyle);
-
-        // Header Background Colors per Column
-        $headerColors = [
-            'A3' => '5A5C69', // Date
-            'B3' => 'E83E8C', // Request (Pink)
-            'C3' => '1CC88A', // Ready
-            'D3' => '36B9CC', // Shipping
-            'E3' => 'F6C23E', // Perubahan Desain
-            'F3' => '4E73DF', // Record (Navy Blue)
-        ];
-        foreach ($headerColors as $cell => $color) {
-            $sheet1->getStyle($cell)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB($color);
-        }
-
-        // Subheader TOTAL
-        $subHeaderTotal = [
-            'TOTAL',
-            $monthlySummary['totals']['request'],
-            $monthlySummary['totals']['ready'],
-            $monthlySummary['totals']['shipping'],
-            $monthlySummary['totals']['design_change'],
-            $monthlySummary['totals']['record'],
-        ];
-        $sheet1->fromArray([$subHeaderTotal], null, 'A4');
-        $sheet1->getStyle('A4:F4')->applyFromArray($summaryTotalStyle);
-        $sheet1->getStyle('B4')->getFont()->getColor()->setRGB('E83E8C');
-        $sheet1->getStyle('C4')->getFont()->getColor()->setRGB('1CC88A');
-        $sheet1->getStyle('D4')->getFont()->getColor()->setRGB('36B9CC');
-        $sheet1->getStyle('E4')->getFont()->getColor()->setRGB('F6C23E');
-        $sheet1->getStyle('F4')->getFont()->getColor()->setRGB('4E73DF');
-
-        // Daily Rows
-        $sRow = 5;
-        for ($i = 1; $i <= $daysInMonth; $i++) {
-            $dayData = $monthlySummary['days'][$i];
-            $sheet1->fromArray([
-                $i,
-                $dayData['request'],
-                $dayData['ready'],
-                $dayData['shipping'],
-                $dayData['design_change'],
-                $dayData['record'],
-            ], null, 'A'.$sRow);
-            $sheet1->getStyle('A'.$sRow.':F'.$sRow)->applyFromArray($summaryContentStyle);
-            $sRow++;
-        }
-
-        // Footer TOTAL
-        $sheet1->fromArray([$subHeaderTotal], null, 'A'.$sRow);
-        $sheet1->getStyle('A'.$sRow.':F'.$sRow)->applyFromArray($summaryTotalStyle);
-        $sheet1->getStyle('B'.$sRow)->getFont()->getColor()->setRGB('E83E8C');
-        $sheet1->getStyle('C'.$sRow)->getFont()->getColor()->setRGB('1CC88A');
-        $sheet1->getStyle('D'.$sRow)->getFont()->getColor()->setRGB('36B9CC');
-        $sheet1->getStyle('E'.$sRow)->getFont()->getColor()->setRGB('F6C23E');
-        $sheet1->getStyle('F'.$sRow)->getFont()->getColor()->setRGB('4E73DF');
-
-        foreach (range('A', 'F') as $col) {
-            $sheet1->getColumnDimension($col)->setAutoSize(true);
-        }
-
-        // -------------------------------------------------------------
-        // Sheet 2: Member Achievement
-        // -------------------------------------------------------------
-        $sheet2 = $spreadsheet->createSheet();
-        $sheet2->setTitle('Member Achievement');
-        $sheet = $sheet2;
-
-        // Header
-        $sheet->setCellValue('A1', 'Achievement Report - '.$date->format('F Y'));
-        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($daysInMonth * 2));
-        $sheet->mergeCells('A1:'.$lastColLetter.'1');
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
-
-        // Style arrays
-        $headerStyle = [
-            'font' => ['bold' => true],
-            'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
-            ],
-            'borders' => [
-                'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
             ],
         ];
 
         $contentStyle = [
             'borders' => [
-                'allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN],
-            ],
-            'alignment' => [
-                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'D1D3E2'],
+                ],
             ],
         ];
 
-        // Request Table Header
-        $sheet->setCellValue('A3', 'REQUESTS & CHECKS');
-        $sheet->getStyle('A3')->getFont()->setBold(true);
+        // Title
+        $sheet->setCellValue('A1', 'ACHIEVEMENT REPORT - '.$date->format('F Y'));
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
 
+        // Requests Table Header
+        $sheet->setCellValue('A3', 'REQUESTS');
+        $sheet->getStyle('A3')->getFont()->setBold(true);
         $sheet->setCellValue('A4', 'Name');
+        $sheet->mergeCells('A4:A5');
         $sheet->setCellValue('B4', 'Total');
+        $sheet->mergeCells('B4:B5');
+
+        $lastColLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($daysInMonth * 2));
         for ($i = 1; $i <= $daysInMonth; $i++) {
             $col1 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2) - 1);
             $col2 = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + ($i * 2));
@@ -422,6 +331,40 @@ class AchievementController extends Controller
             $sheet->getStyle('A'.$startRowRec.':'.$lastColLetterRec.$endRowRec)->applyFromArray($contentStyle);
         }
 
+        $row += 2;
+
+        // Branch Record Table Header
+        $sheet->setCellValue('A'.$row, 'BRANCH RECORDS');
+        $sheet->getStyle('A'.$row)->getFont()->setBold(true);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Name');
+        $sheet->setCellValue('B'.$row, 'Total');
+        for ($i = 1; $i <= $daysInMonth; $i++) {
+            $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + $i);
+            $sheet->setCellValue($col.$row, $i);
+        }
+
+        $sheet->getStyle('A'.$row.':'.$lastColLetterRec.$row)->applyFromArray($headerStyle);
+
+        $row++;
+        $startRowBr = $row;
+        foreach ($branchRecordsData as $personId => $data) {
+            $sheet->setCellValue('A'.$row, $data['name']);
+            $sheet->setCellValue('B'.$row, $data['total']);
+            for ($i = 1; $i <= $daysInMonth; $i++) {
+                $col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(2 + $i);
+                $sheet->setCellValue($col.$row, $data['days'][$i]);
+            }
+            $row++;
+        }
+        $endRowBr = $row - 1;
+
+        if ($endRowBr >= $startRowBr) {
+            $sheet->getStyle('A'.$startRowBr.':A'.$endRowBr)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+            $sheet->getStyle('B'.$startRowBr.':'.$lastColLetterRec.$endRowBr)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('A'.$startRowBr.':'.$lastColLetterRec.$endRowBr)->applyFromArray($contentStyle);
+        }
+
         // Autofit column width for name
         $sheet->getColumnDimension('A')->setAutoSize(true);
 
@@ -467,7 +410,7 @@ class AchievementController extends Controller
         return $members->concat($users)->sortBy('name')->values();
     }
 
-    private function getMonthlySummary($allRequests, $allRecords, $daysInMonth)
+    private function getMonthlySummary($allRequests, $allRecords, $allBranchRecords, $daysInMonth)
     {
         $monthlySummary = [
             'days' => [],
@@ -477,6 +420,7 @@ class AchievementController extends Controller
                 'shipping' => 0,
                 'design_change' => 0,
                 'record' => 0,
+                'branch_record' => 0,
             ],
         ];
 
@@ -487,6 +431,7 @@ class AchievementController extends Controller
                 'shipping' => 0,
                 'design_change' => 0,
                 'record' => 0,
+                'branch_record' => 0,
             ];
         }
 
@@ -516,6 +461,14 @@ class AchievementController extends Controller
             if (isset($monthlySummary['days'][$day])) {
                 $monthlySummary['days'][$day]['record']++;
                 $monthlySummary['totals']['record']++;
+            }
+        }
+
+        foreach ($allBranchRecords as $br) {
+            $day = (int) Carbon::parse($br->Day_Branch_Record)->format('d');
+            if (isset($monthlySummary['days'][$day])) {
+                $monthlySummary['days'][$day]['branch_record']++;
+                $monthlySummary['totals']['branch_record']++;
             }
         }
 

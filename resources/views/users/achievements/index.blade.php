@@ -12,6 +12,15 @@
         </div>
     </div>
 
+    {{-- Keterangan Legenda Tabel --}}
+    <div class="alert alert-light border shadow-sm py-2 px-3 mb-3 d-flex align-items-center flex-wrap" style="gap:15px; font-size:13px;">
+        <span class="font-weight-bold text-dark"><i class="fas fa-info-circle mr-1 text-primary"></i>Keterangan Sel Tabel:</span>
+        <span><strong class="px-2 py-1 bg-light border rounded">Total</strong>: Gabungan (Record + Branch Record)</span>
+        <span><strong class="text-success">Atas (Hijau)</strong>: Record Biasa</span>
+        <span><strong style="color: #e67e22;">Bawah (Orange)</strong>: Branch Record</span>
+        <span><strong class="px-2 py-1 bg-light border rounded">Samping (Kiri)</strong>: Total Harian (Record + Branch Record)</span>
+    </div>
+
     <div class="card shadow mb-4">
         <div class="card-header py-3">
             <h6 class="m-0 font-weight-bold text-primary">Achievement Report -
@@ -19,7 +28,7 @@
             </h6>
         </div>
         <div class="card-body">
-            @if(count($requestsData) == 0)
+            @if(count($requestsData) == 0 && count($recordsData) == 0)
             <div class="alert alert-info">
                 No active members found for this period.
             </div>
@@ -31,17 +40,15 @@
                             <th rowspan="2" class="align-middle text-center sticky-col"
                                 style="background-color: #f8f9fc;">Date
                             </th>
-                            <th colspan="{{ count($requestsData) }}" class="text-center bg-primary text-white">REQUESTS
-                            </th>
-                            <th colspan="{{ count($recordsData) }}" class="text-center bg-success text-white">RECORDS
-                            </th>
+                            <th colspan="{{ count($requestsData) }}" class="text-center bg-primary text-white">REQUESTS</th>
+                            <th colspan="{{ count($recordsData) }}" class="text-center bg-success text-white">RECORDS & BRANCH RECORDS</th>
                         </tr>
                         <tr>
                             <!-- User names for Requests -->
                             @foreach($requestsData as $userId => $data)
                             <th class="text-center small">{{ $data['name'] }}</th>
                             @endforeach
-                            <!-- User names for Records -->
+                            <!-- User names for Records & Branch Records -->
                             @foreach($recordsData as $userId => $data)
                             <th class="text-center small">{{ $data['name'] }}</th>
                             @endforeach
@@ -55,23 +62,43 @@
                             <td class="text-center">{{ $data['total'] }}</td>
                             @endforeach
                             @foreach($recordsData as $userId => $data)
-                            <td class="text-center">{{ $data['total'] }}</td>
+                            @php
+                            $recTotal = $data['total'];
+                            $branchTotal = $branchRecordsData[$userId]['total'] ?? 0;
+                            $combinedTotal = $recTotal + $branchTotal;
+                            @endphp
+                            <td class="text-center font-weight-bold" title="Total Record + Branch Record">{{ $combinedTotal }}</td>
                             @endforeach
                         </tr>
                         <!-- Daily Rows -->
                         @for($i = 1; $i <= $daysInMonth; $i++)
-                            <tr class="hover-row">
-                            <td class="text-center sticky-col"><b>{{ $i }}</b></td>
+                        <tr class="hover-row">
+                            <td class="text-center sticky-col font-weight-bold"><b>{{ $i }}</b></td>
                             <!-- Days for Requests -->
                             @foreach($requestsData as $userId => $data)
                             <td class="text-center">{{ $data['days'][$i] }}</td>
                             @endforeach
-                            <!-- Days for Records -->
+                            <!-- Days for Records & Branch Records -->
                             @foreach($recordsData as $userId => $data)
-                            <td class="text-center">{{ $data['days'][$i] }}</td>
+                            @php
+                            $recCount = $data['days'][$i];
+                            $branchCount = $branchRecordsData[$userId]['days'][$i] ?? 0;
+                            $combinedCount = $recCount + $branchCount;
+                            @endphp
+                            <td class="p-0">
+                                <div class="d-flex align-items-stretch" style="height: 100%; min-height: 44px;">
+                                    <div class="d-flex align-items-center justify-content-center border-right px-1 font-weight-bold bg-light small" style="min-width: 28px;" title="Total (Record + Branch Record)">
+                                        {{ $combinedCount }}
+                                    </div>
+                                    <div class="d-flex flex-column" style="flex: 1;">
+                                        <div class="d-flex align-items-center justify-content-center border-bottom small text-success font-weight-bold" style="flex: 1;" title="Record Biasa (Atas)">{{ $recCount }}</div>
+                                        <div class="d-flex align-items-center justify-content-center small font-weight-bold" style="flex: 1; color: #e67e22;" title="Branch Record (Bawah)">{{ $branchCount }}</div>
+                                    </div>
+                                </div>
+                            </td>
                             @endforeach
-                            </tr>
-                            @endfor
+                        </tr>
+                        @endfor
                     </tbody>
                 </table>
             </div>
@@ -104,7 +131,6 @@
     thead tr:nth-child(2) th {
         position: sticky;
         top: 41px;
-        /* Height of the first row */
         z-index: 10;
         background-color: #f8f9fc;
     }
@@ -112,7 +138,6 @@
     .sticky-total td {
         position: sticky;
         top: 95px;
-        /* Height of Row 1 + Row 2. Adjusted to stay below header */
         z-index: 9;
         background-color: #e3e6f0 !important;
     }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminRecordingController;
 use App\Http\Controllers\Admin\AdminWithdrawalController;
 use App\Http\Controllers\Admin\AdminStockItemController;
 use App\Http\Controllers\Admin\AdminCheckController;
+use App\Http\Controllers\Admin\AdminBranchRecordController;
 use App\Http\Controllers\Admin\AdminSubmissionController;
 use App\Http\Controllers\Admin\ForgotController;
 use App\Http\Controllers\Admin\ItemController;
@@ -45,6 +46,7 @@ use App\Http\Controllers\User\UserForgotController;
 use App\Http\Controllers\User\UserMistakeController;
 use App\Http\Controllers\User\UserReportController;
 use App\Http\Controllers\User\UserRackController;
+use App\Http\Controllers\User\BranchRecord;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AnyAuthMiddleware;
 use App\Http\Middleware\AreaMiddleware;
@@ -177,6 +179,10 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     // WA Queue Monitoring
     Route::get('/wa-queue', [WaQueueController::class, 'index'])->name('wa.queue');
 
+    // Admin Branch Record
+    Route::get('/admin/branch_record', [AdminBranchRecordController::class, 'index'])->name('admin.branch_record');
+    Route::get('/admin/branch_record/export', [AdminBranchRecordController::class, 'export'])->name('admin.branch_record.export');
+
     // Admin Requesting (scan barcode to create request)
     Route::get('/admin_requesting', [AdminRequestingController::class, 'index'])->name('admin.requesting');
     Route::post('/admin_requesting/create', [AdminRequestingController::class, 'create'])->name('admin.requesting.create');
@@ -287,6 +293,14 @@ Route::middleware(AuthMiddleware::class)->group(function () {
 
     // User Rack
     Route::get('/user_rack', [UserRackController::class, 'index'])->name('user.rack');
+
+    // Branch Record (standalone, independent from Request cycle)
+    Route::get('/branch_record', [BranchRecord::class, 'index'])->name('branch_record');
+    Route::post('/branch_record/create', [BranchRecord::class, 'create'])->name('branch_record.create');
+    Route::get('/branch_record/data', [BranchRecord::class, 'getData'])->name('branch_record.data');
+    Route::get('/branch_record/check-rack', [BranchRecord::class, 'checkRack'])->name('branch_record.check_rack');
+    Route::get('/branch_recording', [BranchRecord::class, 'report'])->name('branch_recording');
+    Route::get('/branch_recording/export', [BranchRecord::class, 'reportExport'])->name('branch_recording.export');
 });
 
 Route::middleware(McMiddleware::class)->group(function () {

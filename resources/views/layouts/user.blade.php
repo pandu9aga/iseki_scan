@@ -253,17 +253,24 @@
                     <span>3. Record</span></a>
             </li>
 
+            <!-- Nav Item - Branch Record -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('branch_record') }}">
+                    <i class="fas fa-fw fa-clipboard-list"></i>
+                    <span>4. Branch Record</span></a>
+            </li>
+
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('sum') }}">
                     <i class="fas fa-fw fa-balance-scale"></i>
-                    <span>4. Sum</span></a>
+                    <span>5. Sum</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUrgent"
                     aria-expanded="true" aria-controls="collapseUrgent">
                     <i class="fas fa-fw fa-exclamation-triangle"></i>
-                    <span>5. Urgent</span>
+                    <span>6. Urgent</span>
                 </a>
                 <div id="collapseUrgent" class="collapse" aria-labelledby="headingUrgent"
                     data-parent="#accordionSidebar">
@@ -287,34 +294,41 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('submission') }}">
                     <i class="fas fa-fw fa-file"></i>
-                    <span>6. Requesting</span></a>
+                    <span>7. Requesting</span></a>
             </li>
 
             <!-- Nav Item - Recording -->
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user_report') }}">
                     <i class="fas fa-fw fa-file-image"></i>
-                    <span>7. Recording</span></a>
+                    <span>8. Recording</span></a>
+            </li>
+
+            <!-- Nav Item - Branch Recording -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ route('branch_recording') }}">
+                    <i class="fas fa-fw fa-chart-bar"></i>
+                    <span>9. Branch Recording</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user.oke.estimation') }}">
                     <i class="fas fa-fw fa-check-circle"></i>
-                    <span>8. Oke Estimation</span></a>
+                    <span>10. Oke Estimation</span></a>
             </li>
 
             <!-- Nav Item - Check -->
             <li class="nav-item {{ request()->routeIs('user.check') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('user.check') }}">
                     <i class="fas fa-fw fa-clipboard-check"></i>
-                    <span>9. Check</span></a>
+                    <span>11. Check</span></a>
             </li>
 
             <!-- Nav Item - Withdrawal -->
             <li class="nav-item {{ request()->routeIs('user.withdrawal') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('user.withdrawal') }}">
                     <i class="fas fa-fw fa-exchange-alt"></i>
-                    <span>10. Withdrawal</span></a>
+                    <span>12. Withdrawal</span></a>
             </li>
 
             <!-- Divider -->
@@ -328,7 +342,7 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('member.label.index') }}">
                     <i class="fas fa-solid fa-tags"></i>
-                    <span>11. Label</span></a>
+                    <span>13. Label</span></a>
             </li>
 
             <!-- Divider -->
@@ -342,25 +356,25 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user_achievement') }}">
                     <i class="fas fa-fw fa-trophy"></i>
-                    <span>12. Achievement</span></a>
+                    <span>14. Achievement</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user_mistake') }}">
                     <i class="fas fa-fw fa-flag"></i>
-                    <span>13. Mistake</span></a>
+                    <span>15. Mistake</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user_forgot') }}">
                     <i class="fas fa-fw fa-question-circle"></i>
-                    <span>14. Forgot</span></a>
+                    <span>16. Forgot</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('user.rack') }}">
                     <i class="fas fa-fw fa-table"></i>
-                    <span>15. Rack</span></a>
+                    <span>17. Rack</span></a>
             </li>
 
 
