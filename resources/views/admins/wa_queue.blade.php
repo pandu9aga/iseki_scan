@@ -44,10 +44,28 @@
         <h1 class="h3 mb-0 text-gray-800">
             <i class="fab fa-whatsapp text-success mr-2"></i> WA Queue Monitor
         </h1>
-        <div class="d-flex align-items-center gap-2">
-            <span class="badge badge-pill badge-primary font-weight-normal mr-2" id="pendingCount">
+        <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+            <span class="badge badge-pill badge-primary font-weight-normal py-2 px-3" id="pendingCount">
                 <i class="fas fa-clock mr-1"></i><span id="countLabel">{{ $queues->count() }}</span> Pending
             </span>
+
+            {{-- Status perolehan hari ini (Jumat: 16:50, hari lain: 16:20) --}}
+            <div class="d-inline-flex align-items-center">
+                @if($achievementQueuedToday)
+                    <span class="badge badge-success py-2 px-2" id="badgeAchStatus" title="Pesan perolehan {{ $achievementCutoffLabel }} sudah masuk antrean hari ini">
+                        <i class="fas fa-check-circle mr-1"></i> Rekap {{ $achievementCutoffLabel }}: Ready
+                    </span>
+                @else
+                    <span class="badge badge-light border text-muted py-2 px-2" id="badgeAchStatus" title="Pesan perolehan akan otomatis diantrekan pada jam {{ $achievementCutoffLabel }}">
+                        <i class="fas fa-hourglass-half mr-1"></i> Rekap {{ $achievementCutoffLabel }}: Menunggu Jam {{ $achievementCutoffLabel }}
+                    </span>
+                @endif
+            </div>
+
+            <button id="btnTriggerAchModal" class="btn btn-outline-primary btn-sm shadow-sm" type="button" data-toggle="modal" data-target="#modalAchievementPreview">
+                <i class="fas fa-trophy mr-1"></i> Preview / Generate Rekap
+            </button>
+
             <button id="btnAutoSend" class="btn btn-success btn-sm shadow-sm">
                 <i class="fas fa-paper-plane mr-1"></i> Mulai Auto-Send
             </button>
@@ -159,6 +177,51 @@
                     <p class="text-muted">Semua pesan sudah terkirim!</p>
                 </div>
                 @endforelse
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Preview & Generate Perolehan Achievement --}}
+    <div class="modal fade" id="modalAchievementPreview" tabindex="-1" role="dialog" aria-labelledby="modalAchLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold text-gray-800" id="modalAchLabel">
+                        <i class="fas fa-trophy text-warning mr-1"></i> Preview / Generate Perolehan DST
+                    </h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group row align-items-center mb-3">
+                        <label for="achDateInput" class="col-sm-3 col-form-label font-weight-bold">Pilih Tanggal:</label>
+                        <div class="col-sm-6">
+                            <input type="date" class="form-control" id="achDateInput" value="{{ \Carbon\Carbon::today()->format('Y-m-d') }}">
+                        </div>
+                        <div class="col-sm-3">
+                            <button class="btn btn-sm btn-info btn-block" type="button" id="btnLoadAchPreview">
+                                <i class="fas fa-sync-alt mr-1"></i> Muat Preview
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="achAlertStatus" class="alert alert-warning py-2 mb-3 d-none"></div>
+
+                    <label class="font-weight-bold small text-muted text-uppercase mb-1">Isi Pesan (Target Group: <code>120363026880582483@g.us</code>):</label>
+                    <textarea class="form-control msg-preview" id="achMessagePreview" rows="12" readonly style="font-size: 0.85rem; line-height: 1.4;"></textarea>
+                    
+                    <small class="text-muted mt-2 d-block">
+                        <i class="fas fa-info-circle text-primary mr-1"></i> 
+                        <strong>Otomatisasi:</strong> Jika halaman WA Queue ini tetap dibuka, sistem akan otomatis mengantrekan pesan ini 1x per hari pada jam <strong>16:50 WIB (Jumat)</strong> atau <strong>16:20 WIB (Senin-Kamis/Sabtu-Minggu)</strong>.
+                    </small>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Tutup</button>
+                    <button class="btn btn-primary btn-sm" type="button" id="btnEnqueueAch">
+                        <i class="fas fa-plus-circle mr-1"></i> Masukkan ke Antrean WA
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -419,5 +482,110 @@
             }, 400);
         }
     });
+
+    // ── Perolehan 16:20 & Preview Handlers ──────────────────
+    const ACH_PREVIEW_URL = '{{ route('wa.queue.achievement.preview') }}';
+    const ACH_TRIGGER_URL = '{{ route('wa.queue.achievement.trigger') }}';
+
+    async function loadAchPreview(date) {
+        const previewArea = document.getElementById('achMessagePreview');
+        const alertBox    = document.getElementById('achAlertStatus');
+        previewArea.value = 'Memuat perolehan DST sampai 16:20...';
+        alertBox.classList.add('d-none');
+
+        try {
+            const resp = await fetch(`${ACH_PREVIEW_URL}?date=${encodeURIComponent(date)}`);
+            const data = await resp.json();
+            previewArea.value = data.message;
+
+            if (data.already_exists) {
+                alertBox.className = 'alert alert-info py-2 mb-3';
+                alertBox.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Pesan perolehan untuk tanggal ini <strong>sudah pernah diantrekan</strong>.';
+                alertBox.classList.remove('d-none');
+            }
+        } catch (e) {
+            console.error(e);
+            previewArea.value = 'Gagal memuat preview data perolehan.';
+        }
+    }
+
+    document.getElementById('btnLoadAchPreview').addEventListener('click', function () {
+        const date = document.getElementById('achDateInput').value;
+        loadAchPreview(date);
+    });
+
+    $('#modalAchievementPreview').on('show.bs.modal', function () {
+        const date = document.getElementById('achDateInput').value;
+        loadAchPreview(date);
+    });
+
+    document.getElementById('btnEnqueueAch').addEventListener('click', async function () {
+        const btn = this;
+        const date = document.getElementById('achDateInput').value;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...';
+
+        try {
+            const resp = await fetch(ACH_TRIGGER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': CSRF_TOKEN,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ date: date, force: true })
+            });
+            const res = await resp.json();
+
+            if (res.success) {
+                $('#modalAchievementPreview').modal('hide');
+                alert(res.message);
+                refreshQueue();
+                updateAchBadgeStatus(true);
+            } else {
+                alert(res.message || 'Gagal menambahkan pesan ke antrean.');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Terjadi kesalahan jaringan.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus-circle mr-1"></i> Masukkan ke Antrean WA';
+        }
+    });
+
+    function updateAchBadgeStatus(isQueued) {
+        const badge = document.getElementById('badgeAchStatus');
+        if (!badge) return;
+        const cutoffLabel = '{{ $achievementCutoffLabel }}';
+        if (isQueued) {
+            badge.className = 'badge badge-success py-2 px-2';
+            badge.innerHTML = `<i class="fas fa-check-circle mr-1"></i> Rekap ${cutoffLabel}: Ready`;
+            badge.title = `Pesan perolehan ${cutoffLabel} sudah masuk antrean hari ini`;
+        } else {
+            badge.className = 'badge badge-light border text-muted py-2 px-2';
+            badge.innerHTML = `<i class="fas fa-hourglass-half mr-1"></i> Rekap ${cutoffLabel}: Menunggu Jam ${cutoffLabel}`;
+            badge.title = `Pesan perolehan akan otomatis diantrekan pada jam ${cutoffLabel}`;
+        }
+    }
+
+    // ── Auto-Check Jam Cutoff (Jumat: 16:50, Hari lain: 16:20) Setiap 20 Detik ──
+    let autoAchCheckedToday = {{ $achievementQueuedToday ? 'true' : 'false' }};
+    const targetCutoffMinutes = {{ $isFriday ? 50 : 20 }};
+    setInterval(async () => {
+        if (autoAchCheckedToday) return;
+
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+
+        // Cek jika jam saat ini sudah >= jam cutoff (Jumat: 16:50, hari lain: 16:20)
+        if (hours > 16 || (hours === 16 && minutes >= targetCutoffMinutes)) {
+            console.log(`Jam >= 16:${targetCutoffMinutes} tercapai, menyinkronkan antrean perolehan...`);
+            await refreshQueue();
+            autoAchCheckedToday = true;
+            updateAchBadgeStatus(true);
+        }
+    }, 20000);
 </script>
 @endsection

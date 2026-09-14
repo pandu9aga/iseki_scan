@@ -178,6 +178,8 @@ Route::middleware(AdminMiddleware::class)->group(function () {
 
     // WA Queue Monitoring
     Route::get('/wa-queue', [WaQueueController::class, 'index'])->name('wa.queue');
+    Route::post('/wa-queue/achievement/trigger', [WaQueueController::class, 'triggerAchievement'])->name('wa.queue.achievement.trigger');
+    Route::get('/wa-queue/achievement/preview', [WaQueueController::class, 'previewAchievement'])->name('wa.queue.achievement.preview');
 
     // Admin Branch Record
     Route::get('/admin/branch_record', [AdminBranchRecordController::class, 'index'])->name('admin.branch_record');
