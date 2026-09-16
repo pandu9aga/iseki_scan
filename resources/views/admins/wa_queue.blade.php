@@ -62,8 +62,25 @@
                 @endif
             </div>
 
+            {{-- Status rangkuman operasional hari ini --}}
+            <div class="d-inline-flex align-items-center">
+                @if($summaryQueuedToday)
+                    <span class="badge badge-info py-2 px-2" id="badgeSummaryStatus" title="Pesan rangkuman operasional {{ $achievementCutoffLabel }} sudah masuk antrean hari ini">
+                        <i class="fas fa-check-circle mr-1"></i> Rangkuman: Ready
+                    </span>
+                @else
+                    <span class="badge badge-light border text-muted py-2 px-2" id="badgeSummaryStatus" title="Pesan rangkuman operasional akan otomatis diantrekan pada jam {{ $achievementCutoffLabel }}">
+                        <i class="fas fa-hourglass-half mr-1"></i> Rangkuman: Menunggu Jam {{ $achievementCutoffLabel }}
+                    </span>
+                @endif
+            </div>
+
             <button id="btnTriggerAchModal" class="btn btn-outline-primary btn-sm shadow-sm" type="button" data-toggle="modal" data-target="#modalAchievementPreview">
-                <i class="fas fa-trophy mr-1"></i> Preview / Generate Rekap
+                <i class="fas fa-trophy mr-1"></i> Preview Rekap DST
+            </button>
+
+            <button id="btnTriggerOpSummaryModal" class="btn btn-outline-info btn-sm shadow-sm" type="button" data-toggle="modal" data-target="#modalOperationalSummaryPreview">
+                <i class="fas fa-chart-line mr-1"></i> Preview Rangkuman Operasional
             </button>
 
             <button id="btnAutoSend" class="btn btn-success btn-sm shadow-sm">
@@ -225,6 +242,52 @@
             </div>
         </div>
     </div>
+
+    {{-- Modal Preview & Generate Rangkuman Operasional --}}
+    <div class="modal fade" id="modalOperationalSummaryPreview" tabindex="-1" role="dialog" aria-labelledby="modalOpSummaryLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-weight-bold text-gray-800" id="modalOpSummaryLabel">
+                        <i class="fas fa-chart-line text-info mr-1"></i> Preview / Generate Rangkuman Operasional
+                    </h5>
+                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group row align-items-center mb-3">
+                        <label for="opSummaryDateInput" class="col-sm-3 col-form-label font-weight-bold">Pilih Tanggal:</label>
+                        <div class="col-sm-6">
+                            <input type="date" class="form-control" id="opSummaryDateInput" value="{{ \Carbon\Carbon::today()->format('Y-m-d') }}">
+                        </div>
+                        <div class="col-sm-3">
+                            <button class="btn btn-sm btn-info btn-block" type="button" id="btnLoadOpSummaryPreview">
+                                <i class="fas fa-sync-alt mr-1"></i> Muat Preview
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="opSummaryAlertStatus" class="alert alert-warning py-2 mb-3 d-none"></div>
+
+                    <label class="font-weight-bold small text-muted text-uppercase mb-1">Isi Pesan (Target Group: <code>120363160707493007@g.us</code>):</label>
+                    <textarea class="form-control msg-preview" id="opSummaryMessagePreview" rows="14" readonly style="font-size: 0.85rem; line-height: 1.4;"></textarea>
+                    
+                    <small class="text-muted mt-2 d-block">
+                        <i class="fas fa-info-circle text-primary mr-1"></i> 
+                        <strong>Otomatisasi:</strong> Sistem akan otomatis mengantrekan pesan ini 1x per hari pada jam <strong>16:50 WIB (Jumat)</strong> atau <strong>16:20 WIB (Senin-Kamis/Sabtu-Minggu)</strong>.
+                    </small>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary btn-sm" type="button" data-dismiss="modal">Tutup</button>
+                    <button class="btn btn-info btn-sm" type="button" id="btnEnqueueOpSummary">
+                        <i class="fas fa-plus-circle mr-1"></i> Masukkan ke Antrean WA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 </div>
 @endsection
@@ -569,11 +632,98 @@
         }
     }
 
+    // ── Rangkuman Operasional Preview Handlers ──────────────────
+    const OP_PREVIEW_URL = '{{ route('wa.queue.operational.preview') }}';
+    const OP_TRIGGER_URL = '{{ route('wa.queue.operational.trigger') }}';
+
+    async function loadOpSummaryPreview(date) {
+        const previewArea = document.getElementById('opSummaryMessagePreview');
+        const alertBox    = document.getElementById('opSummaryAlertStatus');
+        previewArea.value = 'Memuat rangkuman operasional...';
+        alertBox.classList.add('d-none');
+
+        try {
+            const resp = await fetch(`${OP_PREVIEW_URL}?date=${encodeURIComponent(date)}`);
+            const data = await resp.json();
+            previewArea.value = data.message;
+
+            if (data.already_exists) {
+                alertBox.className = 'alert alert-info py-2 mb-3';
+                alertBox.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Pesan rangkuman operasional untuk tanggal ini <strong>sudah pernah diantrekan</strong>.';
+                alertBox.classList.remove('d-none');
+            }
+        } catch (e) {
+            console.error(e);
+            previewArea.value = 'Gagal memuat preview data rangkuman operasional.';
+        }
+    }
+
+    document.getElementById('btnLoadOpSummaryPreview').addEventListener('click', function () {
+        const date = document.getElementById('opSummaryDateInput').value;
+        loadOpSummaryPreview(date);
+    });
+
+    $('#modalOperationalSummaryPreview').on('show.bs.modal', function () {
+        const date = document.getElementById('opSummaryDateInput').value;
+        loadOpSummaryPreview(date);
+    });
+
+    document.getElementById('btnEnqueueOpSummary').addEventListener('click', async function () {
+        const btn = this;
+        const date = document.getElementById('opSummaryDateInput').value;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...';
+
+        try {
+            const resp = await fetch(OP_TRIGGER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': CSRF_TOKEN,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ date: date, force: true })
+            });
+            const res = await resp.json();
+
+            if (res.success) {
+                $('#modalOperationalSummaryPreview').modal('hide');
+                alert(res.message);
+                refreshQueue();
+                updateOpSummaryBadgeStatus(true);
+            } else {
+                alert(res.message || 'Gagal menambahkan pesan ke antrean.');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Terjadi kesalahan jaringan.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus-circle mr-1"></i> Masukkan ke Antrean WA';
+        }
+    });
+
+    function updateOpSummaryBadgeStatus(isQueued) {
+        const badge = document.getElementById('badgeSummaryStatus');
+        if (!badge) return;
+        const cutoffLabel = '{{ $achievementCutoffLabel }}';
+        if (isQueued) {
+            badge.className = 'badge badge-info py-2 px-2';
+            badge.innerHTML = `<i class="fas fa-check-circle mr-1"></i> Rangkuman: Ready`;
+            badge.title = `Pesan rangkuman operasional ${cutoffLabel} sudah masuk antrean hari ini`;
+        } else {
+            badge.className = 'badge badge-light border text-muted py-2 px-2';
+            badge.innerHTML = `<i class="fas fa-hourglass-half mr-1"></i> Rangkuman: Menunggu Jam ${cutoffLabel}`;
+            badge.title = `Pesan rangkuman operasional akan otomatis diantrekan pada jam ${cutoffLabel}`;
+        }
+    }
+
     // ── Auto-Check Jam Cutoff (Jumat: 16:50, Hari lain: 16:20) Setiap 20 Detik ──
     let autoAchCheckedToday = {{ $achievementQueuedToday ? 'true' : 'false' }};
+    let autoOpSummaryCheckedToday = {{ $summaryQueuedToday ? 'true' : 'false' }};
     const targetCutoffMinutes = {{ $isFriday ? 50 : 20 }};
     setInterval(async () => {
-        if (autoAchCheckedToday) return;
+        if (autoAchCheckedToday && autoOpSummaryCheckedToday) return;
 
         const now = new Date();
         const hours = now.getHours();
@@ -581,11 +731,14 @@
 
         // Cek jika jam saat ini sudah >= jam cutoff (Jumat: 16:50, hari lain: 16:20)
         if (hours > 16 || (hours === 16 && minutes >= targetCutoffMinutes)) {
-            console.log(`Jam >= 16:${targetCutoffMinutes} tercapai, menyinkronkan antrean perolehan...`);
+            console.log(`Jam >= 16:${targetCutoffMinutes} tercapai, menyinkronkan antrean WA...`);
             await refreshQueue();
             autoAchCheckedToday = true;
+            autoOpSummaryCheckedToday = true;
             updateAchBadgeStatus(true);
+            updateOpSummaryBadgeStatus(true);
         }
     }, 20000);
 </script>
 @endsection
+

@@ -180,6 +180,8 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/wa-queue', [WaQueueController::class, 'index'])->name('wa.queue');
     Route::post('/wa-queue/achievement/trigger', [WaQueueController::class, 'triggerAchievement'])->name('wa.queue.achievement.trigger');
     Route::get('/wa-queue/achievement/preview', [WaQueueController::class, 'previewAchievement'])->name('wa.queue.achievement.preview');
+    Route::post('/wa-queue/operational-summary/trigger', [WaQueueController::class, 'triggerOperationalSummary'])->name('wa.queue.operational.trigger');
+    Route::get('/wa-queue/operational-summary/preview', [WaQueueController::class, 'previewOperationalSummary'])->name('wa.queue.operational.preview');
 
     // Admin Branch Record
     Route::get('/admin/branch_record', [AdminBranchRecordController::class, 'index'])->name('admin.branch_record');

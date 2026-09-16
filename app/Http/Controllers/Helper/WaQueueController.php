@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\BranchRecord;
 use App\Models\Check;
 use App\Models\Member;
+use App\Models\Mistake;
 use App\Models\Record;
 use App\Models\Request as RequestModel;
+use App\Models\SpecialDate;
 use App\Models\User;
 use App\Models\WaQueue;
 use Carbon\Carbon;
@@ -21,6 +23,8 @@ class WaQueueController extends Controller
 
     const WA_ACHIEVEMENT_GROUP_ID = '120363026880582483@g.us';
 
+    const WA_OPERATIONAL_SUMMARY_GROUP_ID = '120363160707493007@g.us';
+
     const WA_TOKEN = 'NOFl7qr6DjYqG4jiy3MOmecZrzPfqkCeLQh76lpawgIRAi6ZSKfPXOB';
 
     const WA_HOST = 'https://solo.wablas.com/';
@@ -31,6 +35,7 @@ class WaQueueController extends Controller
     public function index()
     {
         $this->autoQueueDailyAchievement();
+        $this->autoQueueDailyOperationalSummary();
 
         $queues = WaQueue::where('status', 'pending')->orderBy('created_at', 'asc')->get();
 
@@ -41,6 +46,12 @@ class WaQueueController extends Controller
             ->where('message', 'like', $todayHeader . '%')
             ->exists();
 
+        $summaryHeader = 'Rangkuman Operasional ' . $today->locale('id')->isoFormat('D MMMM Y');
+        $summaryQueuedToday = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
+            ->whereDate('created_at', $today)
+            ->where('message', 'like', $summaryHeader . '%')
+            ->exists();
+
         $achievementCutoffLabel = $this->getAchievementCutoffLabel($today);
         $achievementCutoffTime = $this->getAchievementCutoffTime($today);
         $isFriday = $today->isFriday();
@@ -48,6 +59,7 @@ class WaQueueController extends Controller
         return view('admins.wa_queue', compact(
             'queues',
             'achievementQueuedToday',
+            'summaryQueuedToday',
             'achievementCutoffLabel',
             'achievementCutoffTime',
             'isFriday'
@@ -60,6 +72,7 @@ class WaQueueController extends Controller
     public function fetch()
     {
         $this->autoQueueDailyAchievement();
+        $this->autoQueueDailyOperationalSummary();
 
         $queues = WaQueue::where('status', 'pending')->orderBy('created_at', 'asc')->get();
 
@@ -187,6 +200,551 @@ class WaQueueController extends Controller
             'message'        => $message,
             'already_exists' => $alreadyExists,
         ]);
+    }
+
+    /**
+     * Otomatis mengantrekan pesan rangkuman operasional harian jika jam sudah >= cutoff
+     * dan belum pernah terinsert untuk hari ini.
+     */
+    public function autoQueueDailyOperationalSummary(): ?WaQueue
+    {
+        $now = Carbon::now();
+        $cutoff = $this->getAchievementCutoffTime($now);
+
+        if ($now->format('H:i:s') < $cutoff) {
+            return null;
+        }
+
+        return $this->insertOperationalSummaryQueueForDate($now);
+    }
+
+    /**
+     * Insert operational summary queue for a given date with duplicate check.
+     */
+    public function insertOperationalSummaryQueueForDate(Carbon $date): ?WaQueue
+    {
+        $dateStr = $date->format('Y-m-d');
+        $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
+        $todayHeader = 'Rangkuman Operasional ' . $headerDate;
+
+        return Cache::lock('wa_operational_summary_lock_' . $dateStr, 15)->get(function () use ($date, $todayHeader) {
+            $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
+                ->whereDate('created_at', $date->toDateString())
+                ->where('message', 'like', $todayHeader . '%')
+                ->exists();
+
+            if ($alreadyExists) {
+                return null;
+            }
+
+            $message = $this->buildOperationalSummaryMessage($date);
+
+            return WaQueue::create([
+                'group_id' => self::WA_OPERATIONAL_SUMMARY_GROUP_ID,
+                'message'  => $message,
+                'status'   => 'pending',
+            ]);
+        });
+    }
+
+    /**
+     * Manual trigger route untuk generate rangkuman operasional WA
+     */
+    public function triggerOperationalSummary(Request $request)
+    {
+        $dateInput = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $date = Carbon::parse($dateInput);
+
+        $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
+        $todayHeader = 'Rangkuman Operasional ' . $headerDate;
+
+        $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
+            ->whereDate('created_at', $date->toDateString())
+            ->where('message', 'like', $todayHeader . '%')
+            ->exists();
+
+        if ($alreadyExists && !$request->boolean('force')) {
+            return response()->json([
+                'success' => false,
+                'message' => "Pesan rangkuman operasional untuk tanggal {$headerDate} sudah pernah dibuat hari ini.",
+                'already_exists' => true,
+            ]);
+        }
+
+        $message = $this->buildOperationalSummaryMessage($date);
+
+        $queue = WaQueue::create([
+            'group_id' => self::WA_OPERATIONAL_SUMMARY_GROUP_ID,
+            'message'  => $message,
+            'status'   => 'pending',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Pesan rangkuman operasional untuk {$headerDate} berhasil ditambahkan ke antrean WA!",
+            'queue'   => $queue,
+        ]);
+    }
+
+    /**
+     * Preview pesan rangkuman operasional
+     */
+    public function previewOperationalSummary(Request $request)
+    {
+        $dateInput = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $date = Carbon::parse($dateInput);
+        $message = $this->buildOperationalSummaryMessage($date);
+
+        $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
+        $todayHeader = 'Rangkuman Operasional ' . $headerDate;
+        $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
+            ->whereDate('created_at', $date->toDateString())
+            ->where('message', 'like', $todayHeader . '%')
+            ->exists();
+
+        return response()->json([
+            'date'           => $dateInput,
+            'message'        => $message,
+            'already_exists' => $alreadyExists,
+        ]);
+    }
+
+    /**
+     * Menyusun teks pesan rangkuman operasional terpadu
+     */
+    public function buildOperationalSummaryMessage(Carbon $date): string
+    {
+        $formattedDate = $date->locale('id')->isoFormat('D MMMM Y');
+        $cutoffLabel = $this->getAchievementCutoffLabel($date);
+        $divider = '---------------------------------------------------';
+
+        // 1. Digital Pokayoke
+        $pokayokeNg = $this->getPokayokeNgProcessesCount($date);
+
+        // 2. Iseki Scan (Urgent & Missing)
+        $scanData = $this->getScanOperationalData($date);
+
+        // 3. Aspro
+        $aspro = $this->getAsproOperationalData($date);
+
+        // 4. Rifa (Absen Sakit)
+        $rifaSakit = $this->getRifaSickLeaveCount($date);
+
+        // 5 & 6. Parcom & Chadet
+        $ngData = $this->getParcomAndChadetNgCount($date);
+
+        // 7. Devmon
+        $devmonBelum = $this->getDevmonUnsubmittedCount($date);
+
+        // 8. KYT (Minggu Lalu)
+        $kyt = $this->getKytLastWeekUnsubmittedPerArea($date);
+
+        // 9. Podium (S Minus)
+        $podiumMinus = $this->getPodiumMinusSummary($date);
+
+        // 10. Efficiency
+        $efficiencyList = $this->getEfficiencySummaryPerArea($date);
+
+        $lines = [];
+        $lines[] = "Rangkuman Operasional {$formattedDate}, {$cutoffLabel}";
+        $lines[] = $divider;
+
+        $lines[] = "*Astra, AI Number, Oli Detection, Detective AI:*";
+        $lines[] = "- NG Processes: {$pokayokeNg}";
+        $lines[] = "";
+
+        $lines[] = "*Part:*";
+        $lines[] = "- Telat Supply: {$scanData['telat_supply']}";
+        $lines[] = "- Telat Request: {$scanData['telat_request']}";
+        $lines[] = "- Missing DST: {$scanData['missing_dst']}";
+        $lines[] = "";
+
+        $lines[] = "*Aspro:*";
+        $lines[] = "- Total Audit: {$aspro['total_audit']}";
+        $lines[] = "- Total Temuan: {$aspro['total_temuan']}";
+        $lines[] = "";
+
+        $lines[] = "*Rifa:*";
+        $lines[] = "- Izin Sakit: {$rifaSakit} orang";
+        $lines[] = "";
+
+        $lines[] = "*Record NG:*";
+        $lines[] = "- AI Number: {$ngData['chadet']} NG";
+        $lines[] = "- Detective AI: {$ngData['parcom']} NG";
+        $lines[] = "";
+
+        $lines[] = "*Devmon:*";
+        $lines[] = "- Device Belum Absen: {$devmonBelum} device";
+        $lines[] = "";
+
+        $lines[] = "*KYT (" . ($kyt['week_label'] ?: 'Minggu Lalu') . "):*";
+        $lines[] = "- Belum Temuan: " . (count($kyt['belum_temuan']) ? implode(', ', $kyt['belum_temuan']) : 'Nihil');
+        $lines[] = "- Belum Penanganan: " . (count($kyt['belum_penanganan']) ? implode(', ', $kyt['belum_penanganan']) : 'Nihil');
+        $lines[] = "";
+
+        $lines[] = "*Digital Pokayoke:*";
+        if (count($podiumMinus) > 0) {
+            foreach ($podiumMinus as $pm) {
+                $lines[] = "- {$pm}";
+            }
+        } else {
+            $lines[] = "- Nihil / Semua Tercapai";
+        }
+        $lines[] = "";
+
+        $lines[] = "*Efficiency:*";
+        if (count($efficiencyList) > 0) {
+            foreach ($efficiencyList as $eff) {
+                $lines[] = "- {$eff}";
+            }
+        } else {
+            $lines[] = "- Data tidak tersedia";
+        }
+
+        $lines[] = $divider;
+        $lines[] = 'おつかれさまでした';
+        $lines[] = '✧⁺⸜(･ ᗜ ･ )⸝⁺✧';
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * 1. Ambil jumlah ng_processes digital pokayoke hari ini
+     */
+    private function getPokayokeNgProcessesCount(Carbon $date): int
+    {
+        try {
+            return DB::connection('podium')->table('ng_processes')
+                ->whereDate('created_at', $date->toDateString())
+                ->count();
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 2. Ambil data urgent telat supply, telat request, dan missing DST hari ini
+     */
+    private function getScanOperationalData(Carbon $date): array
+    {
+        try {
+            $dateStr = $date->toDateString();
+            $telatSupply = Mistake::whereDate('Day_Mistake', $dateStr)
+                ->where('Category_Mistake', 'like', '%telat supply%')
+                ->count();
+
+            $telatRequest = Mistake::whereDate('Day_Mistake', $dateStr)
+                ->where('Category_Mistake', 'like', '%telat request%')
+                ->count();
+
+            $workdaysAgo = SpecialDate::subWorkdays(Carbon::now(), 1);
+            $missingDst = RequestModel::where('Status_Request', '!=', 'Done')
+                ->whereNotNull('Ready_Request')
+                ->get()
+                ->filter(function ($req) use ($workdaysAgo) {
+                    $time = $req->Design_Changes_Request ?? $req->Production_Area_Request ?? $req->Shipping_Request ?? $req->Ready_Request;
+                    return $time && Carbon::parse($time)->lt($workdaysAgo);
+                })->count();
+
+            return [
+                'telat_supply'  => $telatSupply,
+                'telat_request' => $telatRequest,
+                'missing_dst'   => $missingDst,
+            ];
+        } catch (\Throwable $e) {
+            return ['telat_supply' => 0, 'telat_request' => 0, 'missing_dst' => 0];
+        }
+    }
+
+    /**
+     * 3. Ambil total audit dan temuan Aspro hari ini
+     */
+    private function getAsproOperationalData(Carbon $date): array
+    {
+        try {
+            $dateStr = $date->toDateString();
+            $totalAudit = DB::connection('aspro')->table('list_reports')
+                ->whereDate('Time_Approved_Auditor', $dateStr)
+                ->count();
+
+            $totalTemuan = DB::connection('aspro')->table('temuans')
+                ->whereDate('Time_Temuan', $dateStr)
+                ->count();
+
+            return [
+                'total_audit'  => $totalAudit,
+                'total_temuan' => $totalTemuan,
+            ];
+        } catch (\Throwable $e) {
+            return ['total_audit' => 0, 'total_temuan' => 0];
+        }
+    }
+
+    /**
+     * 4. Ambil jumlah izin sakit Rifa hari ini
+     */
+    private function getRifaSickLeaveCount(Carbon $date): int
+    {
+        try {
+            return DB::connection('rifa')->table('absensis')
+                ->whereDate('tanggal', $date->toDateString())
+                ->where('kategori', 'S')
+                ->count();
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 5 & 6. Ambil record NG Parcom dan Chadet hari ini
+     */
+    private function getParcomAndChadetNgCount(Carbon $date): array
+    {
+        $dateStr = $date->toDateString();
+        $parcomNg = 0;
+        $chadetNg = 0;
+
+        try {
+            $parcomNg = DB::connection('parcom')->table('records')
+                ->whereDate('Time_Record', $dateStr)
+                ->where('Result_Record', 'NG')
+                ->count();
+        } catch (\Throwable $e) {}
+
+        try {
+            $chadetNg = DB::connection('chadet')->table('records')
+                ->whereDate('Time', $dateStr)
+                ->where('Status_Record', 'NG')
+                ->count();
+        } catch (\Throwable $e) {}
+
+        return [
+            'parcom' => $parcomNg,
+            'chadet' => $chadetNg,
+        ];
+    }
+
+    /**
+     * 7. Ambil jumlah device devmon yang belum absensi hari ini
+     */
+    private function getDevmonUnsubmittedCount(Carbon $date): int
+    {
+        try {
+            $dateStr = $date->toDateString();
+            $totalDevices = DB::connection('devmon')->table('phone_lists')
+                ->where('registered', 1)
+                ->whereNull('deleted_at')
+                ->count();
+
+            $activeToday = DB::connection('devmon')->table('absences')
+                ->whereDate('time_absence', $dateStr)
+                ->distinct('device_id')
+                ->count('device_id');
+
+            return max(0, $totalDevices - $activeToday);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 8. Ambil KYT belum input minggu lalu (temuan & penanganan) per area
+     */
+    private function getKytLastWeekUnsubmittedPerArea(Carbon $date): array
+    {
+        $belumTemuan = [];
+        $belumPenanganan = [];
+        $weekLabel = '';
+
+        try {
+            $lastWeek = DB::connection('kyt')->table('kyt_date_lists')
+                ->where('kyt_date', '<', $date->toDateString())
+                ->orderBy('kyt_date', 'desc')
+                ->first();
+
+            if ($lastWeek) {
+                $weekLabel = 'Minggu ' . $lastWeek->number_of_Weeks . ' (' . Carbon::parse($lastWeek->kyt_date)->locale('id')->isoFormat('D MMMM Y') . ')';
+                $teams = DB::connection('kyt')->table('team_k_y_t_s')->get();
+
+                foreach ($teams as $team) {
+                    $kyt = DB::connection('kyt')->table('k_y_t_lists')
+                        ->where('team_k_y_t_id', $team->id)
+                        ->where('kyt_date_id', $lastWeek->id)
+                        ->first();
+
+                    if (!$kyt) {
+                        $belumTemuan[] = $team->team_name;
+                    } else {
+                        $penanganan = DB::connection('kyt')->table('kyt_penanganans')
+                            ->where('kyt_list_id', $kyt->id)
+                            ->first();
+
+                        if (!$penanganan) {
+                            $belumPenanganan[] = $team->team_name;
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        return [
+            'week_label'        => $weekLabel,
+            'belum_temuan'      => $belumTemuan,
+            'belum_penanganan'  => $belumPenanganan,
+        ];
+    }
+
+    /**
+     * 9. Ambil perolehan S minus Podium hari ini
+     */
+    private function getPodiumMinusSummary(Carbon $date): array
+    {
+        $minusList = [];
+
+        try {
+            $dateStr = $date->toDateString();
+            $targets = DB::connection('podium')->table('wa_rangkuman_targets')
+                ->where('Target_Date', $dateStr)
+                ->get()
+                ->keyBy(fn($t) => $t->Category_Group . '|' . $t->Category_Item);
+
+            $scanCount = function ($areaId) use ($date) {
+                return DB::connection('efficiency')->table('scans')
+                    ->where('Id_Area', $areaId)
+                    ->whereDate('Time_Scan', $date)
+                    ->distinct('Sequence_No_Plan')
+                    ->count('Sequence_No_Plan');
+            };
+
+            $scanCountWithTractor = function ($areaId, $conditionRaw) use ($date) {
+                return DB::connection('efficiency')->table('scans')
+                    ->join('tractors as t', 'scans.Id_Tractor', '=', 't.Id_Tractor')
+                    ->leftJoin(DB::raw("`iseki_podium`.`plans` as plans"), function ($join) {
+                        $join->on('scans.Sequence_No_Plan', '=', 'plans.Sequence_No_Plan')
+                            ->on('scans.Production_Date_Plan', '=', 'plans.Production_Date_Plan');
+                    })
+                    ->where('scans.Id_Area', $areaId)
+                    ->whereDate('scans.Time_Scan', $date)
+                    ->whereRaw($conditionRaw)
+                    ->distinct('scans.Sequence_No_Plan')
+                    ->count('scans.Sequence_No_Plan');
+            };
+
+            $scanCountWithPlan = function ($areaId, $conditionRaw) use ($date) {
+                return DB::connection('efficiency')->table('scans')
+                    ->leftJoin(DB::raw("`iseki_podium`.`plans` as plans"), function ($join) {
+                        $join->on('scans.Sequence_No_Plan', '=', 'plans.Sequence_No_Plan')
+                            ->on('scans.Production_Date_Plan', '=', 'plans.Production_Date_Plan');
+                    })
+                    ->where('scans.Id_Area', $areaId)
+                    ->whereDate('scans.Time_Scan', $date)
+                    ->whereRaw($conditionRaw)
+                    ->distinct('scans.Sequence_No_Plan')
+                    ->count('scans.Sequence_No_Plan');
+            };
+
+            $lineoffActual = DB::connection('podium')->table('plans')
+                ->whereNotNull('Lineoff_Plan')
+                ->whereDate('Lineoff_Plan', $dateStr)
+                ->count();
+
+            $sxg3SfTypesStr = "'SXG3','SXG3MW','SXG3日本','SF2','SF2 Trial','SF2CL','SF2CL日本','SF2MW','SF2MW日本','SF2日本','SF5','SF5MW'";
+
+            $podiumItems = [
+                ['group' => 'TRANSMISI', 'item' => 'SXG3 & SF', 'A' => $scanCountWithPlan(2, "(plans.Type_Plan IN ($sxg3SfTypesStr))")],
+                ['group' => 'TRANSMISI', 'item' => 'Transmisi', 'A' => $scanCountWithPlan(2, "(plans.Type_Plan IS NULL OR plans.Type_Plan NOT IN ($sxg3SfTypesStr))")],
+                ['group' => 'SUB ENGINE', 'item' => 'Sub Engine', 'A' => $scanCount(6)],
+                ['group' => 'LINE A', 'item' => 'Unit', 'A' => $scanCountWithTractor(3, "(t.Name_Tractor = plans.Model_Name_Plan AND (plans.Model_Mower_Plan IS NULL OR t.Name_Tractor != plans.Model_Mower_Plan) AND (plans.Model_Collector_Plan IS NULL OR t.Name_Tractor != plans.Model_Collector_Plan))")],
+                ['group' => 'LINE A', 'item' => 'Mocol', 'A' => $scanCountWithTractor(3, "(t.Name_Tractor = plans.Model_Mower_Plan OR t.Name_Tractor = plans.Model_Collector_Plan)")],
+                ['group' => 'LINE B', 'item' => 'Line B', 'A' => $scanCount(4)],
+                ['group' => 'SUB ASSY', 'item' => 'Sub Assy', 'A' => $scanCount(7)],
+                ['group' => 'MAIN LINE', 'item' => 'Mainline', 'A' => $lineoffActual],
+                ['group' => 'INSPEKSI', 'item' => 'Inspeksi', 'A' => $scanCount(8)],
+                ['group' => 'MOCOL', 'item' => 'Unit', 'A' => $scanCountWithTractor(1, "scans.Sequence_No_Plan NOT REGEXP '[Tt]'")],
+                ['group' => 'MOCOL', 'item' => 'Mower', 'A' => $scanCountWithTractor(1, "(scans.Sequence_No_Plan REGEXP '[Tt]' AND plans.Model_Name_Plan = plans.Model_Mower_Plan)")],
+                ['group' => 'MOCOL', 'item' => 'Collector', 'A' => $scanCountWithTractor(1, "(scans.Sequence_No_Plan REGEXP '[Tt]' AND plans.Model_Name_Plan = plans.Model_Collector_Plan)")],
+            ];
+
+            foreach ($podiumItems as $pi) {
+                $tKey = $pi['group'] . '|' . $pi['item'];
+                $tVal = isset($targets[$tKey]) ? (int)$targets[$tKey]->Target : 0;
+                $sVal = $pi['A'] - $tVal;
+                if ($sVal < 0) {
+                    $minusList[] = "{$pi['group']} ({$pi['item']}): {$sVal}";
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        return $minusList;
+    }
+
+    /**
+     * 10. Ambil efisiensi harian per area seperti dashboard full screen
+     */
+    private function getEfficiencySummaryPerArea(Carbon $date): array
+    {
+        $effList = [];
+
+        try {
+            $areas = DB::connection('efficiency')->table('areas')
+                ->orderByRaw("FIELD(Name_Area, 'TRANSMISI', 'SUB ENGINE', 'LINE A', 'LINE B', 'SUB ASSY', 'MAIN LINE', 'INSPEKSI', 'MOWER')")
+                ->get();
+
+            $calculateProgressiveHours = function(int $memberCount) {
+                $now = Carbon::now();
+                $start = Carbon::today()->setTime(7, 30);
+                $endOfWork = Carbon::today()->setTime(16, 30);
+                if ($now->lt($start)) return 0.0;
+                if ($now->gt($endOfWork)) return $memberCount * 8.0;
+                $totalHours = $start->diffInRealSeconds($now) / 3600.0;
+                if ($now->gt(Carbon::today()->setTime(10, 0))) $totalHours -= 10 / 60;
+                if ($now->gt(Carbon::today()->setTime(12, 0))) $totalHours -= 40 / 60;
+                if ($now->gt(Carbon::today()->setTime(15, 0))) $totalHours -= 10 / 60;
+                return $memberCount * min(max(0.0, $totalHours), 8.0);
+            };
+
+            $todayReports = DB::connection('efficiency')->table('reports')
+                ->where('Day_Report', $date->toDateString())
+                ->get()
+                ->keyBy('Id_Area');
+
+            foreach ($areas as $area) {
+                $areaId = $area->Id_Area;
+                $scansSum = (float)DB::connection('efficiency')->table('scans')
+                    ->where('Id_Area', $areaId)
+                    ->whereDate('Time_Scan', $date)
+                    ->sum('Assigned_Hour_Scan') * (1 - 0.078);
+
+                $costsSum = (float)DB::connection('efficiency')->table('costs')
+                    ->where('Id_Area', $areaId)
+                    ->whereDate('Start_Cost', $date)
+                    ->sum('Non_Operational_Cost');
+
+                $penangananSum = (float)DB::connection('efficiency')->table('penanganans')
+                    ->where('Id_Area', $areaId)
+                    ->whereDate('Start_Penanganan', $date)
+                    ->sum('Hour_Penanganan');
+
+                $powerSum = (float)DB::connection('efficiency')->table('powers')
+                    ->where('Id_Area', $areaId)
+                    ->whereDate('Start_Power', $date)
+                    ->sum('Leave_Hour_Power');
+
+                $report = $todayReports->get($areaId);
+                $repMembers = $report ? (int)$report->Total_Member_Report : 0;
+                $memberHours = $calculateProgressiveHours($repMembers);
+
+                $reportNetHours = $memberHours - $powerSum;
+                $kategori1 = $reportNetHours + $penangananSum;
+                $kategori2 = $scansSum + $costsSum;
+                $selisihJamArea = $kategori2 - $kategori1;
+                $effPercent = $scansSum != 0 ? ($selisihJamArea / $scansSum) * 100 : 0;
+
+                $effList[] = "{$area->Name_Area}: " . number_format($effPercent, 0) . "%";
+            }
+        } catch (\Throwable $e) {}
+
+        return $effList;
     }
 
     /**
