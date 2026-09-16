@@ -334,7 +334,7 @@ class WaQueueController extends Controller
         $ngData = $this->getParcomAndChadetNgCount($date);
 
         // 7. Devmon
-        $devmonBelum = $this->getDevmonUnsubmittedCount($date);
+        $devmonUnsubmitted = $this->getDevmonUnsubmittedDevices($date);
 
         // 8. KYT (Minggu Lalu)
         $kyt = $this->getKytLastWeekUnsubmittedPerArea($date);
@@ -346,7 +346,7 @@ class WaQueueController extends Controller
         $efficiencyList = $this->getEfficiencySummaryPerArea($date);
 
         $lines = [];
-        $lines[] = "Rangkuman Operasional {$formattedDate}, {$cutoffLabel}";
+        $lines[] = "PDX Report {$formattedDate}, {$cutoffLabel}";
         $lines[] = $divider;
 
         $lines[] = "*Astra, AI Number, Oli Detection, Detective AI:*";
@@ -374,15 +374,21 @@ class WaQueueController extends Controller
         $lines[] = "";
 
         $lines[] = "*Devmon:*";
-        $lines[] = "- Device Belum Absen: {$devmonBelum} device";
+        if (count($devmonUnsubmitted) > 0) {
+            foreach ($devmonUnsubmitted as $dev) {
+                $lines[] = "- {$dev['label']}: {$dev['last_user']}";
+            }
+        } else {
+            $lines[] = "- Semua device sudah absen";
+        }
         $lines[] = "";
 
         $lines[] = "*KYT (" . ($kyt['week_label'] ?: 'Minggu Lalu') . "):*";
-        $lines[] = "- Belum Temuan: " . (count($kyt['belum_temuan']) ? implode(', ', $kyt['belum_temuan']) : 'Nihil');
+        $lines[] = "- Belum Pengajuan: " . (count($kyt['belum_temuan']) ? implode(', ', $kyt['belum_temuan']) : 'Nihil');
         $lines[] = "- Belum Penanganan: " . (count($kyt['belum_penanganan']) ? implode(', ', $kyt['belum_penanganan']) : 'Nihil');
         $lines[] = "";
 
-        $lines[] = "*Digital Pokayoke:*";
+        $lines[] = "*Target Produksi:*";
         if (count($podiumMinus) > 0) {
             foreach ($podiumMinus as $pm) {
                 $lines[] = "- {$pm}";
@@ -430,11 +436,11 @@ class WaQueueController extends Controller
         try {
             $dateStr = $date->toDateString();
             $telatSupply = Mistake::whereDate('Day_Mistake', $dateStr)
-                ->where('Category_Mistake', 'like', '%telat supply%')
+                ->where('Category_Mistake', 'telat supply')
                 ->count();
 
             $telatRequest = Mistake::whereDate('Day_Mistake', $dateStr)
-                ->where('Category_Mistake', 'like', '%telat request%')
+                ->where('Category_Mistake', 'telat request')
                 ->count();
 
             $workdaysAgo = SpecialDate::subWorkdays(Carbon::now(), 1);
@@ -463,9 +469,28 @@ class WaQueueController extends Controller
     {
         try {
             $dateStr = $date->toDateString();
-            $totalAudit = DB::connection('aspro')->table('list_reports')
+
+            // Total audit di Aspro mencakup approval auditor pada jobdesc (list_reports),
+            // training (list_trainings), dan jobdesc pengganti (list_report_replacements)
+            $jobdescAudits = DB::connection('aspro')->table('list_reports')
                 ->whereDate('Time_Approved_Auditor', $dateStr)
                 ->count();
+
+            $trainingAudits = 0;
+            if (DB::connection('aspro')->getSchemaBuilder()->hasTable('list_trainings')) {
+                $trainingAudits = DB::connection('aspro')->table('list_trainings')
+                    ->whereDate('Time_Approved_Auditor', $dateStr)
+                    ->count();
+            }
+
+            $replacementAudits = 0;
+            if (DB::connection('aspro')->getSchemaBuilder()->hasTable('list_report_replacements')) {
+                $replacementAudits = DB::connection('aspro')->table('list_report_replacements')
+                    ->whereDate('Time_Approved_Auditor', $dateStr)
+                    ->count();
+            }
+
+            $totalAudit = $jobdescAudits + $trainingAudits + $replacementAudits;
 
             $totalTemuan = DB::connection('aspro')->table('temuans')
                 ->whereDate('Time_Temuan', $dateStr)
@@ -525,25 +550,57 @@ class WaQueueController extends Controller
     }
 
     /**
-     * 7. Ambil jumlah device devmon yang belum absensi hari ini
+     * 7. Ambil list device devmon yang belum absensi hari ini beserta last user-nya
      */
-    private function getDevmonUnsubmittedCount(Carbon $date): int
+    private function getDevmonUnsubmittedDevices(Carbon $date): array
     {
         try {
             $dateStr = $date->toDateString();
-            $totalDevices = DB::connection('devmon')->table('phone_lists')
+
+            // ID device yang sudah absen hari ini
+            $activeDeviceIds = DB::connection('devmon')->table('absences')
+                ->whereDate('time_absence', $dateStr)
+                ->pluck('device_id')
+                ->unique()
+                ->toArray();
+
+            // Device yang aktif terdaftar tapi belum absen hari ini
+            $unsubmitted = DB::connection('devmon')->table('phone_lists')
+                ->where('approved', 1)
                 ->where('registered', 1)
                 ->whereNull('deleted_at')
-                ->count();
+                ->whereNotIn('model_id', $activeDeviceIds)
+                ->select('id', 'model_id', 'model_name', 'model_type')
+                ->orderBy('model_name')
+                ->get();
 
-            $activeToday = DB::connection('devmon')->table('absences')
-                ->whereDate('time_absence', $dateStr)
-                ->distinct('device_id')
-                ->count('device_id');
+            $result = [];
+            foreach ($unsubmitted as $device) {
+                // Cari user terakhir yang absen di device ini
+                $lastAbsence = DB::connection('devmon')->table('absences')
+                    ->where('device_id', $device->model_id)
+                    ->orderBy('id', 'desc')
+                    ->first();
 
-            return max(0, $totalDevices - $activeToday);
+                $lastUser = $lastAbsence && !empty($lastAbsence->name)
+                    ? $lastAbsence->name
+                    : 'Belum pernah absen';
+
+                $label = !empty($device->model_name)
+                    ? $device->model_name . " ({$device->model_id})"
+                    : $device->model_id;
+
+                $result[] = [
+                    'model_id'   => $device->model_id,
+                    'model_name' => $device->model_name,
+                    'label'      => $label,
+                    'last_user'  => $lastUser,
+                ];
+            }
+
+            return $result;
         } catch (\Throwable $e) {
-            return 0;
+            return [];
         }
     }
 
