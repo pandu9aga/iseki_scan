@@ -46,10 +46,13 @@ class WaQueueController extends Controller
             ->where('message', 'like', $todayHeader . '%')
             ->exists();
 
-        $summaryHeader = 'Rangkuman Operasional ' . $today->locale('id')->isoFormat('D MMMM Y');
+        $summaryHeader = 'PDX Report ' . $today->locale('id')->isoFormat('D MMMM Y');
         $summaryQueuedToday = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
             ->whereDate('created_at', $today)
-            ->where('message', 'like', $summaryHeader . '%')
+            ->where(function ($q) use ($summaryHeader, $today) {
+                $q->where('message', 'like', $summaryHeader . '%')
+                  ->orWhere('message', 'like', 'Rangkuman Operasional ' . $today->locale('id')->isoFormat('D MMMM Y') . '%');
+            })
             ->exists();
 
         $achievementCutoffLabel = $this->getAchievementCutoffLabel($today);
@@ -225,12 +228,16 @@ class WaQueueController extends Controller
     {
         $dateStr = $date->format('Y-m-d');
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = 'Rangkuman Operasional ' . $headerDate;
+        $todayHeader = 'PDX Report ' . $headerDate;
+        $legacyHeader = 'Rangkuman Operasional ' . $headerDate;
 
-        return Cache::lock('wa_operational_summary_lock_' . $dateStr, 15)->get(function () use ($date, $todayHeader) {
+        return Cache::lock('wa_operational_summary_lock_' . $dateStr, 15)->get(function () use ($date, $todayHeader, $legacyHeader) {
             $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
                 ->whereDate('created_at', $date->toDateString())
-                ->where('message', 'like', $todayHeader . '%')
+                ->where(function ($q) use ($todayHeader, $legacyHeader) {
+                    $q->where('message', 'like', $todayHeader . '%')
+                      ->orWhere('message', 'like', $legacyHeader . '%');
+                })
                 ->exists();
 
             if ($alreadyExists) {
@@ -256,17 +263,21 @@ class WaQueueController extends Controller
         $date = Carbon::parse($dateInput);
 
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = 'Rangkuman Operasional ' . $headerDate;
+        $todayHeader = 'PDX Report ' . $headerDate;
+        $legacyHeader = 'Rangkuman Operasional ' . $headerDate;
 
         $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
             ->whereDate('created_at', $date->toDateString())
-            ->where('message', 'like', $todayHeader . '%')
+            ->where(function ($q) use ($todayHeader, $legacyHeader) {
+                $q->where('message', 'like', $todayHeader . '%')
+                  ->orWhere('message', 'like', $legacyHeader . '%');
+            })
             ->exists();
 
         if ($alreadyExists && !$request->boolean('force')) {
             return response()->json([
                 'success' => false,
-                'message' => "Pesan rangkuman operasional untuk tanggal {$headerDate} sudah pernah dibuat hari ini.",
+                'message' => "Pesan PDX Report untuk tanggal {$headerDate} sudah pernah dibuat hari ini.",
                 'already_exists' => true,
             ]);
         }
@@ -281,7 +292,7 @@ class WaQueueController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Pesan rangkuman operasional untuk {$headerDate} berhasil ditambahkan ke antrean WA!",
+            'message' => "Pesan PDX Report untuk {$headerDate} berhasil ditambahkan ke antrean WA!",
             'queue'   => $queue,
         ]);
     }
@@ -296,10 +307,14 @@ class WaQueueController extends Controller
         $message = $this->buildOperationalSummaryMessage($date);
 
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = 'Rangkuman Operasional ' . $headerDate;
+        $todayHeader = 'PDX Report ' . $headerDate;
+        $legacyHeader = 'Rangkuman Operasional ' . $headerDate;
         $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
             ->whereDate('created_at', $date->toDateString())
-            ->where('message', 'like', $todayHeader . '%')
+            ->where(function ($q) use ($todayHeader, $legacyHeader) {
+                $q->where('message', 'like', $todayHeader . '%')
+                  ->orWhere('message', 'like', $legacyHeader . '%');
+            })
             ->exists();
 
         return response()->json([
