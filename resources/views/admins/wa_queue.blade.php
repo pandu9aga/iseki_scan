@@ -62,15 +62,15 @@
                 @endif
             </div>
 
-            {{-- Status PDX Report hari ini --}}
+            {{-- Status Bad News hari ini --}}
             <div class="d-inline-flex align-items-center">
                 @if($summaryQueuedToday)
-                    <span class="badge badge-info py-2 px-2" id="badgeSummaryStatus" title="Pesan PDX Report {{ $achievementCutoffLabel }} sudah masuk antrean hari ini">
-                        <i class="fas fa-check-circle mr-1"></i> PDX Report: Ready
+                    <span class="badge badge-info py-2 px-2" id="badgeSummaryStatus" title="Pesan Bad News {{ $achievementCutoffLabel }} sudah masuk antrean hari ini">
+                        <i class="fas fa-check-circle mr-1"></i> Bad News: Ready
                     </span>
                 @else
-                    <span class="badge badge-light border text-muted py-2 px-2" id="badgeSummaryStatus" title="Pesan PDX Report akan otomatis diantrekan pada jam {{ $achievementCutoffLabel }}">
-                        <i class="fas fa-hourglass-half mr-1"></i> PDX Report: Menunggu Jam {{ $achievementCutoffLabel }}
+                    <span class="badge badge-light border text-muted py-2 px-2" id="badgeSummaryStatus" title="Pesan Bad News akan otomatis diantrekan pada jam {{ $achievementCutoffLabel }}">
+                        <i class="fas fa-hourglass-half mr-1"></i> Bad News: Menunggu Jam {{ $achievementCutoffLabel }}
                     </span>
                 @endif
             </div>
@@ -80,7 +80,7 @@
             </button>
 
             <button id="btnTriggerOpSummaryModal" class="btn btn-outline-info btn-sm shadow-sm" type="button" data-toggle="modal" data-target="#modalOperationalSummaryPreview">
-                <i class="fas fa-chart-line mr-1"></i> Preview PDX Report
+                <i class="fas fa-chart-line mr-1"></i> Preview Bad News
             </button>
 
             <button id="btnAutoSend" class="btn btn-success btn-sm shadow-sm">
@@ -249,7 +249,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title font-weight-bold text-gray-800" id="modalOpSummaryLabel">
-                        <i class="fas fa-chart-line text-info mr-1"></i> Preview / Generate PDX Report
+                        <i class="fas fa-chart-line text-info mr-1"></i> Preview / Generate Bad News
                     </h5>
                     <button class="close" type="button" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">×</span>
@@ -639,7 +639,7 @@
     async function loadOpSummaryPreview(date) {
         const previewArea = document.getElementById('opSummaryMessagePreview');
         const alertBox    = document.getElementById('opSummaryAlertStatus');
-        previewArea.value = 'Memuat data PDX Report...';
+        previewArea.value = 'Memuat data Bad News...';
         alertBox.classList.add('d-none');
 
         try {
@@ -649,12 +649,12 @@
 
             if (data.already_exists) {
                 alertBox.className = 'alert alert-info py-2 mb-3';
-                alertBox.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Pesan PDX Report untuk tanggal ini <strong>sudah pernah diantrekan</strong>.';
+                alertBox.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Pesan Bad News untuk tanggal ini <strong>sudah pernah diantrekan</strong>.';
                 alertBox.classList.remove('d-none');
             }
         } catch (e) {
             console.error(e);
-            previewArea.value = 'Gagal memuat preview data PDX Report.';
+            previewArea.value = 'Gagal memuat preview data Bad News.';
         }
     }
 
@@ -709,12 +709,12 @@
         const cutoffLabel = '{{ $achievementCutoffLabel }}';
         if (isQueued) {
             badge.className = 'badge badge-info py-2 px-2';
-            badge.innerHTML = `<i class="fas fa-check-circle mr-1"></i> PDX Report: Ready`;
-            badge.title = `Pesan PDX Report ${cutoffLabel} sudah masuk antrean hari ini`;
+            badge.innerHTML = `<i class="fas fa-check-circle mr-1"></i> Bad News: Ready`;
+            badge.title = `Pesan Bad News ${cutoffLabel} sudah masuk antrean hari ini`;
         } else {
             badge.className = 'badge badge-light border text-muted py-2 px-2';
-            badge.innerHTML = `<i class="fas fa-hourglass-half mr-1"></i> PDX Report: Menunggu Jam ${cutoffLabel}`;
-            badge.title = `Pesan PDX Report akan otomatis diantrekan pada jam ${cutoffLabel}`;
+            badge.innerHTML = `<i class="fas fa-hourglass-half mr-1"></i> Bad News: Menunggu Jam ${cutoffLabel}`;
+            badge.title = `Pesan Bad News akan otomatis diantrekan pada jam ${cutoffLabel}`;
         }
     }
 

@@ -46,11 +46,12 @@ class WaQueueController extends Controller
             ->where('message', 'like', $todayHeader . '%')
             ->exists();
 
-        $summaryHeader = 'PDX Report ' . $today->locale('id')->isoFormat('D MMMM Y');
+        $summaryHeader = '⛔ Bad News ' . $today->locale('id')->isoFormat('D MMMM Y');
         $summaryQueuedToday = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
             ->whereDate('created_at', $today)
             ->where(function ($q) use ($summaryHeader, $today) {
                 $q->where('message', 'like', $summaryHeader . '%')
+                  ->orWhere('message', 'like', 'PDX Report ' . $today->locale('id')->isoFormat('D MMMM Y') . '%')
                   ->orWhere('message', 'like', 'Rangkuman Operasional ' . $today->locale('id')->isoFormat('D MMMM Y') . '%');
             })
             ->exists();
@@ -228,15 +229,17 @@ class WaQueueController extends Controller
     {
         $dateStr = $date->format('Y-m-d');
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = 'PDX Report ' . $headerDate;
-        $legacyHeader = 'Rangkuman Operasional ' . $headerDate;
+        $todayHeader = '⛔ Bad News ' . $headerDate;
+        $legacyHeader1 = 'PDX Report ' . $headerDate;
+        $legacyHeader2 = 'Rangkuman Operasional ' . $headerDate;
 
-        return Cache::lock('wa_operational_summary_lock_' . $dateStr, 15)->get(function () use ($date, $todayHeader, $legacyHeader) {
+        return Cache::lock('wa_operational_summary_lock_' . $dateStr, 15)->get(function () use ($date, $todayHeader, $legacyHeader1, $legacyHeader2) {
             $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
                 ->whereDate('created_at', $date->toDateString())
-                ->where(function ($q) use ($todayHeader, $legacyHeader) {
+                ->where(function ($q) use ($todayHeader, $legacyHeader1, $legacyHeader2) {
                     $q->where('message', 'like', $todayHeader . '%')
-                      ->orWhere('message', 'like', $legacyHeader . '%');
+                      ->orWhere('message', 'like', $legacyHeader1 . '%')
+                      ->orWhere('message', 'like', $legacyHeader2 . '%');
                 })
                 ->exists();
 
@@ -263,21 +266,23 @@ class WaQueueController extends Controller
         $date = Carbon::parse($dateInput);
 
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = 'PDX Report ' . $headerDate;
-        $legacyHeader = 'Rangkuman Operasional ' . $headerDate;
+        $todayHeader = '⛔ Bad News ' . $headerDate;
+        $legacyHeader1 = 'PDX Report ' . $headerDate;
+        $legacyHeader2 = 'Rangkuman Operasional ' . $headerDate;
 
         $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
             ->whereDate('created_at', $date->toDateString())
-            ->where(function ($q) use ($todayHeader, $legacyHeader) {
+            ->where(function ($q) use ($todayHeader, $legacyHeader1, $legacyHeader2) {
                 $q->where('message', 'like', $todayHeader . '%')
-                  ->orWhere('message', 'like', $legacyHeader . '%');
+                  ->orWhere('message', 'like', $legacyHeader1 . '%')
+                  ->orWhere('message', 'like', $legacyHeader2 . '%');
             })
             ->exists();
 
         if ($alreadyExists && !$request->boolean('force')) {
             return response()->json([
                 'success' => false,
-                'message' => "Pesan PDX Report untuk tanggal {$headerDate} sudah pernah dibuat hari ini.",
+                'message' => "Pesan Bad News untuk tanggal {$headerDate} sudah pernah dibuat hari ini.",
                 'already_exists' => true,
             ]);
         }
@@ -292,7 +297,7 @@ class WaQueueController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Pesan PDX Report untuk {$headerDate} berhasil ditambahkan ke antrean WA!",
+            'message' => "Pesan Bad News untuk {$headerDate} berhasil ditambahkan ke antrean WA!",
             'queue'   => $queue,
         ]);
     }
@@ -307,13 +312,15 @@ class WaQueueController extends Controller
         $message = $this->buildOperationalSummaryMessage($date);
 
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = 'PDX Report ' . $headerDate;
-        $legacyHeader = 'Rangkuman Operasional ' . $headerDate;
+        $todayHeader = '⛔ Bad News ' . $headerDate;
+        $legacyHeader1 = 'PDX Report ' . $headerDate;
+        $legacyHeader2 = 'Rangkuman Operasional ' . $headerDate;
         $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
             ->whereDate('created_at', $date->toDateString())
-            ->where(function ($q) use ($todayHeader, $legacyHeader) {
+            ->where(function ($q) use ($todayHeader, $legacyHeader1, $legacyHeader2) {
                 $q->where('message', 'like', $todayHeader . '%')
-                  ->orWhere('message', 'like', $legacyHeader . '%');
+                  ->orWhere('message', 'like', $legacyHeader1 . '%')
+                  ->orWhere('message', 'like', $legacyHeader2 . '%');
             })
             ->exists();
 
@@ -331,7 +338,7 @@ class WaQueueController extends Controller
     {
         $formattedDate = $date->locale('id')->isoFormat('D MMMM Y');
         $cutoffLabel = $this->getAchievementCutoffLabel($date);
-        $divider = '---------------------------------------------------';
+        $divider = "---------------------------------------------------";
 
         // 1. Digital Pokayoke
         $pokayokeNg = $this->getPokayokeNgProcessesCount($date);
@@ -361,7 +368,7 @@ class WaQueueController extends Controller
         $efficiencyList = $this->getEfficiencySummaryPerArea($date);
 
         $lines = [];
-        $lines[] = "PDX Report {$formattedDate}, {$cutoffLabel}";
+        $lines[] = "⛔ Bad News {$formattedDate} - (⇀‸↼‶)";
         $lines[] = $divider;
 
         $lines[] = "*Astra, AI Number, Oli Detection, Detective AI:*";
