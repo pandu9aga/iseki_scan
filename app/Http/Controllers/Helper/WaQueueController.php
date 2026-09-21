@@ -14,7 +14,6 @@ use App\Models\User;
 use App\Models\WaQueue;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class WaQueueController extends Controller
@@ -40,19 +39,19 @@ class WaQueueController extends Controller
         $queues = WaQueue::where('status', 'pending')->orderBy('created_at', 'asc')->get();
 
         $today = Carbon::today();
-        $todayHeader = 'Perolehan DST ' . $today->locale('id')->isoFormat('D MMMM Y');
+        $todayHeader = 'Perolehan DST '.$today->locale('id')->isoFormat('D MMMM Y');
         $achievementQueuedToday = WaQueue::where('group_id', self::WA_ACHIEVEMENT_GROUP_ID)
             ->whereDate('created_at', $today)
-            ->where('message', 'like', $todayHeader . '%')
+            ->where('message', 'like', $todayHeader.'%')
             ->exists();
 
-        $summaryHeader = '⛔ Bad News ' . $today->locale('id')->isoFormat('D MMMM Y');
+        $summaryHeader = '⛔ Bad News '.$today->locale('id')->isoFormat('D MMMM Y');
         $summaryQueuedToday = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
             ->whereDate('created_at', $today)
             ->where(function ($q) use ($summaryHeader, $today) {
-                $q->where('message', 'like', $summaryHeader . '%')
-                  ->orWhere('message', 'like', 'PDX Report ' . $today->locale('id')->isoFormat('D MMMM Y') . '%')
-                  ->orWhere('message', 'like', 'Rangkuman Operasional ' . $today->locale('id')->isoFormat('D MMMM Y') . '%');
+                $q->where('message', 'like', $summaryHeader.'%')
+                    ->orWhere('message', 'like', 'PDX Report '.$today->locale('id')->isoFormat('D MMMM Y').'%')
+                    ->orWhere('message', 'like', 'Rangkuman Operasional '.$today->locale('id')->isoFormat('D MMMM Y').'%');
             })
             ->exists();
 
@@ -121,13 +120,13 @@ class WaQueueController extends Controller
     {
         $dateStr = $date->format('Y-m-d');
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = 'Perolehan DST ' . $headerDate;
+        $todayHeader = 'Perolehan DST '.$headerDate;
 
         // Atomic lock to prevent race conditions across multiple open tabs/requests
-        return Cache::lock('wa_achievement_queue_lock_' . $dateStr, 15)->get(function () use ($date, $todayHeader) {
+        return Cache::lock('wa_achievement_queue_lock_'.$dateStr, 15)->get(function () use ($date, $todayHeader) {
             $alreadyExists = WaQueue::where('group_id', self::WA_ACHIEVEMENT_GROUP_ID)
                 ->whereDate('created_at', $date->toDateString())
-                ->where('message', 'like', $todayHeader . '%')
+                ->where('message', 'like', $todayHeader.'%')
                 ->exists();
 
             if ($alreadyExists) {
@@ -138,8 +137,8 @@ class WaQueueController extends Controller
 
             return WaQueue::create([
                 'group_id' => self::WA_ACHIEVEMENT_GROUP_ID,
-                'message'  => $message,
-                'status'   => 'pending',
+                'message' => $message,
+                'status' => 'pending',
             ]);
         });
     }
@@ -153,14 +152,14 @@ class WaQueueController extends Controller
         $date = Carbon::parse($dateInput);
 
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = 'Perolehan DST ' . $headerDate;
+        $todayHeader = 'Perolehan DST '.$headerDate;
 
         $alreadyExists = WaQueue::where('group_id', self::WA_ACHIEVEMENT_GROUP_ID)
             ->whereDate('created_at', $date->toDateString())
-            ->where('message', 'like', $todayHeader . '%')
+            ->where('message', 'like', $todayHeader.'%')
             ->exists();
 
-        if ($alreadyExists && !$request->boolean('force')) {
+        if ($alreadyExists && ! $request->boolean('force')) {
             return response()->json([
                 'success' => false,
                 'message' => "Pesan perolehan untuk tanggal {$headerDate} sudah pernah dibuat hari ini.",
@@ -172,14 +171,14 @@ class WaQueueController extends Controller
 
         $queue = WaQueue::create([
             'group_id' => self::WA_ACHIEVEMENT_GROUP_ID,
-            'message'  => $message,
-            'status'   => 'pending',
+            'message' => $message,
+            'status' => 'pending',
         ]);
 
         return response()->json([
             'success' => true,
             'message' => "Pesan perolehan untuk {$headerDate} berhasil ditambahkan ke antrean WA!",
-            'queue'   => $queue,
+            'queue' => $queue,
         ]);
     }
 
@@ -193,15 +192,15 @@ class WaQueueController extends Controller
         $message = $this->buildAchievementMessage($date);
 
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = 'Perolehan DST ' . $headerDate;
+        $todayHeader = 'Perolehan DST '.$headerDate;
         $alreadyExists = WaQueue::where('group_id', self::WA_ACHIEVEMENT_GROUP_ID)
             ->whereDate('created_at', $date->toDateString())
-            ->where('message', 'like', $todayHeader . '%')
+            ->where('message', 'like', $todayHeader.'%')
             ->exists();
 
         return response()->json([
-            'date'           => $dateInput,
-            'message'        => $message,
+            'date' => $dateInput,
+            'message' => $message,
             'already_exists' => $alreadyExists,
         ]);
     }
@@ -224,23 +223,26 @@ class WaQueueController extends Controller
 
     /**
      * Insert operational summary queue for a given date with duplicate check.
+     * Menggunakan DB transaction + lockForUpdate() agar atomic di semua cache driver.
      */
     public function insertOperationalSummaryQueueForDate(Carbon $date): ?WaQueue
     {
-        $dateStr = $date->format('Y-m-d');
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = '⛔ Bad News ' . $headerDate;
-        $legacyHeader1 = 'PDX Report ' . $headerDate;
-        $legacyHeader2 = 'Rangkuman Operasional ' . $headerDate;
+        $todayHeader = '⛔ Bad News '.$headerDate;
+        $legacyHeader1 = 'PDX Report '.$headerDate;
+        $legacyHeader2 = 'Rangkuman Operasional '.$headerDate;
 
-        return Cache::lock('wa_operational_summary_lock_' . $dateStr, 15)->get(function () use ($date, $todayHeader, $legacyHeader1, $legacyHeader2) {
+        return DB::transaction(function () use ($date, $todayHeader, $legacyHeader1, $legacyHeader2) {
+            // lockForUpdate() mencegah race condition: row tidak bisa dibaca
+            // oleh transaksi lain sampai transaksi ini selesai.
             $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
                 ->whereDate('created_at', $date->toDateString())
                 ->where(function ($q) use ($todayHeader, $legacyHeader1, $legacyHeader2) {
-                    $q->where('message', 'like', $todayHeader . '%')
-                      ->orWhere('message', 'like', $legacyHeader1 . '%')
-                      ->orWhere('message', 'like', $legacyHeader2 . '%');
+                    $q->where('message', 'like', $todayHeader.'%')
+                        ->orWhere('message', 'like', $legacyHeader1.'%')
+                        ->orWhere('message', 'like', $legacyHeader2.'%');
                 })
+                ->lockForUpdate()
                 ->exists();
 
             if ($alreadyExists) {
@@ -251,8 +253,8 @@ class WaQueueController extends Controller
 
             return WaQueue::create([
                 'group_id' => self::WA_OPERATIONAL_SUMMARY_GROUP_ID,
-                'message'  => $message,
-                'status'   => 'pending',
+                'message' => $message,
+                'status' => 'pending',
             ]);
         });
     }
@@ -266,20 +268,20 @@ class WaQueueController extends Controller
         $date = Carbon::parse($dateInput);
 
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = '⛔ Bad News ' . $headerDate;
-        $legacyHeader1 = 'PDX Report ' . $headerDate;
-        $legacyHeader2 = 'Rangkuman Operasional ' . $headerDate;
+        $todayHeader = '⛔ Bad News '.$headerDate;
+        $legacyHeader1 = 'PDX Report '.$headerDate;
+        $legacyHeader2 = 'Rangkuman Operasional '.$headerDate;
 
         $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
             ->whereDate('created_at', $date->toDateString())
             ->where(function ($q) use ($todayHeader, $legacyHeader1, $legacyHeader2) {
-                $q->where('message', 'like', $todayHeader . '%')
-                  ->orWhere('message', 'like', $legacyHeader1 . '%')
-                  ->orWhere('message', 'like', $legacyHeader2 . '%');
+                $q->where('message', 'like', $todayHeader.'%')
+                    ->orWhere('message', 'like', $legacyHeader1.'%')
+                    ->orWhere('message', 'like', $legacyHeader2.'%');
             })
             ->exists();
 
-        if ($alreadyExists && !$request->boolean('force')) {
+        if ($alreadyExists && ! $request->boolean('force')) {
             return response()->json([
                 'success' => false,
                 'message' => "Pesan Bad News untuk tanggal {$headerDate} sudah pernah dibuat hari ini.",
@@ -291,14 +293,14 @@ class WaQueueController extends Controller
 
         $queue = WaQueue::create([
             'group_id' => self::WA_OPERATIONAL_SUMMARY_GROUP_ID,
-            'message'  => $message,
-            'status'   => 'pending',
+            'message' => $message,
+            'status' => 'pending',
         ]);
 
         return response()->json([
             'success' => true,
             'message' => "Pesan Bad News untuk {$headerDate} berhasil ditambahkan ke antrean WA!",
-            'queue'   => $queue,
+            'queue' => $queue,
         ]);
     }
 
@@ -312,21 +314,21 @@ class WaQueueController extends Controller
         $message = $this->buildOperationalSummaryMessage($date);
 
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
-        $todayHeader = '⛔ Bad News ' . $headerDate;
-        $legacyHeader1 = 'PDX Report ' . $headerDate;
-        $legacyHeader2 = 'Rangkuman Operasional ' . $headerDate;
+        $todayHeader = '⛔ Bad News '.$headerDate;
+        $legacyHeader1 = 'PDX Report '.$headerDate;
+        $legacyHeader2 = 'Rangkuman Operasional '.$headerDate;
         $alreadyExists = WaQueue::where('group_id', self::WA_OPERATIONAL_SUMMARY_GROUP_ID)
             ->whereDate('created_at', $date->toDateString())
             ->where(function ($q) use ($todayHeader, $legacyHeader1, $legacyHeader2) {
-                $q->where('message', 'like', $todayHeader . '%')
-                  ->orWhere('message', 'like', $legacyHeader1 . '%')
-                  ->orWhere('message', 'like', $legacyHeader2 . '%');
+                $q->where('message', 'like', $todayHeader.'%')
+                    ->orWhere('message', 'like', $legacyHeader1.'%')
+                    ->orWhere('message', 'like', $legacyHeader2.'%');
             })
             ->exists();
 
         return response()->json([
-            'date'           => $dateInput,
-            'message'        => $message,
+            'date' => $dateInput,
+            'message' => $message,
             'already_exists' => $alreadyExists,
         ]);
     }
@@ -338,13 +340,16 @@ class WaQueueController extends Controller
     {
         $formattedDate = $date->locale('id')->isoFormat('D MMMM Y');
         $cutoffLabel = $this->getAchievementCutoffLabel($date);
-        $divider = "---------------------------------------------------";
+        $divider = '---------------------------------------------------';
 
         // 1. Digital Pokayoke
         $pokayokeNg = $this->getPokayokeNgProcessesCount($date);
 
         // 2. Iseki Scan (Urgent & Missing)
         $scanData = $this->getScanOperationalData($date);
+
+        // 2b. Marshalling Part Kurang
+        $marshallingPartKurang = $this->getMarshallingPartKurangSummary($date);
 
         // 3. Aspro
         $aspro = $this->getAsproOperationalData($date);
@@ -371,62 +376,72 @@ class WaQueueController extends Controller
         $lines[] = "⛔ Bad News {$formattedDate} - (⇀‸↼‶)";
         $lines[] = $divider;
 
-        $lines[] = "*Astra, AI Number, Oli Detection, Detective AI:*";
+        $lines[] = '*Astra, AI Number, Oli Detection, Detective AI:*';
         $lines[] = "- NG Processes: {$pokayokeNg}";
-        $lines[] = "";
+        $lines[] = '';
 
-        $lines[] = "*Part:*";
+        $lines[] = '*Part:*';
         $lines[] = "- Telat Supply: {$scanData['telat_supply']}";
         $lines[] = "- Telat Request: {$scanData['telat_request']}";
         $lines[] = "- Missing DST: {$scanData['missing_dst']}";
-        $lines[] = "";
+        $lines[] = '';
 
-        $lines[] = "*Aspro:*";
+        $lines[] = '*Marshalling Part Kurang:*';
+        if (count($marshallingPartKurang) > 0) {
+            foreach ($marshallingPartKurang as $areaName => $count) {
+                $lines[] = "- {$areaName}: {$count}";
+            }
+        } else {
+            $lines[] = '- Nihil';
+        }
+        $lines[] = '';
+
+        $lines[] = '*Aspro:*';
         $lines[] = "- Total Audit: {$aspro['total_audit']}";
         $lines[] = "- Total Temuan: {$aspro['total_temuan']}";
-        $lines[] = "";
+        $lines[] = '';
 
-        $lines[] = "*Rifa:*";
+        $lines[] = '*Rifa:*';
         $lines[] = "- Izin Sakit: {$rifaSakit} orang";
-        $lines[] = "";
+        $lines[] = '';
 
-        $lines[] = "*Record NG:*";
+        $lines[] = '*Record NG:*';
         $lines[] = "- AI Number: {$ngData['chadet']} NG";
         $lines[] = "- Detective AI: {$ngData['parcom']} NG";
-        $lines[] = "";
+        $lines[] = '';
 
-        $lines[] = "*Devmon:*";
+        $lines[] = '*Devmon:*';
         if (count($devmonUnsubmitted) > 0) {
             foreach ($devmonUnsubmitted as $dev) {
                 $lines[] = "- {$dev['label']}: {$dev['last_user']}";
             }
         } else {
-            $lines[] = "- Semua device sudah absen";
+            $lines[] = '- Semua device sudah absen';
         }
-        $lines[] = "";
+        $lines[] = '';
 
-        $lines[] = "*KYT (" . ($kyt['week_label'] ?: 'Minggu Lalu') . "):*";
-        $lines[] = "- Belum Pengajuan: " . (count($kyt['belum_temuan']) ? implode(', ', $kyt['belum_temuan']) : 'Nihil');
-        $lines[] = "- Belum Penanganan: " . (count($kyt['belum_penanganan']) ? implode(', ', $kyt['belum_penanganan']) : 'Nihil');
-        $lines[] = "";
+        $lines[] = '*KYT ('.($kyt['week_label'] ?: 'Minggu Lalu').'):*';
+        $lines[] = '- Belum Pengajuan: '.(count($kyt['belum_temuan']) ? implode(', ', $kyt['belum_temuan']) : 'Nihil');
+        $lines[] = '- Belum Penanganan: '.(count($kyt['belum_penanganan']) ? implode(', ', $kyt['belum_penanganan']) : 'Nihil');
+        $lines[] = '';
 
-        $lines[] = "*Target Produksi:*";
+        $lines[] = '*Target Produksi:*';
         if (count($podiumMinus) > 0) {
             foreach ($podiumMinus as $pm) {
                 $lines[] = "- {$pm}";
             }
         } else {
-            $lines[] = "- Nihil / Semua Tercapai";
+            $lines[] = '- Nihil / Semua Tercapai';
         }
-        $lines[] = "";
+        $lines[] = '';
 
-        $lines[] = "*Efficiency:*";
+        $lines[] = '*Efficiency:*';
         if (count($efficiencyList) > 0) {
             foreach ($efficiencyList as $eff) {
                 $lines[] = "- {$eff}";
             }
         } else {
-            $lines[] = "- Data tidak tersedia";
+            $lines[] = '- Data tidak tersedia';
         }
 
         $lines[] = $divider;
@@ -471,13 +486,14 @@ class WaQueueController extends Controller
                 ->get()
                 ->filter(function ($req) use ($workdaysAgo) {
                     $time = $req->Design_Changes_Request ?? $req->Production_Area_Request ?? $req->Shipping_Request ?? $req->Ready_Request;
+
                     return $time && Carbon::parse($time)->lt($workdaysAgo);
                 })->count();
 
             return [
-                'telat_supply'  => $telatSupply,
+                'telat_supply' => $telatSupply,
                 'telat_request' => $telatRequest,
-                'missing_dst'   => $missingDst,
+                'missing_dst' => $missingDst,
             ];
         } catch (\Throwable $e) {
             return ['telat_supply' => 0, 'telat_request' => 0, 'missing_dst' => 0];
@@ -519,7 +535,7 @@ class WaQueueController extends Controller
                 ->count();
 
             return [
-                'total_audit'  => $totalAudit,
+                'total_audit' => $totalAudit,
                 'total_temuan' => $totalTemuan,
             ];
         } catch (\Throwable $e) {
@@ -556,14 +572,16 @@ class WaQueueController extends Controller
                 ->whereDate('Time_Record', $dateStr)
                 ->where('Result_Record', 'NG')
                 ->count();
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         try {
             $chadetNg = DB::connection('chadet')->table('records')
                 ->whereDate('Time', $dateStr)
                 ->where('Status_Record', 'NG')
                 ->count();
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         return [
             'parcom' => $parcomNg,
@@ -604,24 +622,54 @@ class WaQueueController extends Controller
                     ->orderBy('id', 'desc')
                     ->first();
 
-                $lastUser = $lastAbsence && !empty($lastAbsence->name)
+                $lastUser = $lastAbsence && ! empty($lastAbsence->name)
                     ? $lastAbsence->name
                     : 'Belum pernah absen';
 
-                $label = !empty($device->model_name)
-                    ? $device->model_name . " ({$device->model_id})"
+                $label = ! empty($device->model_name)
+                    ? $device->model_name." ({$device->model_id})"
                     : $device->model_id;
 
                 $result[] = [
-                    'model_id'   => $device->model_id,
+                    'model_id' => $device->model_id,
                     'model_name' => $device->model_name,
-                    'label'      => $label,
-                    'last_user'  => $lastUser,
+                    'label' => $label,
+                    'last_user' => $lastUser,
                 ];
             }
 
             return $result;
         } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * 7b. Ambil rekap part kurang dari iseki_marshalling per area pada tanggal tertentu
+     *
+     * @return array<string, int> Contoh: ['Sub Assy' => 3, 'Main Line' => 1]
+     */
+    private function getMarshallingPartKurangSummary(Carbon $date): array
+    {
+        try {
+            $rows = DB::connection('marshalling')->table('part_kurangs')
+                ->whereDate('created_at', $date->toDateString())
+                ->select('area', DB::raw('count(*) as total'))
+                ->groupBy('area')
+                ->orderBy('area')
+                ->get();
+
+            $result = [];
+            foreach ($rows as $row) {
+                $rawArea = trim((string) $row->area);
+                $label = ucwords(str_replace('_', ' ', $rawArea));
+                $result[$label] = (int) $row->total;
+            }
+
+            return $result;
+        } catch (\Throwable $e) {
+            \Log::error('Gagal mengambil data part_kurangs iseki_marshalling: '.$e->getMessage());
+
             return [];
         }
     }
@@ -642,7 +690,7 @@ class WaQueueController extends Controller
                 ->first();
 
             if ($lastWeek) {
-                $weekLabel = 'Minggu ' . $lastWeek->number_of_Weeks . ' (' . Carbon::parse($lastWeek->kyt_date)->locale('id')->isoFormat('D MMMM Y') . ')';
+                $weekLabel = 'Minggu '.$lastWeek->number_of_Weeks.' ('.Carbon::parse($lastWeek->kyt_date)->locale('id')->isoFormat('D MMMM Y').')';
                 $teams = DB::connection('kyt')->table('team_k_y_t_s')->get();
 
                 foreach ($teams as $team) {
@@ -651,25 +699,26 @@ class WaQueueController extends Controller
                         ->where('kyt_date_id', $lastWeek->id)
                         ->first();
 
-                    if (!$kyt) {
+                    if (! $kyt) {
                         $belumTemuan[] = $team->team_name;
                     } else {
                         $penanganan = DB::connection('kyt')->table('kyt_penanganans')
                             ->where('kyt_list_id', $kyt->id)
                             ->first();
 
-                        if (!$penanganan) {
+                        if (! $penanganan) {
                             $belumPenanganan[] = $team->team_name;
                         }
                     }
                 }
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         return [
-            'week_label'        => $weekLabel,
-            'belum_temuan'      => $belumTemuan,
-            'belum_penanganan'  => $belumPenanganan,
+            'week_label' => $weekLabel,
+            'belum_temuan' => $belumTemuan,
+            'belum_penanganan' => $belumPenanganan,
         ];
     }
 
@@ -685,7 +734,7 @@ class WaQueueController extends Controller
             $targets = DB::connection('podium')->table('wa_rangkuman_targets')
                 ->where('Target_Date', $dateStr)
                 ->get()
-                ->keyBy(fn($t) => $t->Category_Group . '|' . $t->Category_Item);
+                ->keyBy(fn ($t) => $t->Category_Group.'|'.$t->Category_Item);
 
             $scanCount = function ($areaId) use ($date) {
                 return DB::connection('efficiency')->table('scans')
@@ -698,7 +747,7 @@ class WaQueueController extends Controller
             $scanCountWithTractor = function ($areaId, $conditionRaw) use ($date) {
                 return DB::connection('efficiency')->table('scans')
                     ->join('tractors as t', 'scans.Id_Tractor', '=', 't.Id_Tractor')
-                    ->leftJoin(DB::raw("`iseki_podium`.`plans` as plans"), function ($join) {
+                    ->leftJoin(DB::raw('`iseki_podium`.`plans` as plans'), function ($join) {
                         $join->on('scans.Sequence_No_Plan', '=', 'plans.Sequence_No_Plan')
                             ->on('scans.Production_Date_Plan', '=', 'plans.Production_Date_Plan');
                     })
@@ -711,7 +760,7 @@ class WaQueueController extends Controller
 
             $scanCountWithPlan = function ($areaId, $conditionRaw) use ($date) {
                 return DB::connection('efficiency')->table('scans')
-                    ->leftJoin(DB::raw("`iseki_podium`.`plans` as plans"), function ($join) {
+                    ->leftJoin(DB::raw('`iseki_podium`.`plans` as plans'), function ($join) {
                         $join->on('scans.Sequence_No_Plan', '=', 'plans.Sequence_No_Plan')
                             ->on('scans.Production_Date_Plan', '=', 'plans.Production_Date_Plan');
                     })
@@ -733,8 +782,8 @@ class WaQueueController extends Controller
                 ['group' => 'TRANSMISI', 'item' => 'SXG3 & SF', 'A' => $scanCountWithPlan(2, "(plans.Type_Plan IN ($sxg3SfTypesStr))")],
                 ['group' => 'TRANSMISI', 'item' => 'Transmisi', 'A' => $scanCountWithPlan(2, "(plans.Type_Plan IS NULL OR plans.Type_Plan NOT IN ($sxg3SfTypesStr))")],
                 ['group' => 'SUB ENGINE', 'item' => 'Sub Engine', 'A' => $scanCount(6)],
-                ['group' => 'LINE A', 'item' => 'Unit', 'A' => $scanCountWithTractor(3, "(t.Name_Tractor = plans.Model_Name_Plan AND (plans.Model_Mower_Plan IS NULL OR t.Name_Tractor != plans.Model_Mower_Plan) AND (plans.Model_Collector_Plan IS NULL OR t.Name_Tractor != plans.Model_Collector_Plan))")],
-                ['group' => 'LINE A', 'item' => 'Mocol', 'A' => $scanCountWithTractor(3, "(t.Name_Tractor = plans.Model_Mower_Plan OR t.Name_Tractor = plans.Model_Collector_Plan)")],
+                ['group' => 'LINE A', 'item' => 'Unit', 'A' => $scanCountWithTractor(3, '(t.Name_Tractor = plans.Model_Name_Plan AND (plans.Model_Mower_Plan IS NULL OR t.Name_Tractor != plans.Model_Mower_Plan) AND (plans.Model_Collector_Plan IS NULL OR t.Name_Tractor != plans.Model_Collector_Plan))')],
+                ['group' => 'LINE A', 'item' => 'Mocol', 'A' => $scanCountWithTractor(3, '(t.Name_Tractor = plans.Model_Mower_Plan OR t.Name_Tractor = plans.Model_Collector_Plan)')],
                 ['group' => 'LINE B', 'item' => 'Line B', 'A' => $scanCount(4)],
                 ['group' => 'SUB ASSY', 'item' => 'Sub Assy', 'A' => $scanCount(7)],
                 ['group' => 'MAIN LINE', 'item' => 'Mainline', 'A' => $lineoffActual],
@@ -745,14 +794,15 @@ class WaQueueController extends Controller
             ];
 
             foreach ($podiumItems as $pi) {
-                $tKey = $pi['group'] . '|' . $pi['item'];
-                $tVal = isset($targets[$tKey]) ? (int)$targets[$tKey]->Target : 0;
+                $tKey = $pi['group'].'|'.$pi['item'];
+                $tVal = isset($targets[$tKey]) ? (int) $targets[$tKey]->Target : 0;
                 $sVal = $pi['A'] - $tVal;
                 if ($sVal < 0) {
                     $minusList[] = "{$pi['group']} ({$pi['item']}): {$sVal}";
                 }
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         return $minusList;
     }
@@ -769,16 +819,27 @@ class WaQueueController extends Controller
                 ->orderByRaw("FIELD(Name_Area, 'TRANSMISI', 'SUB ENGINE', 'LINE A', 'LINE B', 'SUB ASSY', 'MAIN LINE', 'INSPEKSI', 'MOWER')")
                 ->get();
 
-            $calculateProgressiveHours = function(int $memberCount) {
+            $calculateProgressiveHours = function (int $memberCount) {
                 $now = Carbon::now();
                 $start = Carbon::today()->setTime(7, 30);
                 $endOfWork = Carbon::today()->setTime(16, 30);
-                if ($now->lt($start)) return 0.0;
-                if ($now->gt($endOfWork)) return $memberCount * 8.0;
+                if ($now->lt($start)) {
+                    return 0.0;
+                }
+                if ($now->gt($endOfWork)) {
+                    return $memberCount * 8.0;
+                }
                 $totalHours = $start->diffInRealSeconds($now) / 3600.0;
-                if ($now->gt(Carbon::today()->setTime(10, 0))) $totalHours -= 10 / 60;
-                if ($now->gt(Carbon::today()->setTime(12, 0))) $totalHours -= 40 / 60;
-                if ($now->gt(Carbon::today()->setTime(15, 0))) $totalHours -= 10 / 60;
+                if ($now->gt(Carbon::today()->setTime(10, 0))) {
+                    $totalHours -= 10 / 60;
+                }
+                if ($now->gt(Carbon::today()->setTime(12, 0))) {
+                    $totalHours -= 40 / 60;
+                }
+                if ($now->gt(Carbon::today()->setTime(15, 0))) {
+                    $totalHours -= 10 / 60;
+                }
+
                 return $memberCount * min(max(0.0, $totalHours), 8.0);
             };
 
@@ -789,28 +850,28 @@ class WaQueueController extends Controller
 
             foreach ($areas as $area) {
                 $areaId = $area->Id_Area;
-                $scansSum = (float)DB::connection('efficiency')->table('scans')
+                $scansSum = (float) DB::connection('efficiency')->table('scans')
                     ->where('Id_Area', $areaId)
                     ->whereDate('Time_Scan', $date)
                     ->sum('Assigned_Hour_Scan') * (1 - 0.078);
 
-                $costsSum = (float)DB::connection('efficiency')->table('costs')
+                $costsSum = (float) DB::connection('efficiency')->table('costs')
                     ->where('Id_Area', $areaId)
                     ->whereDate('Start_Cost', $date)
                     ->sum('Non_Operational_Cost');
 
-                $penangananSum = (float)DB::connection('efficiency')->table('penanganans')
+                $penangananSum = (float) DB::connection('efficiency')->table('penanganans')
                     ->where('Id_Area', $areaId)
                     ->whereDate('Start_Penanganan', $date)
                     ->sum('Hour_Penanganan');
 
-                $powerSum = (float)DB::connection('efficiency')->table('powers')
+                $powerSum = (float) DB::connection('efficiency')->table('powers')
                     ->where('Id_Area', $areaId)
                     ->whereDate('Start_Power', $date)
                     ->sum('Leave_Hour_Power');
 
                 $report = $todayReports->get($areaId);
-                $repMembers = $report ? (int)$report->Total_Member_Report : 0;
+                $repMembers = $report ? (int) $report->Total_Member_Report : 0;
                 $memberHours = $calculateProgressiveHours($repMembers);
 
                 $reportNetHours = $memberHours - $powerSum;
@@ -819,9 +880,10 @@ class WaQueueController extends Controller
                 $selisihJamArea = $kategori2 - $kategori1;
                 $effPercent = $scansSum != 0 ? ($selisihJamArea / $scansSum) * 100 : 0;
 
-                $effList[] = "{$area->Name_Area}: " . number_format($effPercent, 0) . "%";
+                $effList[] = "{$area->Name_Area}: ".number_format($effPercent, 0).'%';
             }
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         return $effList;
     }
@@ -844,14 +906,14 @@ class WaQueueController extends Controller
             ->whereTime('Time_Check', '<=', $cutoffTime)
             ->where(function ($q) {
                 $q->whereNotNull('Status_Check')
-                  ->orWhere('Auto_Check', 1);
+                    ->orWhere('Auto_Check', 1);
             })
             ->get(['Id_User', 'Is_User']);
 
         $checkCounts = [];
         foreach ($checks as $c) {
             $prefix = ($c->Is_User == 1) ? 'u_' : 'm_';
-            $key = $prefix . $c->Id_User;
+            $key = $prefix.$c->Id_User;
             $checkCounts[$key] = ($checkCounts[$key] ?? 0) + 1;
         }
 
@@ -875,7 +937,7 @@ class WaQueueController extends Controller
         $requestCounts = [];
         foreach ($requests as $r) {
             $prefix = ($r->Is_User == 1) ? 'u_' : 'm_';
-            $key = $prefix . $r->Id_User;
+            $key = $prefix.$r->Id_User;
             $requestCounts[$key] = ($requestCounts[$key] ?? 0) + 1;
         }
 
@@ -903,12 +965,12 @@ class WaQueueController extends Controller
         $recordCounts = [];
         foreach ($records as $rec) {
             $prefix = ($rec->Is_User == 1) ? 'u_' : 'm_';
-            $key = $prefix . $rec->Id_User;
+            $key = $prefix.$rec->Id_User;
             $recordCounts[$key] = ($recordCounts[$key] ?? 0) + 1;
         }
 
         foreach ($branchRecords as $br) {
-            $key = 'm_' . $br->Id_User;
+            $key = 'm_'.$br->Id_User;
             $recordCounts[$key] = ($recordCounts[$key] ?? 0) + 1;
         }
 
@@ -938,7 +1000,7 @@ class WaQueueController extends Controller
                 $lines[] = "{$no}. {$item['name']} - {$item['count']}";
             }
         } else {
-            $lines[] = "-";
+            $lines[] = '-';
         }
         $lines[] = $divider;
 
@@ -950,7 +1012,7 @@ class WaQueueController extends Controller
                 $lines[] = "{$no}. {$item['name']} - {$item['count']}";
             }
         } else {
-            $lines[] = "-";
+            $lines[] = '-';
         }
         $lines[] = $divider;
 
@@ -962,7 +1024,7 @@ class WaQueueController extends Controller
                 $lines[] = "{$no}. {$item['name']} - {$item['count']}";
             }
         } else {
-            $lines[] = "-";
+            $lines[] = '-';
         }
         $lines[] = '---------------------------------------------------';
         $lines[] = 'おつかれさまでした。。。⸜(｡˃ ᵕ ˂ )⸝♡';
@@ -979,12 +1041,12 @@ class WaQueueController extends Controller
 
         $members = Member::all(['Id_Member', 'Name_Member']);
         foreach ($members as $m) {
-            $map['m_' . $m->Id_Member] = $m->Name_Member;
+            $map['m_'.$m->Id_Member] = $m->Name_Member;
         }
 
         $users = User::all(['Id_User', 'Name_User']);
         foreach ($users as $u) {
-            $map['u_' . $u->Id_User] = $u->Name_User;
+            $map['u_'.$u->Id_User] = $u->Name_User;
         }
 
         return $map;
