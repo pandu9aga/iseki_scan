@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\WaQueue;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class WaQueueController extends Controller
@@ -115,18 +116,18 @@ class WaQueueController extends Controller
 
     /**
      * Insert achievement queue for a given date with duplicate check.
+     * Menggunakan DB transaction + lockForUpdate() agar atomic di semua cache driver.
      */
     public function insertAchievementQueueForDate(Carbon $date): ?WaQueue
     {
-        $dateStr = $date->format('Y-m-d');
         $headerDate = $date->locale('id')->isoFormat('D MMMM Y');
         $todayHeader = 'Perolehan DST '.$headerDate;
 
-        // Atomic lock to prevent race conditions across multiple open tabs/requests
-        return Cache::lock('wa_achievement_queue_lock_'.$dateStr, 15)->get(function () use ($date, $todayHeader) {
+        return DB::transaction(function () use ($date, $todayHeader) {
             $alreadyExists = WaQueue::where('group_id', self::WA_ACHIEVEMENT_GROUP_ID)
                 ->whereDate('created_at', $date->toDateString())
                 ->where('message', 'like', $todayHeader.'%')
+                ->lockForUpdate()
                 ->exists();
 
             if ($alreadyExists) {

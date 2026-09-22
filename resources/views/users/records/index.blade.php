@@ -3,7 +3,14 @@
 <!-- Begin Page Content -->
 <div class="container-fluid">
 
-    <h1 class="h3 mb-2 text-gray-800" id="top">Record</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <h1 class="h3 text-gray-800 mb-0" id="top">Record</h1>
+        @if (!empty($isBulkAllowed) && $isBulkAllowed)
+        <button type="button" class="btn btn-primary btn-sm shadow-sm" data-toggle="modal" data-target="#bulkRecordModal">
+            <i class="fas fa-layer-group mr-1"></i> Bulk Record (NIK 111111)
+        </button>
+        @endif
+    </div>
 
     <div id="reader_item" class="mx-auto" style="max-width: 300px;"></div>
     <div id="reader_rack" class="mx-auto" style="max-width: 300px;"></div>
@@ -155,6 +162,109 @@
                                 </div>
                             </div>
                         </div>
+
+                        @if (!empty($isBulkAllowed) && $isBulkAllowed)
+                        <!-- Modal Bulk Record Input -->
+                        <div class="modal fade" id="bulkRecordModal" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog modal-lg" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-primary text-white">
+                                        <h5 class="modal-title"><i class="fas fa-layer-group mr-1"></i> Bulk Record (NIK 111111)</h5>
+                                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="alert alert-info py-2" style="font-size: 13px;">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Masukkan <strong>Code Rack</strong> per baris. Item yang tidak memiliki request waiting akan <strong>dilewati</strong> dan didaftarkan pada laporan hasil. Jumlah record otomatis disamakan dengan sum request.
+                                        </div>
+                                        <div class="form-group mb-2">
+                                            <label for="bulk_text" class="font-weight-bold text-dark" style="font-size: 14px;">Daftar Code Rack (1 Baris = 1 Code Rack):</label>
+                                            <textarea id="bulk_text" class="form-control" rows="8" placeholder="Contoh:&#10;A-01-01&#10;A-01-02&#10;B-02-05"></textarea>
+                                        </div>
+                                        <div id="bulkErrorAlert" class="alert alert-danger py-2" style="display: none; font-size: 13px;"></div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                                        <button type="button" id="btnSubmitBulk" class="btn btn-primary" onclick="submitBulkRecord()">
+                                            <i class="fas fa-check mr-1"></i> Proses Bulk Record
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal Hasil Bulk Record -->
+                        <div class="modal fade" id="bulkResultModal" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog modal-lg" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-dark text-white">
+                                        <h5 class="modal-title"><i class="fas fa-poll mr-1"></i> Hasil Bulk Record</h5>
+                                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body" style="font-size: 13px;">
+                                        <div class="row text-center mb-3">
+                                            <div class="col-md-6 mb-2">
+                                                <div class="p-2 border rounded bg-light">
+                                                    <span class="text-success font-weight-bold" style="font-size: 1.2rem;" id="resSuccessCount">0</span>
+                                                    <div class="text-muted small">Berhasil Di-Record</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-2">
+                                                <div class="p-2 border rounded bg-light">
+                                                    <span class="text-danger font-weight-bold" style="font-size: 1.2rem;" id="resSkippedCount">0</span>
+                                                    <div class="text-muted small">Dilewati (Tidak Ada Request)</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="skippedSection" style="display: none;">
+                                            <h6 class="font-weight-bold text-danger mb-2">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i> Item Dilewati Karena Tidak Ada Request:
+                                            </h6>
+                                            <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                                                <table class="table table-bordered table-sm table-striped">
+                                                    <thead class="thead-light">
+                                                        <tr>
+                                                            <th style="width: 50px;" class="text-center">Baris</th>
+                                                            <th>Code Rack</th>
+                                                            <th>Keterangan</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="skippedTableBody"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        <div id="successSection" class="mt-3" style="display: none;">
+                                            <h6 class="font-weight-bold text-success mb-2">
+                                                <i class="fas fa-check-circle mr-1"></i> Rincian Record yang Berhasil Dibuat:
+                                            </h6>
+                                            <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                                <table class="table table-bordered table-sm table-striped">
+                                                    <thead class="thead-light">
+                                                        <tr>
+                                                            <th style="width: 50px;" class="text-center">Baris</th>
+                                                            <th>Code Rack</th>
+                                                            <th>Code Item</th>
+                                                            <th class="text-center">Sum Record</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="successTableBody"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-primary" data-dismiss="modal">Selesai</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -582,6 +692,103 @@
             }
         });
     });
+
+    @if (!empty($isBulkAllowed) && $isBulkAllowed)
+    function submitBulkRecord() {
+        var text = document.getElementById('bulk_text').value.trim();
+        var alertBox = document.getElementById('bulkErrorAlert');
+        var btn = document.getElementById('btnSubmitBulk');
+
+        alertBox.style.display = 'none';
+        alertBox.textContent = '';
+
+        if (!text) {
+            alertBox.textContent = 'Harap masukkan daftar Code Rack.';
+            alertBox.style.display = 'block';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...';
+
+        $.ajax({
+            url: '{{ route("record.bulkCreate") }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                bulk_text: text
+            },
+            success: function(res) {
+                if (res.success) {
+                    $('#bulkRecordModal').modal('hide');
+                    document.getElementById('bulk_text').value = '';
+
+                    // Isi data modal hasil
+                    document.getElementById('resSuccessCount').textContent = res.success_count;
+                    document.getElementById('resSkippedCount').textContent = res.skipped_count;
+
+                    // Bagian skipped
+                    var skippedSection = document.getElementById('skippedSection');
+                    var skippedTbody = document.getElementById('skippedTableBody');
+                    skippedTbody.innerHTML = '';
+                    if (res.skipped_count > 0) {
+                        res.skipped_items.forEach(function(item) {
+                            skippedTbody.innerHTML += `
+                                <tr>
+                                    <td class="text-center">${item.line}</td>
+                                    <td><span class="badge badge-warning">${item.code_rack}</span></td>
+                                    <td class="text-danger font-italic">${item.reason}</td>
+                                </tr>
+                            `;
+                        });
+                        skippedSection.style.display = 'block';
+                    } else {
+                        skippedSection.style.display = 'none';
+                    }
+
+                    // Bagian success
+                    var successSection = document.getElementById('successSection');
+                    var successTbody = document.getElementById('successTableBody');
+                    successTbody.innerHTML = '';
+                    if (res.success_count > 0) {
+                        res.success_items.forEach(function(item) {
+                            successTbody.innerHTML += `
+                                <tr>
+                                    <td class="text-center">${item.line}</td>
+                                    <td><span class="badge badge-primary">${item.code_rack}</span></td>
+                                    <td>${item.code_item}</td>
+                                    <td class="text-center font-weight-bold text-success">${item.sum_record}</td>
+                                </tr>
+                            `;
+                        });
+                        successSection.style.display = 'block';
+                    } else {
+                        successSection.style.display = 'none';
+                    }
+
+                    // Buka modal hasil & refresh data tabel
+                    $('#bulkResultModal').modal('show');
+                    loadRecordData();
+                } else {
+                    alertBox.textContent = res.message || 'Terjadi kesalahan saat memproses.';
+                    alertBox.style.display = 'block';
+                }
+            },
+            error: function(xhr) {
+                var msg = 'Gagal memproses bulk record.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                alertBox.textContent = msg;
+                alertBox.style.display = 'block';
+            },
+            complete: function() {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check mr-1"></i> Proses Bulk Record';
+            }
+        });
+    }
+    @endif
 </script>
 @endsection
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Member;
 use App\Models\Record;
 use App\Models\Request as RequestModel;
 use App\Models\SumMismatch;
@@ -14,7 +15,115 @@ class RecordController extends Controller
 {
     public function index()
     {
-        return view('users.records.index');
+        $member = Member::find(session('Id_Member'));
+        $isBulkAllowed = $member && trim((string)$member->NIK_Member) === '111111';
+
+        return view('users.records.index', compact('isBulkAllowed'));
+    }
+
+    public function bulkCreate(Request $request)
+    {
+        $member = Member::find(session('Id_Member'));
+        if (!$member || trim((string)$member->NIK_Member) !== '111111') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk fitur ini.',
+            ], 403);
+        }
+
+        $request->validate([
+            'bulk_text' => 'required|string',
+        ], [
+            'bulk_text.required' => 'Input text rack code wajib diisi.',
+        ]);
+
+        $rawText = $request->input('bulk_text');
+        $lines = preg_split('/\r\n|\r|\n/', $rawText);
+
+        $date = Carbon::today();
+        $timeNow = Carbon::now()->format('H:i:s');
+        $Id_User = session('Id_Member');
+
+        $successItems = [];
+        $skippedItems = [];
+
+        DB::beginTransaction();
+        try {
+            foreach ($lines as $index => $line) {
+                $codeRack = trim($line);
+                if ($codeRack === '') {
+                    continue;
+                }
+
+                // Cari request waiting berdasarkan Code_Rack
+                // Prioritas pertama: request waiting terlama (FIFO)
+                $matchingRequest = RequestModel::where('Code_Rack', $codeRack)
+                    ->where('Status_Request', 'Waiting')
+                    ->orderBy('Id_Request', 'asc')
+                    ->first();
+
+                if (!$matchingRequest) {
+                    $skippedItems[] = [
+                        'line' => $index + 1,
+                        'code_rack' => $codeRack,
+                        'reason' => 'Tidak ada request berstatus Waiting',
+                    ];
+                    continue;
+                }
+
+                // Set Sum_Record = Sum_Request
+                $sumQty = (int) $matchingRequest->Sum_Request;
+
+                // Ambil code item dari request atau fallback rak
+                $codeItem = $matchingRequest->Code_Item_Rack;
+                if (!$codeItem) {
+                    $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $codeRack);
+                    $codeItem = substr($cleanItem, 0, 12);
+                }
+
+                // Update status request menjadi Done
+                $matchingRequest->update(['Status_Request' => 'Done']);
+
+                // Buat record baru
+                $record = Record::create([
+                    'Day_Record' => $date,
+                    'Time_Record' => $timeNow,
+                    'Code_Item_Rack' => $codeItem,
+                    'Code_Rack' => $matchingRequest->Code_Rack,
+                    'Correctness_Record' => 1,
+                    'Sum_Record' => $sumQty,
+                    'Id_User' => $Id_User,
+                    'Id_Request' => $matchingRequest->Id_Request,
+                ]);
+
+                $successItems[] = [
+                    'line' => $index + 1,
+                    'code_rack' => $matchingRequest->Code_Rack,
+                    'code_item' => $codeItem,
+                    'sum_record' => $sumQty,
+                    'id_request' => $matchingRequest->Id_Request,
+                    'id_record' => $record->Id_Record,
+                ];
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'total_processed' => count($successItems) + count($skippedItems),
+                'success_count' => count($successItems),
+                'skipped_count' => count($skippedItems),
+                'success_items' => $successItems,
+                'skipped_items' => $skippedItems,
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memproses bulk record: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function create(Request $request)

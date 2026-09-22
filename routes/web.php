@@ -247,6 +247,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
 
     Route::get('/record', [RecordController::class, 'index'])->name('record');
     Route::post('/record/create', [RecordController::class, 'create'])->name('record.create');
+    Route::post('/record/bulk-create', [RecordController::class, 'bulkCreate'])->name('record.bulkCreate');
     Route::get('/record/check', [RecordController::class, 'check'])->name('record.check');
     Route::post('/record/check-multiple', [RecordController::class, 'checkMultiple'])->name('record.checkMultiple');
     Route::get('/record/data', [RecordController::class, 'getData'])->name('record.data');
