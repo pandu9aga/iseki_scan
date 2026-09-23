@@ -52,19 +52,11 @@ class AreaScanController extends Controller
             return response()->json(['success' => true, 'message' => 'Scan sedang diproses atau sudah berhasil (Double Input dicegah).']);
         }
 
-        $checkDuplicateToday = function () use ($codeRack, $idTypeUser, $idMember) {
-            if (Carbon::now()->between('07:00', '17:00')) {
-                $exists = Urgent::where('Code_Rack', $codeRack)
-                    ->whereDate('Time_Urgent', Carbon::today())
-                    ->where('Id_User', $idMember)
-                    ->where('Id_Type_User', $idTypeUser)
-                    ->exists();
-
-                if ($exists) {
-                    return true;
-                }
-            }
-            return false;
+        $checkDuplicateToday = function ($targetPicMemberId = null) use ($codeRack) {
+            // Cek apakah rak ini sudah pernah dilaporkan urgent hari ini di iseki_scan oleh siapa pun (baik member iseki_scan maupun marshalling)
+            return Urgent::where('Code_Rack', $codeRack)
+                ->whereDate('Time_Urgent', Carbon::today())
+                ->exists();
         };
 
         $qcOverride = false;
@@ -119,7 +111,7 @@ class AreaScanController extends Controller
             }
 
             if ($checkDuplicateToday()) {
-                return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada scan untuk Kode Rak oleh Anda hari ini).']);
+                return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada laporan urgent untuk Kode Rak ini hari ini di iseki_scan).']);
             }
 
             $namePart = $rackForOverride ? ($rackForOverride->Name_Item_Rack ?? '-') : '-';
@@ -184,7 +176,7 @@ class AreaScanController extends Controller
                 [$idMemberTarget, $nameMemberTarget] = $this->getLastRecordPic($codeRack);
 
                 if ($checkDuplicateToday($idMemberTarget)) {
-                    return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).']);
+                    return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada laporan urgent untuk Kode Rak ini hari ini di iseki_scan).']);
                 }
 
                 $category = 'telat supply';
@@ -369,7 +361,7 @@ class AreaScanController extends Controller
             [$idMemberTarget, $nameMemberTarget] = $this->getLastRequestPic($codeRack);
 
             if ($checkDuplicateToday($idMemberTarget)) {
-                return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada scan untuk Kode Rak & PIC yang sama hari ini).']);
+                return response()->json(['success' => false, 'message' => 'Double Input dicegah (Sudah ada laporan urgent untuk Kode Rak ini hari ini di iseki_scan).']);
             }
 
             $lastReq = RequestModel::where('Code_Rack', $codeRack)->orderBy('Id_Request', 'desc')->first();
