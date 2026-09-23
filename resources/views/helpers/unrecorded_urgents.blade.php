@@ -99,6 +99,7 @@
                             <th>Time Urgent</th>
                             <th>Category</th>
                             <th>Code Rack</th>
+                            <th>Lokasi</th>
                             <th style="min-width:90px;max-width:110px;">Name Part</th>
                             <th>PIC</th>
                             <th>Reporter</th>
@@ -151,6 +152,12 @@
                 { data: 'Time_Urgent', name: 'Time_Urgent' },
                 { data: 'Mistake_Category', name: 'Mistake_Category', searchable: false },
                 { data: 'Code_Rack', name: 'Code_Rack' },
+                { 
+                    data: 'Rack_Location', 
+                    name: 'Rack_Location', 
+                    searchable: false,
+                    orderable: false
+                },
                 { 
                     data: 'Name_Part', 
                     name: 'Name_Part', 

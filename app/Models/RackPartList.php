@@ -14,6 +14,8 @@ class RackPartList extends Model
     // Define the fillable attributes
     protected $fillable = [
         'rack_no',
+        'rack',
+        'cell',
         'item_code',
         'part_name',
         'cek',

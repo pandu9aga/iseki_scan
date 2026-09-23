@@ -308,7 +308,7 @@
             <li class="nav-item {{ request()->routeIs('admin.withdrawal') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('admin.withdrawal') }}">
                     <i class="fas fa-fw fa-exchange-alt"></i>
-                    <span>7. Withdrawal</span></a>
+                    <span>8. Withdrawal</span></a>
             </li>
 
             <!-- Divider -->
@@ -339,43 +339,43 @@
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('missing') }}">
                     <i class="fas fa-fw fa-ban"></i>
-                    <span>8. Missing DST</span></a>
+                    <span>9. Missing DST</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('missing.mc') }}">
                     <i class="fas fa-fw fa-ban"></i>
-                    <span>9. Missing MC</span></a>
+                    <span>10. Missing MC</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.missing.estimation') }}">
                     <i class="fas fa-fw fa-clock"></i>
-                    <span>10. Missing Estimation</span></a>
+                    <span>11. Missing Estimation</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.oke.estimation') }}">
                     <i class="fas fa-fw fa-check-circle"></i>
-                    <span>11.Oke Estimation</span></a>
+                    <span>12.Oke Estimation</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.urgents') }}">
                     <i class="fas fa-fw fa-exclamation-circle"></i>
-                    <span>12. Urgent</span></a>
+                    <span>13. Urgent</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.sum') }}">
                     <i class="fas fa-fw fa-balance-scale"></i>
-                    <span>13. Sum</span></a>
+                    <span>14. Sum</span></a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link" href="{{ route('admin.sumhistory') }}">
                     <i class="fas fa-fw fa-history"></i>
-                    <span>14.Rangkuman Sum</span></a>
+                    <span>15.Rangkuman Sum</span></a>
             </li>
 
             <!-- Divider -->

@@ -126,6 +126,7 @@
                             <th>Category</th>
                             <th>Type Tractor</th>
                             <th>Code Rack</th>
+                            <th>Lokasi</th>
                             <th style="min-width:90px;max-width:110px;">Name Part</th>
                             <th>PIC</th>
                             <th>Reporter</th>
@@ -188,6 +189,12 @@
                 { data: 'Mistake_Category', name: 'Mistake_Category', searchable: false },
                 { data: 'Type_Tractor', name: 'Type_Tractor', className: 'name-part-col' },
                 { data: 'Code_Rack', name: 'Code_Rack' },
+                { 
+                    data: 'Rack_Location', 
+                    name: 'Rack_Location', 
+                    searchable: false,
+                    orderable: false
+                },
                 { 
                     data: 'Name_Part', 
                     name: 'Name_Part', 

@@ -8,6 +8,7 @@ use App\Models\Mistake;
 use App\Models\Rack;
 use App\Models\Record;
 use App\Models\Request as RequestModel;
+use App\Models\RackPartList;
 use App\Models\StockItem;
 use App\Models\SumMismatch;
 use App\Models\Urgent;
@@ -201,6 +202,9 @@ class UrgentController extends Controller
                     }
 
                     return '-';
+                })
+                ->addColumn('Rack_Location', function ($urgent) {
+                    return $this->getRackLocation($urgent->Code_Rack);
                 })
                 ->rawColumns(['PIC_Urgent', 'Name_Part', 'Mistake_Category', 'Request_Details', 'Reporter', 'Record_Time', 'Request_Time'])
                 ->make(true);
@@ -474,6 +478,7 @@ class UrgentController extends Controller
                     'sum_request' => $pendingSumMismatch->Sum_Request,
                     'pic' => $nameMcPic,
                     'code_rack' => $codeRack,
+                    'rack_location' => $this->getRackLocation($codeRack),
                 ],
             ]);
         }
@@ -558,6 +563,7 @@ class UrgentController extends Controller
                     'sum_request' => $waitingRequest ? $waitingRequest->Sum_Request : '-',
                     'pic' => $nameMemberTarget,
                     'code_rack' => $codeRack,
+                    'rack_location' => $this->getRackLocation($codeRack),
                 ],
             ]);
         }
@@ -771,6 +777,7 @@ class UrgentController extends Controller
                 'sum_request' => $waitingRequest->Sum_Request,
                 'pic' => $pic,
                 'code_rack' => $codeRack,
+                'rack_location' => $this->getRackLocation($codeRack),
             ];
 
             return redirect()->back()->with([
@@ -876,6 +883,7 @@ class UrgentController extends Controller
                 'sum_request' => $sumRequest,
                 'pic' => $nameMemberTarget,
                 'code_rack' => $codeRack,
+                'rack_location' => $this->getRackLocation($codeRack),
             ];
 
             return redirect()->back()->with([
@@ -883,6 +891,20 @@ class UrgentController extends Controller
                 'scan_success_data' => $scanSuccessData,
             ]);
         }
+    }
+
+    /**
+     * Get rack location (rack & cell) from iseki_label rack_part_lists.
+     */
+    private function getRackLocation($codeRack)
+    {
+        $rackPartList = RackPartList::where('rack_no', $codeRack)->first();
+        if ($rackPartList) {
+            $rack = str_replace(['"', '[', ']', '{', '}'], '', $rackPartList->rack ?? '-');
+            $cell = str_replace(['"', '[', ']', '{', '}'], '', $rackPartList->cell ?? '-');
+            return trim($rack . ' / ' . $cell, ' /');
+        }
+        return '-';
     }
 
     /**
@@ -914,6 +936,8 @@ class UrgentController extends Controller
         $message .= "Time Request: {$data['time_request']}\n";
         $message .= "PIC: {$data['pic']}\n";
         $message .= "Reporter: {$data['reporter']}\n";
+        $rackLocation = $this->getRackLocation($data['code_rack']);
+        $message .= "Lokasi: {$rackLocation}\n";
         $message .= "Request Details:\n";
         $namePart = $data['name_part'] ?? '-';
         $message .= "Item: {$data['code_item']} ({$namePart}) - Sum: {$data['sum_request']}";
@@ -1159,6 +1183,9 @@ class UrgentController extends Controller
                 ->editColumn('Time_Urgent', function ($urgent) {
                     return nl2br(e($urgent->Time_Urgent));
                 })
+                ->addColumn('Rack_Location', function ($urgent) {
+                    return $this->getRackLocation($urgent->Code_Rack);
+                })
                 ->rawColumns(['Time_Urgent', 'PIC_Urgent', 'Name_Part', 'Mistake_Category', 'Request_Details', 'Reporter', 'Request_Time'])
                 ->make(true);
         }
@@ -1216,14 +1243,14 @@ class UrgentController extends Controller
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
-        $headers = ['No', 'Time Urgent', 'Category', 'Code Rack', 'Name Part', 'PIC', 'Reporter', 'Code Item', 'Sum Request', 'Time Request', 'Time Record'];
+        $headers = ['No', 'Time Urgent', 'Category', 'Code Rack', 'Lokasi', 'Name Part', 'PIC', 'Reporter', 'Code Item', 'Sum Request', 'Time Request', 'Time Record'];
         $sheet->fromArray([$headers], null, 'A1');
 
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
-        $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:L1')->applyFromArray($headerStyle);
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
 
         $row = 2;
@@ -1298,6 +1325,7 @@ class UrgentController extends Controller
                 $urgent->Time_Urgent,
                 $category,
                 $urgent->Code_Rack,
+                $this->getRackLocation($urgent->Code_Rack),
                 $namePart,
                 $pic,
                 $reporter,
@@ -1358,14 +1386,14 @@ class UrgentController extends Controller
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
-        $headers = ['No', 'Time Urgent', 'Category', 'Code Rack', 'Name Part', 'PIC', 'Reporter', 'Code Item', 'Sum Request', 'Time Request'];
+        $headers = ['No', 'Time Urgent', 'Category', 'Code Rack', 'Lokasi', 'Name Part', 'PIC', 'Reporter', 'Code Item', 'Sum Request', 'Time Request'];
         $sheet->fromArray([$headers], null, 'A1');
 
         $headerStyle = [
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
-        $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
 
         $row = 2;
@@ -1431,6 +1459,7 @@ class UrgentController extends Controller
                 $urgent->Time_Urgent,
                 $category,
                 $urgent->Code_Rack,
+                $this->getRackLocation($urgent->Code_Rack),
                 $namePart,
                 $pic,
                 $reporter,

@@ -59,6 +59,10 @@
                                         <th><i class="fas fa-user mr-2 text-primary"></i> PIC Pemesan</th>
                                         <td>: {{ session('scan_success_data.pic') ?? '-' }}</td>
                                     </tr>
+                                    <tr>
+                                        <th><i class="fas fa-map-marker-alt mr-2 text-primary"></i> Lokasi Rak</th>
+                                        <td>: {{ session('scan_success_data.rack_location') ?? '-' }}</td>
+                                    </tr>
                                 </table>
                             </div>
                             @endif
