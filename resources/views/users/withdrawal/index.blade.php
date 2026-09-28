@@ -58,6 +58,15 @@
         background-color: #faf5ff;
     }
 
+    .th-group-ng {
+        background-color: #f8d7da !important;
+        color: #721c24;
+    }
+
+    .td-ng {
+        background-color: #fdf5f6;
+    }
+
     /* ── Buttons ─────────────────────────────────────────── */
     .btn-action {
         font-size: 0.72rem;
@@ -109,6 +118,10 @@
 
     tbody tr:nth-child(even) .td-ret {
         background-color: #f6f0ff;
+    }
+
+    tbody tr:nth-child(even) .td-ng {
+        background-color: #f9ecee;
     }
 
     .scan-area {
@@ -190,6 +203,9 @@
                             <th class="th-group-rcv" style="min-width:140px;">Status Withdrawal</th>
 
                             <th class="th-group-ret" style="min-width:140px;">Return to Rack</th>
+
+                            <th class="th-group-ng" style="min-width:120px;">Part NG Oke</th>
+                            <th class="th-group-ng" style="min-width:140px;">Return NG Oke</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -277,6 +293,35 @@
                                 @elseif($w->Finish_Receiving)
                                 <button class="btn btn-primary btn-action font-weight-bold" data-toggle="modal" data-target="#modalReturn{{ $w->Id_Withdrawal }}">
                                     <i class="fas fa-undo mr-1"></i>Masuk Rak
+                                </button>
+                                @else
+                                <span class="text-muted">-</span>
+                                @endif
+                            </td>
+                            
+                            {{-- PART NG OKE (Read Only) & RETURN NG (Action) --}}
+                            <td class="td-ng">
+                                @if($w->Is_Part_Ng)
+                                <span class="chip chip-done mb-1"><i class="fas fa-check mr-1"></i>NG Oke</span><br>
+                                <small class="text-muted d-block">
+                                    {{ \Carbon\Carbon::parse($w->Date_Part_Ng)->format('d/m/y H:i') }}
+                                </small>
+                                @elseif($w->Date_Return)
+                                <span class="text-muted">Menunggu QC</span>
+                                @else
+                                <span class="text-muted">-</span>
+                                @endif
+                            </td>
+                            <td class="td-ng">
+                                @if($w->Date_Return_Ng)
+                                <span class="font-weight-bold">{{ $w->name_return_ng ?? $w->NIK_Return_Ng }}</span><br>
+                                <span class="badge badge-secondary mb-1">Rak: {{ $w->Code_Rack_Return_Ng ?? '-' }}</span><br>
+                                <small class="text-muted d-block">
+                                    {{ \Carbon\Carbon::parse($w->Date_Return_Ng)->format('d/m/y H:i') }}
+                                </small>
+                                @elseif($w->Is_Part_Ng)
+                                <button class="btn btn-danger btn-action font-weight-bold" data-toggle="modal" data-target="#modalReturnNg{{ $w->Id_Withdrawal }}">
+                                    <i class="fas fa-undo mr-1"></i>Return NG
                                 </button>
                                 @else
                                 <span class="text-muted">-</span>
@@ -418,6 +463,66 @@
 </div>
 @endif
 
+{{-- Modal Return NG --}}
+@if($w->Is_Part_Ng && !$w->Date_Return_Ng)
+<div class="modal fade" id="modalReturnNg{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form action="{{ route('user.withdrawal.returnNg', $w->Id_Withdrawal) }}" method="POST">
+                @csrf
+                <div class="modal-header bg-danger text-white">
+                    <h6 class="modal-title font-weight-bold">
+                        <i class="fas fa-undo mr-1"></i>Return Part NG ke Rak — {{ $w->Code_Item_Withdrawal }}
+                    </h6>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning py-2 mb-3" style="font-size:0.8rem;">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        Pastikan barcode rak yang discan adalah <strong>{{ $w->rack_no }}</strong>
+                    </div>
+
+                    <div class="custom-control custom-checkbox mb-3 p-2 bg-light rounded border">
+                        <input type="checkbox" class="custom-control-input cb-daichi-ng" id="daichiNg{{ $w->Id_Withdrawal }}"
+                            data-target="#codeRackNg{{ $w->Id_Withdrawal }}" data-scan-btn="#btnScanNg{{ $w->Id_Withdrawal }}">
+                        <label class="custom-control-label font-weight-bold text-primary" for="daichiNg{{ $w->Id_Withdrawal }}" style="font-size:0.85rem; cursor:pointer;">
+                            <i class="fas fa-shipping-fast mr-1"></i>Item DAICHI
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="font-size:0.82rem;font-weight:600;">Scan / Input Barcode Rak <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="text" name="Code_Rack_Return_Ng"
+                                id="codeRackNg{{ $w->Id_Withdrawal }}"
+                                class="form-control"
+                                placeholder="Scan barcode rak"
+                                required readonly autocomplete="off">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-secondary btnScanNg"
+                                    id="btnScanNg{{ $w->Id_Withdrawal }}"
+                                    data-id="{{ $w->Id_Withdrawal }}"
+                                    title="Buka scanner kamera">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {{-- QR Scanner --}}
+                    <div id="readerRackNg{{ $w->Id_Withdrawal }}" class="scan-area"></div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fas fa-save mr-1"></i>Simpan & Return Part NG
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+
 @endforeach
 
 @endsection
@@ -531,6 +636,66 @@
         // Reset DAICHI state when modal closes
         $('.modal').on('hidden.bs.modal', function() {
             $(this).find('.cb-daichi').prop('checked', false).trigger('change');
+        });
+
+        // ── QR Scanner for Return Part NG ───────────────────────
+        var scannersNg = {};
+
+        $(document).on('click', '.btnScanNg', function() {
+            var id = $(this).data('id');
+            var readerId = 'readerRackNg' + id;
+
+            if (scannersNg[id]) {
+                scannersNg[id].clear();
+                delete scannersNg[id];
+                $('#' + readerId).empty();
+                return;
+            }
+
+            scannersNg[id] = new Html5QrcodeScanner(readerId, {
+                fps: 10,
+                qrbox: { width: 240, height: 240 },
+                videoConstraints: { facingMode: "environment" }
+            });
+
+            scannersNg[id].render(function(decodedText) {
+                $('#codeRackNg' + id).val(decodedText.trim());
+                scannersNg[id].clear();
+                delete scannersNg[id];
+                $('#' + readerId).empty();
+            });
+        });
+
+        // Stop NG scanner when modal closes
+        $(document).on('hidden.bs.modal', '[id^="modalReturnNg"]', function() {
+            var id = $(this).find('.btnScanNg').data('id');
+            if (id && scannersNg[id]) {
+                scannersNg[id].clear();
+                delete scannersNg[id];
+                $('#readerRackNg' + id).empty();
+            }
+            $(this).find('.cb-daichi-ng').prop('checked', false).trigger('change');
+        });
+
+        // ── Item DAICHI Checkbox Logic for Return NG ───────────
+        $(document).on('change', '.cb-daichi-ng', function() {
+            const isChecked = $(this).is(':checked');
+            const targetInput = $(this).data('target');
+            const scanBtn = $(this).data('scan-btn');
+            const id = $(targetInput).attr('id').replace('codeRackNg', '');
+
+            if (isChecked) {
+                $(targetInput).val('DAICHI').attr('readonly', true).addClass('bg-light font-weight-bold text-primary');
+                $(scanBtn).addClass('disabled').css('pointer-events', 'none').attr('tabindex', '-1');
+                if (scannersNg[id]) {
+                    scannersNg[id].clear();
+                    delete scannersNg[id];
+                    $('#readerRackNg' + id).empty();
+                }
+            } else {
+                $(targetInput).val('').attr('readonly', true).removeClass('bg-light font-weight-bold text-primary');
+                $(scanBtn).removeClass('disabled').css('pointer-events', 'auto').removeAttr('tabindex');
+            }
         });
 
     });

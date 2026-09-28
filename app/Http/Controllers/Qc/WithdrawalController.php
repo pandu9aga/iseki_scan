@@ -249,9 +249,6 @@ class WithdrawalController extends Controller
         return back()->with('success', 'Barang telah diterima.');
     }
 
-    /**
-     * QC clicks "Selesai" - marks QC process as finished
-     */
     public function finish($id, Request $request)
     {
         $request->validate([
@@ -266,6 +263,30 @@ class WithdrawalController extends Controller
         ]);
 
         return back()->with('success', 'QC telah selesai.');
+    }
+
+    /**
+     * QC clicks "Part NG Oke" - indicates the part is NG and waiting for DST to return it
+     */
+    public function partNgOke($id)
+    {
+        $withdrawal = Withdrawal::findOrFail($id);
+
+        if ($withdrawal->Is_Part_Ng) {
+            return back()->withErrors(['error' => 'Part sudah ditandai sebagai NG sebelumnya.']);
+        }
+
+        // Part harus sudah Selesai (Finish) oleh QC sebelum bisa ditandai NG
+        if (!$withdrawal->Finish_Receiving) {
+            return back()->withErrors(['error' => 'QC harus menyelesaikan proses (Selesai) terlebih dahulu sebelum bisa menandai Part NG.']);
+        }
+
+        $withdrawal->update([
+            'Is_Part_Ng' => true,
+            'Date_Part_Ng' => Carbon::now(),
+        ]);
+
+        return back()->with('success', 'Part ditandai sebagai NG Oke, menunggu DST untuk Return Part NG.');
     }
 
     /**
@@ -374,12 +395,13 @@ class WithdrawalController extends Controller
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        $headers = [
+            $headers = [
             'No', 'Date WD', 'Name PIC', 'Item Code', 'Name Item', 'No Rack',
             'Oke DST', 'PIC DST', 'Date Oke',
             'Sampai di QC', 'Date Sampai QC',
             'Received', 'Date Received', 'Finish', 'Date Finish', 'Description Finish',
-            'PIC Return', 'No Rack Return', 'Date Return'
+            'PIC Return', 'No Rack Return', 'Date Return',
+            'Part NG Oke', 'Date Part NG', 'PIC Return NG', 'No Rack Return NG', 'Date Return NG'
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
@@ -387,7 +409,7 @@ class WithdrawalController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:S1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:X1')->applyFromArray($headerStyle);
 
         $row = 2;
         foreach ($withdrawals as $index => $w) {
@@ -418,6 +440,19 @@ class WithdrawalController extends Controller
                 }
             }
             
+            $nameReturnNg = '-';
+            if ($w->NIK_Return_Ng) {
+                if ($w->Is_User && isset($usersMap[$w->NIK_Return_Ng])) {
+                    $nameReturnNg = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } elseif (isset($membersMap[$w->NIK_Return_Ng])) {
+                    $nameReturnNg = $membersMap[$w->NIK_Return_Ng];
+                } elseif (isset($usersMap[$w->NIK_Return_Ng])) {
+                    $nameReturnNg = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } else {
+                    $nameReturnNg = $w->NIK_Return_Ng;
+                }
+            }
+            
             $rackInfo = $racksMap[$w->Code_Item_Withdrawal] ?? null;
 
             $sheet->fromArray([
@@ -440,6 +475,11 @@ class WithdrawalController extends Controller
                 $w->Date_Return ? $nameReturn : '-',
                 $w->Code_Rack_Return ?? '-',
                 $w->Date_Return ? Carbon::parse($w->Date_Return)->format('d/m/Y H:i') : '-',
+                $w->Is_Part_Ng ? 'Ya' : '-',
+                $w->Date_Part_Ng ? Carbon::parse($w->Date_Part_Ng)->format('d/m/Y H:i') : '-',
+                $w->Date_Return_Ng ? $nameReturnNg : '-',
+                $w->Code_Rack_Return_Ng ?? '-',
+                $w->Date_Return_Ng ? Carbon::parse($w->Date_Return_Ng)->format('d/m/Y H:i') : '-',
             ], null, 'A' . $row);
 
             $row++;

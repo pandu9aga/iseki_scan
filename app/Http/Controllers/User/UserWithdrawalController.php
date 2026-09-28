@@ -247,6 +247,60 @@ class UserWithdrawalController extends Controller
     }
 
     /**
+     * DST returns NG item to rack
+     * Input: Code_Rack_Return_Ng (scanned barcode)
+     */
+    public function returnNg($id, Request $request)
+    {
+        $nikMember = session('NIK_Member');
+        if (!$nikMember) {
+            return back()->withErrors(['error' => 'Session expired. Silakan login ulang.']);
+        }
+
+        $request->validate([
+            'Code_Rack_Return_Ng' => 'required|string',
+        ]);
+
+        $withdrawal = Withdrawal::findOrFail($id);
+
+        $member = Member::where('NIK_Member', $nikMember)->first();
+        if (!$member) {
+            return back()->withErrors(['error' => 'NIK tidak ditemukan di data member.']);
+        }
+
+        if (!$withdrawal->Is_Part_Ng) {
+            return back()->withErrors(['error' => 'Part belum ditandai sebagai NG oleh QC.']);
+        }
+        
+        if ($withdrawal->Date_Return_Ng) {
+            return back()->withErrors(['error' => 'Part NG sudah di-return sebelumnya.']);
+        }
+
+        if ($request->Code_Rack_Return_Ng !== 'DAICHI') {
+            $rack = Rack::where('Code_Rack', $request->Code_Rack_Return_Ng)->first();
+            if (!$rack) {
+                return back()->withErrors(['Code_Rack_Return_Ng' => 'Kode rak tidak ditemukan.']);
+            }
+
+            // Normalisasi perbandingan string
+            if (trim(strtolower($rack->Code_Item_Rack)) !== trim(strtolower($withdrawal->Code_Item_Withdrawal))) {
+                return back()->withErrors([
+                    'Code_Rack_Return_Ng' => 'Salah Barang! Discan: ' . $rack->Code_Item_Rack .
+                        ', Seharusnya: ' . $withdrawal->Code_Item_Withdrawal
+                ]);
+            }
+        }
+
+        $withdrawal->update([
+            'NIK_Return_Ng' => $nikMember,
+            'Code_Rack_Return_Ng' => $request->Code_Rack_Return_Ng,
+            'Date_Return_Ng' => Carbon::now(),
+        ]);
+
+        return back()->with('success', 'Part NG telah dikembalikan ke rak oleh ' . $member->Name_Member);
+    }
+
+    /**
      * Export withdrawal data to Excel
      */
     public function export(Request $request)
@@ -329,7 +383,12 @@ class UserWithdrawalController extends Controller
             'Description Finish',
             'PIC Return',
             'No Rack Return',
-            'Date Return'
+            'Date Return',
+            'Part NG Oke',
+            'Date Part NG',
+            'PIC Return NG',
+            'No Rack Return NG',
+            'Date Return NG'
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
@@ -337,7 +396,7 @@ class UserWithdrawalController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:X1')->applyFromArray($headerStyle);
 
         $row = 2;
         foreach ($withdrawals as $index => $w) {
@@ -368,6 +427,19 @@ class UserWithdrawalController extends Controller
                 }
             }
 
+            $nameReturnNg = '-';
+            if ($w->NIK_Return_Ng) {
+                if ($w->Is_User && isset($usersMap[$w->NIK_Return_Ng])) {
+                    $nameReturnNg = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } elseif (isset($membersMap[$w->NIK_Return_Ng])) {
+                    $nameReturnNg = $membersMap[$w->NIK_Return_Ng];
+                } elseif (isset($usersMap[$w->NIK_Return_Ng])) {
+                    $nameReturnNg = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } else {
+                    $nameReturnNg = $w->NIK_Return_Ng;
+                }
+            }
+
             $rackInfo = $racksMap[$w->Code_Item_Withdrawal] ?? null;
 
             $sheet->fromArray([
@@ -375,8 +447,8 @@ class UserWithdrawalController extends Controller
                 $w->Date_Withdrawal ? Carbon::parse($w->Date_Withdrawal)->format('d/m/Y H:i') : '-',
                 $w->Name_Withdrawal ?? '-',
                 $w->Code_Item_Withdrawal ?? '-',
-                $rackInfo ? $rackInfo['name'] : '-',
-                $rackInfo ? $rackInfo['no'] : '-',
+                $w->Name_Item_Withdrawal ?? ($rackInfo ? $rackInfo['name'] : '-'),
+                $w->No_Rack_Item_Withdrawal ?? ($rackInfo ? $rackInfo['no'] : '-'),
                 $w->Oke_Withdrawal ? 'OK' : 'Pending',
                 $w->Oke_Withdrawal ? $nameDisiapkan : '-',
                 $w->Oke_Withdrawal && $w->Date_Oke_Withdrawal ? Carbon::parse($w->Date_Oke_Withdrawal)->format('d/m/Y H:i') : '-',
@@ -390,6 +462,11 @@ class UserWithdrawalController extends Controller
                 $w->Date_Return ? $nameReturn : '-',
                 $w->Code_Rack_Return ?? '-',
                 $w->Date_Return ? Carbon::parse($w->Date_Return)->format('d/m/Y H:i') : '-',
+                $w->Is_Part_Ng ? 'Ya' : '-',
+                $w->Date_Part_Ng ? Carbon::parse($w->Date_Part_Ng)->format('d/m/Y H:i') : '-',
+                $w->Date_Return_Ng ? $nameReturnNg : '-',
+                $w->Code_Rack_Return_Ng ?? '-',
+                $w->Date_Return_Ng ? Carbon::parse($w->Date_Return_Ng)->format('d/m/Y H:i') : '-',
             ], null, 'A' . $row);
 
             $row++;
