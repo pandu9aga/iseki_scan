@@ -285,6 +285,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::post('/user_withdrawal/oke/{id}', [UserWithdrawalController::class, 'oke'])->name('user.withdrawal.oke');
     Route::post('/user_withdrawal/arrive/{id}', [UserWithdrawalController::class, 'arrive'])->name('user.withdrawal.arrive');
     Route::post('/user_withdrawal/return/{id}', [UserWithdrawalController::class, 'returnRack'])->name('user.withdrawal.return');
+    Route::post('/user_withdrawal/return-ng/{id}', [UserWithdrawalController::class, 'returnNg'])->name('user.withdrawal.returnNg');
     Route::get('/user_withdrawal/export', [UserWithdrawalController::class, 'export'])->name('user.withdrawal.export');
 
     // User Check
@@ -411,6 +412,7 @@ Route::middleware(QcMiddleware::class)->group(function () {
     Route::post('/qc/withdrawal/oke/{id}', [WithdrawalController::class, 'oke'])->name('qc.withdrawal.oke');
     Route::post('/qc/withdrawal/receiving/{id}', [WithdrawalController::class, 'receiving'])->name('qc.withdrawal.receiving');
     Route::post('/qc/withdrawal/finish/{id}', [WithdrawalController::class, 'finish'])->name('qc.withdrawal.finish');
+    Route::post('/qc/withdrawal/part-ng-oke/{id}', [WithdrawalController::class, 'partNgOke'])->name('qc.withdrawal.partNgOke');
     Route::post('/qc/withdrawal/return/{id}', [WithdrawalController::class, 'returnRack'])->name('qc.withdrawal.return');
     Route::delete('/qc/withdrawal/destroy/{id}', [WithdrawalController::class, 'destroy'])->name('qc.withdrawal.destroy');
     Route::get('/qc/withdrawal/export', [WithdrawalController::class, 'export'])->name('qc.withdrawal.export');

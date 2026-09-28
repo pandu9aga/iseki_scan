@@ -58,6 +58,15 @@
         background-color: #faf5ff;
     }
 
+    .th-group-ng {
+        background-color: #f8d7da !important;
+        color: #721c24;
+    }
+
+    .td-ng {
+        background-color: #fdf5f6;
+    }
+
     /* ── Buttons ─────────────────────────────────────────── */
     .btn-action {
         font-size: 0.72rem;
@@ -163,6 +172,10 @@
     tbody tr:nth-child(even) .td-ret {
         background-color: #f6f0ff;
     }
+
+    tbody tr:nth-child(even) .td-ng {
+        background-color: #f9ecee;
+    }
 </style>
 @endsection
 
@@ -249,6 +262,9 @@
 
                             <th class="th-group-ret" style="min-width:120px;">PIC Return</th>
                             <th class="th-group-ret" style="min-width:100px;">No Rack Return</th>
+
+                            <th class="th-group-ng" style="min-width:110px;">Part NG Oke</th>
+                            <th class="th-group-ng" style="min-width:130px;">PIC Return Part Oke</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -360,6 +376,39 @@
                             </td>
                             <td class="td-ret">
                                 {{ $w->Code_Rack_Return ?? '-' }}
+                            </td>
+
+                            {{-- PART NG OKE — QC Action & Return NG Status --}}
+                            <td class="td-ng">
+                                @if($w->Is_Part_Ng)
+                                <span class="chip chip-done"><i class="fas fa-check mr-1"></i>NG Oke</span><br>
+                                <small class="text-muted d-block mt-1">
+                                    {{ \Carbon\Carbon::parse($w->Date_Part_Ng)->format('d/m/y H:i') }}
+                                </small>
+                                @elseif($w->Finish_Receiving)
+                                <form action="{{ route('qc.withdrawal.partNgOke', $w->Id_Withdrawal) }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="btn btn-danger btn-action text-white"
+                                        onclick="return confirm('Tandai Part ini sebagai NG Oke? DST akan diminta mengembalikan Part NG ini.')">
+                                        <i class="fas fa-times-circle mr-1"></i>Part NG Oke
+                                    </button>
+                                </form>
+                                @else
+                                <span class="text-muted">-</span>
+                                @endif
+                            </td>
+                            <td class="td-ng">
+                                @if($w->Date_Return_Ng)
+                                <span class="font-weight-bold">{{ $w->name_return_ng ?? $w->NIK_Return_Ng }}</span><br>
+                                <small class="text-muted d-block mt-1">
+                                    Rack: {{ $w->Code_Rack_Return_Ng }} <br>
+                                    {{ \Carbon\Carbon::parse($w->Date_Return_Ng)->format('d/m/y H:i') }}
+                                </small>
+                                @elseif($w->Is_Part_Ng)
+                                <span class="chip chip-active">Menunggu DST</span>
+                                @else
+                                <span class="text-muted">-</span>
+                                @endif
                             </td>
                         </tr>
                         @endforeach

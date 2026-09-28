@@ -29,6 +29,11 @@ class Withdrawal extends Model
         'NIK_Return',
         'Code_Rack_Return',
         'Date_Return',
+        'Is_Part_Ng',
+        'Date_Part_Ng',
+        'NIK_Return_Ng',
+        'Code_Rack_Return_Ng',
+        'Date_Return_Ng',
         'Is_User',
         'Desc_Finish',
         'No_Rack_Item_Withdrawal',
@@ -46,6 +51,9 @@ class Withdrawal extends Model
         'Finish_Receiving' => 'boolean',
         'Date_Finish_Receiving' => 'datetime',
         'Date_Return' => 'datetime',
+        'Is_Part_Ng' => 'boolean',
+        'Date_Part_Ng' => 'datetime',
+        'Date_Return_Ng' => 'datetime',
     ];
 
     public function rack()
