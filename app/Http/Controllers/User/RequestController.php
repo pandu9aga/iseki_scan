@@ -88,6 +88,14 @@ class RequestController extends Controller
             $newRequest->Area_Request = $request->input('Area_Request');
         }
 
+        // Snapshot area member saat request dibuat
+        if ($Id_User) {
+            $member = \App\Models\Member::find($Id_User);
+            if ($member && !empty($member->Member_Area)) {
+                $newRequest->Member_Area_Request = $member->Member_Area;
+            }
+        }
+
         // tambahkan urgent_request
         $newRequest->Urgent_Request = $isUrgent ? 1 : 0;
 

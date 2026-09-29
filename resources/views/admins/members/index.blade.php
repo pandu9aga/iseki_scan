@@ -14,6 +14,7 @@
                             <th>No</th>
                             <th>NIK</th>
                             <th>Name</th>
+                            <th>Area</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -22,6 +23,7 @@
                             <th>No</th>
                             <th>NIK</th>
                             <th>Name</th>
+                            <th>Area</th>
                             <th>Action</th>
                         </tr>
                     </tfoot>
@@ -31,6 +33,7 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $i->NIK_Member }}</td>
                             <td>{{ $i->Name_Member }}</td>
+                            <td>{{ $i->Member_Area ?? '-' }}</td>
                             <td>
                                 <a href="{{ route('member.edit', $i->Id_Member) }}" class="btn btn-sm btn-warning">edit</a>
                                 {{-- <a href="{{ route('member.destroy', $i->Id_Member) }}" class="btn btn-sm btn-danger">delete</a> --}}
@@ -98,7 +101,7 @@
 <script src="{{asset('js/demo/datatables-demo.js')}}"></script>
 
 <script>
-    $('#dataTable').on('click', '[data-bs-toggle="modal"]', function () {
+    $('#dataTable').on('click', '[data-bs-toggle="modal"]', function() {
         var target = $(this).data('bs-target');
         var modal = new bootstrap.Modal(document.getElementById(target.substring(1)), {
             backdrop: true,
@@ -106,6 +109,7 @@
         });
         modal.show();
     });
+
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {

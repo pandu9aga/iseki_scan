@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Member;
 use App\Models\Type_User; // jika ada tipe user untuk member
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\Rule;
 
 class MemberController extends Controller
 {
@@ -22,7 +23,8 @@ class MemberController extends Controller
     public function add()
     {
         $type_user = Type_User::all();
-        return view('admins.members.add', compact('type_user'));
+        $areas = Member::areaOptions();
+        return view('admins.members.add', compact('type_user', 'areas'));
     }
 
     // Simpan member baru
@@ -30,16 +32,19 @@ class MemberController extends Controller
     {
         $request->validate([
             'NIK_Member' => 'required|unique:members,NIK_Member',
-            'Name_Member' => 'required'
+            'Name_Member' => 'required',
+            'Member_Area' => ['nullable', Rule::in(Member::areaOptions())],
         ], [
             'NIK_Member.required' => 'NIK wajib diisi',
             'NIK_Member.unique' => 'NIK sudah terdaftar',
-            'Name_Member.required' => 'Nama wajib diisi'
+            'Name_Member.required' => 'Nama wajib diisi',
+            'Member_Area.in' => 'Area yang dipilih tidak valid'
         ]);
 
         Member::create([
             'NIK_Member' => $request->NIK_Member,
             'Name_Member' => $request->Name_Member,
+            'Member_Area' => $request->input('Member_Area') ?: null,
         ]);
 
         return redirect()->route('member')->with('success', 'Data member berhasil ditambah');
@@ -50,7 +55,8 @@ class MemberController extends Controller
     {
         $member = Member::findOrFail($id);
         $type_user = Type_User::all();
-        return view('admins.members.edit', compact('member', 'type_user'));
+        $areas = Member::areaOptions();
+        return view('admins.members.edit', compact('member', 'type_user', 'areas'));
     }
 
     // Update data member
@@ -58,17 +64,20 @@ class MemberController extends Controller
     {
         $request->validate([
             'NIK_Member' => 'required|unique:members,NIK_Member,' . $id . ',Id_Member',
-            'Name_Member' => 'required'
+            'Name_Member' => 'required',
+            'Member_Area' => ['nullable', Rule::in(Member::areaOptions())],
         ], [
             'NIK_Member.required' => 'NIK wajib diisi',
             'NIK_Member.unique' => 'NIK sudah terdaftar',
-            'Name_Member.required' => 'Nama wajib diisi'
+            'Name_Member.required' => 'Nama wajib diisi',
+            'Member_Area.in' => 'Area yang dipilih tidak valid'
         ]);
 
         $member = Member::findOrFail($id);
         $member->update([
             'NIK_Member' => $request->NIK_Member,
-            'Name_Member' => $request->Name_Member
+            'Name_Member' => $request->Name_Member,
+            'Member_Area' => $request->input('Member_Area') ?: null,
         ]);
 
         return redirect()->route('member')->with('success', 'Data member berhasil diupdate');

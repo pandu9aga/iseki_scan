@@ -18,7 +18,7 @@
                                         <span style="font-size: small;">NIK</span>
                                         <input type="text" name="NIK_Member" class="form-control form-control-member @error('NIK_Member') is-invalid @enderror" value="{{ old('NIK_Member') }}">
                                         @error('NIK_Member')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
 
@@ -26,9 +26,22 @@
                                         <span style="font-size: small;">Name</span>
                                         <input type="text" name="Name_Member" class="form-control form-control-member @error('Name_Member') is-invalid @enderror" value="{{ old('Name_Member') }}">
                                         @error('Name_Member')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
-                                    </div>                                   
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <span style="font-size: small;">Area</span>
+                                        <select name="Member_Area" class="form-control @error('Member_Area') is-invalid @enderror">
+                                            <option value="">- Belum ada area -</option>
+                                            @foreach($areas as $area)
+                                            <option value="{{ $area }}" {{ old('Member_Area') === $area ? 'selected' : '' }}>{{ $area }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('Member_Area')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
                                 </div>
                             </div>
                             <br>

@@ -14,7 +14,7 @@
     <div class="card border-left-success shadow mb-4">
         <div class="card-body py-3">
             <div class="text-xs font-weight-bold text-success text-uppercase mb-2">
-                Filter Day & Member
+                Filter Day, Member & Area
             </div>
             <form class="user" action="{{ route('report.ready_waiting') }}" method="GET" id="filterForm">
                 <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
@@ -31,9 +31,9 @@
                             <i class="fas fa-calendar-day"></i>
                         </button>
                         @if($dateForInput)
-                            <button type="button" class="btn btn-sm btn-outline-secondary ml-1" onclick="clearDate()" title="Semua Tanggal">
-                                <i class="fas fa-calendar-times"></i>
-                            </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ml-1" onclick="clearDate()" title="Semua Tanggal">
+                            <i class="fas fa-calendar-times"></i>
+                        </button>
                         @endif
                     </div>
 
@@ -42,11 +42,22 @@
                         <select name="Id_User" class="form-control form-control-sm">
                             <option value="">All Members</option>
                             @foreach($members as $m)
-                                <option value="{{ $m->id }}" 
-                                    {{ request('Id_User') == $m->id ? 'selected' : '' }}>
-                                    {{ $m->name }}
-                                </option>
+                            <option value="{{ $m->id }}"
+                                {{ request('Id_User') == $m->id ? 'selected' : '' }}>
+                                {{ $m->name }}
+                            </option>
                             @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Area Filter --}}
+                    <div style="min-width: 160px; max-width: 240px; flex: 1 1 160px;">
+                        <select name="Member_Area" class="form-control form-control-sm">
+                            <option value="">All Areas</option>
+                            @foreach($areaOptions as $opt)
+                            <option value="{{ $opt }}" {{ request('Member_Area') === $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                            @endforeach
+                            <option value="__none" {{ request('Member_Area') === '__none' ? 'selected' : '' }}>Tanpa Area</option>
                         </select>
                     </div>
 
@@ -55,10 +66,10 @@
                         <button class="btn btn-sm btn-primary shadow-sm" type="submit">
                             <i class="fas fa-filter fa-sm mr-1"></i>Apply
                         </button>
-                        @if(request('Id_User') || request('Day_Record'))
-                            <a href="{{ route('report.ready_waiting') }}" class="btn btn-sm btn-outline-secondary shadow-sm">
-                                <i class="fas fa-undo fa-sm mr-1"></i>Reset
-                            </a>
+                        @if(request('Id_User') || request('Day_Record') || request('Member_Area'))
+                        <a href="{{ route('report.ready_waiting') }}" class="btn btn-sm btn-outline-secondary shadow-sm">
+                            <i class="fas fa-undo fa-sm mr-1"></i>Reset
+                        </a>
                         @endif
                     </div>
                 </div>
@@ -69,6 +80,7 @@
                 <form class="user" action="{{ route('report.ready_waiting.export') }}" method="GET" target="_blank">
                     <input name="Day_Record" type="hidden" value="{{ $dateForInput }}">
                     <input name="Id_User" type="hidden" value="{{ request('Id_User') }}">
+                    <input name="Member_Area" type="hidden" value="{{ request('Member_Area') }}">
                     <button class="btn btn-sm btn-outline-success shadow-sm" type="submit">
                         <i class="fas fa-download fa-sm mr-1"></i>Download Excel
                     </button>
@@ -77,32 +89,68 @@
         </div>
     </div>
 
+    {{-- Cards Total Ready - Waiting per Area Member --}}
+    @if($areaSummary->isNotEmpty())
+    @php
+    $areaColors = ['primary', 'success', 'info', 'warning', 'danger', 'dark'];
+    @endphp
+    <div class="text-xs font-weight-bold text-success text-uppercase mb-2">
+        Total Ready - Waiting per Area Member
+        <span class="text-muted font-weight-normal text-lowercase">(klik kartu untuk memfilter)</span>
+    </div>
+    <div class="row mb-3">
+        @foreach($areaSummary as $idx => $area)
+        @php
+        $areaColor = $area['key'] === '__none' ? 'secondary' : $areaColors[$idx % count($areaColors)];
+        $isActive = request('Member_Area') === $area['key'];
+        $areaUrl = route('report.ready_waiting', array_filter([
+        'Day_Record' => request('Day_Record'),
+        'Id_User' => request('Id_User'),
+        'Member_Area' => $isActive ? null : $area['key'],
+        ]));
+        @endphp
+        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-2">
+            <a href="{{ $areaUrl }}" class="text-decoration-none">
+                <div class="card border-left-{{ $areaColor }} {{ $isActive ? 'border-bottom-'.$areaColor : '' }} shadow h-100 py-1" style="{{ $area['count'] === 0 ? 'opacity: .55;' : '' }}">
+                    <div class="card-body py-2 px-3">
+                        <div class="text-xs font-weight-bold text-{{ $areaColor }} text-uppercase mb-1 text-truncate" title="{{ $area['name'] }}">
+                            {{ $area['name'] }}
+                        </div>
+                        <div class="h4 mb-0 font-weight-bold text-gray-800">{{ $area['count'] }}</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        @endforeach
+    </div>
+    @endif
+
     {{-- Cards PIC Request --}}
     @php
-        $colors = ['primary', 'success', 'info', 'warning', 'danger', 'dark', 'secondary'];
+    $colors = ['primary', 'success', 'info', 'warning', 'danger', 'dark', 'secondary'];
     @endphp
     @if($picSummary->isNotEmpty())
-        <div class="row mb-3">
-            @foreach($picSummary as $idx => $pic)
-                @php
-                    $color = $colors[$idx % count($colors)];
-                @endphp
-                <div class="col-xl-1 col-lg-3 col-md-4 col-sm-6 mb-1">
-                    <div class="card border-left-{{ $color }} shadow h-100 py-1">
-                        <div class="card-body py-1 px-2">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-{{ $color }} text-uppercase mb-1 text-truncate" title="{{ $pic['name'] }}">
-                                        {{ $pic['name'] }}
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $pic['count'] }}</div>
-                                </div>
+    <div class="row mb-3">
+        @foreach($picSummary as $idx => $pic)
+        @php
+        $color = $colors[$idx % count($colors)];
+        @endphp
+        <div class="col-xl-1 col-lg-3 col-md-4 col-sm-6 mb-1">
+            <div class="card border-left-{{ $color }} shadow h-100 py-1">
+                <div class="card-body py-1 px-2">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-{{ $color }} text-uppercase mb-1 text-truncate" title="{{ $pic['name'] }}">
+                                {{ $pic['name'] }}
                             </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ $pic['count'] }}</div>
                         </div>
                     </div>
                 </div>
-            @endforeach
+            </div>
         </div>
+        @endforeach
+    </div>
     @endif
 
     {{-- Data Table Card --}}
@@ -129,6 +177,7 @@
                             <th>Name Part</th>
                             <th>Time Ready</th>
                             <th>PIC Req</th>
+                            <th>Area Member</th>
                         </tr>
                     </thead>
                     <tfoot>
@@ -140,6 +189,7 @@
                             <th>Name Part</th>
                             <th>Time Ready</th>
                             <th>PIC Req</th>
+                            <th>Area Member</th>
                         </tr>
                     </tfoot>
                     <tbody>
@@ -156,6 +206,7 @@
                                 </span>
                             </td>
                             <td>{{ $r->display_name ?? '-' }}</td>
+                            <td>{{ $r->Member_Area_Request ?? '-' }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -181,24 +232,24 @@
 <!-- Page level custom scripts -->
 <script src="{{asset('js/demo/datatables-demo.js')}}"></script>
 <script>
-function changeDate(offset) {
-    var input = document.getElementById('Day_Record');
-    var currentVal = input.value;
-    var d = currentVal ? new Date(currentVal + 'T00:00:00') : new Date();
-    d.setDate(d.getDate() + offset);
-    input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    document.getElementById('filterForm').submit();
-}
+    function changeDate(offset) {
+        var input = document.getElementById('Day_Record');
+        var currentVal = input.value;
+        var d = currentVal ? new Date(currentVal + 'T00:00:00') : new Date();
+        d.setDate(d.getDate() + offset);
+        input.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        document.getElementById('filterForm').submit();
+    }
 
-function setToday() {
-    var d = new Date();
-    document.getElementById('Day_Record').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-    document.getElementById('filterForm').submit();
-}
+    function setToday() {
+        var d = new Date();
+        document.getElementById('Day_Record').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        document.getElementById('filterForm').submit();
+    }
 
-function clearDate() {
-    document.getElementById('Day_Record').value = '';
-    document.getElementById('filterForm').submit();
-}
+    function clearDate() {
+        document.getElementById('Day_Record').value = '';
+        document.getElementById('filterForm').submit();
+    }
 </script>
 @endsection

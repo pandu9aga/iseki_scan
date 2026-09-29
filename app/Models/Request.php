@@ -22,6 +22,7 @@ class Request extends Model
         'Id_User',
         'Sum_Request',
         'Area_Request',
+        'Member_Area_Request',
         'Urgent_Request',
         'Status_Request',
         'Status_Validation',
@@ -34,6 +35,19 @@ class Request extends Model
         'Updated_At_Request',
         'Is_User',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($request) {
+            // Snapshot area member saat request dibuat jika bukan admin
+            if (empty($request->Member_Area_Request) && empty($request->Is_User) && !empty($request->Id_User)) {
+                $member = Member::find($request->Id_User);
+                if ($member && !empty($member->Member_Area)) {
+                    $request->Member_Area_Request = $member->Member_Area;
+                }
+            }
+        });
+    }
 
     // Relasi ke Member
     public function member()

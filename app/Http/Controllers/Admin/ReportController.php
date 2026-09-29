@@ -43,7 +43,14 @@ class ReportController extends Controller
         $members = $this->getPeople();
 
         return view('admins.reports.index', compact(
-            'records', 'totalRecords', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput', 'members'
+            'records',
+            'totalRecords',
+            'correct',
+            'incorrect',
+            'formattedDate',
+            'date',
+            'dateForInput',
+            'members'
         ));
     }
 
@@ -74,7 +81,14 @@ class ReportController extends Controller
         $members = $this->getPeople();
 
         return view('admins.reports.index', compact(
-            'records', 'totalRecords', 'correct', 'incorrect', 'formattedDate', 'date', 'dateForInput', 'members'
+            'records',
+            'totalRecords',
+            'correct',
+            'incorrect',
+            'formattedDate',
+            'date',
+            'dateForInput',
+            'members'
         ));
     }
 
@@ -106,9 +120,21 @@ class ReportController extends Controller
 
         // Header kolom
         $headers = [
-            'No', 'Time Record', 'Area', 'Rack', 'Sum Record',
-            'Item', 'Name', 'Correctness', 'Time Request',
-            'Sum Request', 'Sum Stock', 'Estimation Date', 'Member Request', 'Member Record', 'Updated',
+            'No',
+            'Time Record',
+            'Area',
+            'Rack',
+            'Sum Record',
+            'Item',
+            'Name',
+            'Correctness',
+            'Time Request',
+            'Sum Request',
+            'Sum Stock',
+            'Estimation Date',
+            'Member Request',
+            'Member Record',
+            'Updated',
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
@@ -128,14 +154,14 @@ class ReportController extends Controller
         foreach ($records as $record) {
             // jika user berubah -> tambah satu baris pemisah yang berisi '-' lalu reset nomor
             if ($lastUser !== null && $record->Id_User != $lastUser) {
-                $sheet->fromArray(array_fill(0, count($headers), '-'), null, 'A'.$row);
+                $sheet->fromArray(array_fill(0, count($headers), '-'), null, 'A' . $row);
                 $row++;
                 $no = 1;
             }
 
             $correctness = $record->Correctness_Record == 1 ? 'Correct' : 'Incorrect';
-            $timeRecord = ($record->Day_Record ?? '').' '.($record->Time_Record ?? '');
-            $timeRequest = (optional($record->request)->Day_Request ?? '').' '.(optional($record->request)->Time_Request ?? '');
+            $timeRecord = ($record->Day_Record ?? '') . ' ' . ($record->Time_Record ?? '');
+            $timeRequest = (optional($record->request)->Day_Request ?? '') . ' ' . (optional($record->request)->Time_Request ?? '');
 
             $statusCode = '';
             if (optional($record->request)->Ready_Request !== null) {
@@ -178,10 +204,10 @@ class ReportController extends Controller
                 optional($record->request)->display_name ?? '',
                 $record->display_name,
                 $record->Updated_At_Record ?? '',
-            ], null, 'A'.$row);
+            ], null, 'A' . $row);
 
             // warna Correct/Incorrect
-            $correctnessCell = 'H'.$row;
+            $correctnessCell = 'H' . $row;
             $sheet->getStyle($correctnessCell)->applyFromArray([
                 'font' => [
                     'bold' => true,
@@ -196,7 +222,7 @@ class ReportController extends Controller
 
         $lastRow = $row - 1;
         if ($lastRow >= 2) {
-            $sheet->getStyle('L2:L'.$lastRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+            $sheet->getStyle('L2:L' . $lastRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
         }
 
         // Auto-size kolom
@@ -205,9 +231,9 @@ class ReportController extends Controller
         }
 
         // Simpan & download
-        $fileName = 'Record_'.$date.'.xlsx';
+        $fileName = 'Record_' . $date . '.xlsx';
         $writer = new Xlsx($spreadsheet);
-        $filePath = storage_path('app/public/'.$fileName);
+        $filePath = storage_path('app/public/' . $fileName);
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
@@ -223,7 +249,7 @@ class ReportController extends Controller
             ->whereNotNull('Ready_Request')
             ->where(function ($q) {
                 $q->where('Status_Request', '!=', 'Done')
-                  ->orWhereNull('Status_Request');
+                    ->orWhereNull('Status_Request');
             })
             ->orderBy('Ready_Request', 'desc');
 
@@ -235,7 +261,13 @@ class ReportController extends Controller
             $this->applyMemberFilter($query, $memberId);
         }
 
-        $requests = $query->get();
+        $requestsAll = $query->get();
+
+        // Rekap per area member (dihitung sebelum filter area, supaya kartu tetap menampilkan semua area)
+        $areaSummary = $this->buildAreaSummary($requestsAll);
+        $areaOptions = Member::areaOptions();
+
+        $requests = $this->applyAreaFilter($requestsAll, $request->input('Member_Area'));
         $totalRequests = $requests->count();
         $members = $this->getPeople();
 
@@ -250,7 +282,13 @@ class ReportController extends Controller
         })->sortByDesc('count')->values();
 
         return view('admins.reports.ready_waiting', compact(
-            'requests', 'totalRequests', 'members', 'picSummary', 'dateForInput'
+            'requests',
+            'totalRequests',
+            'members',
+            'picSummary',
+            'dateForInput',
+            'areaSummary',
+            'areaOptions'
         ));
     }
 
@@ -264,7 +302,7 @@ class ReportController extends Controller
             ->whereNotNull('Ready_Request')
             ->where(function ($q) {
                 $q->where('Status_Request', '!=', 'Done')
-                  ->orWhereNull('Status_Request');
+                    ->orWhereNull('Status_Request');
             })
             ->orderBy('Ready_Request', 'desc');
 
@@ -276,7 +314,7 @@ class ReportController extends Controller
             $this->applyMemberFilter($query, $memberId);
         }
 
-        $requests = $query->get();
+        $requests = $this->applyAreaFilter($query->get(), $request->input('Member_Area'));
 
         // Buat Spreadsheet
         $spreadsheet = new Spreadsheet;
@@ -284,7 +322,14 @@ class ReportController extends Controller
 
         // Header kolom
         $headers = [
-            'No', 'Time Req', 'Rack', 'Item', 'Name Part', 'Time Ready', 'PIC Req',
+            'No',
+            'Time Req',
+            'Rack',
+            'Item',
+            'Name Part',
+            'Time Ready',
+            'PIC Req',
+            'Area Member',
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
@@ -293,7 +338,7 @@ class ReportController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
-        $sheet->getStyle('A1:G1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:H1')->applyFromArray($headerStyle);
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
 
         // Isi data
@@ -301,7 +346,7 @@ class ReportController extends Controller
         $no = 1;
 
         foreach ($requests as $req) {
-            $timeReq = trim(($req->Day_Request ?? '').' '.($req->Time_Request ?? ''));
+            $timeReq = trim(($req->Day_Request ?? '') . ' ' . ($req->Time_Request ?? ''));
             $timeReady = $req->Ready_Request ?? '';
             $namePart = optional($req->rack)->Name_Item_Rack ?? '';
             $picReq = $req->display_name ?? '';
@@ -314,24 +359,77 @@ class ReportController extends Controller
                 $namePart,
                 $timeReady,
                 $picReq,
-            ], null, 'A'.$row);
+                $req->Member_Area_Request ?? '',
+            ], null, 'A' . $row);
 
             $no++;
             $row++;
         }
 
         // Auto-size kolom
-        foreach (range('A', 'G') as $col) {
+        foreach (range('A', 'H') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
         // Simpan & download
-        $fileName = 'Ready_Waiting_Requests_'.Carbon::today()->format('Y-m-d').'.xlsx';
+        $fileName = 'Ready_Waiting_Requests_' . Carbon::today()->format('Y-m-d') . '.xlsx';
         $writer = new Xlsx($spreadsheet);
-        $filePath = storage_path('app/public/'.$fileName);
+        $filePath = storage_path('app/public/' . $fileName);
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Rekap jumlah request per area member (snapshot Member_Area_Request).
+     * Semua area di enum ditampilkan (0 jika kosong); request tanpa area
+     * (admin / data lama / member tanpa area) dikelompokkan sebagai "Tanpa Area".
+     */
+    private function buildAreaSummary($requests)
+    {
+        $known = Member::areaOptions();
+
+        $counts = $requests->groupBy(function ($item) {
+            return $item->Member_Area_Request ?: '__none';
+        })->map(function ($group) {
+            return $group->count();
+        });
+
+        $summary = [];
+        foreach ($known as $area) {
+            $summary[] = ['key' => $area, 'name' => $area, 'count' => $counts[$area] ?? 0];
+        }
+
+        // Area yang ada di data tapi sudah tidak ada di daftar enum (jaga-jaga)
+        foreach ($counts as $key => $count) {
+            if ($key !== '__none' && !in_array($key, $known, true)) {
+                $summary[] = ['key' => $key, 'name' => $key, 'count' => $count];
+            }
+        }
+
+        if (($counts['__none'] ?? 0) > 0) {
+            $summary[] = ['key' => '__none', 'name' => 'Tanpa Area', 'count' => $counts['__none']];
+        }
+
+        return collect($summary)->sortByDesc('count')->values();
+    }
+
+    /**
+     * Filter koleksi request berdasarkan area member ('__none' = tanpa area).
+     */
+    private function applyAreaFilter($requests, $areaFilter)
+    {
+        if ($areaFilter === null || $areaFilter === '') {
+            return $requests;
+        }
+
+        return $requests->filter(function ($item) use ($areaFilter) {
+            if ($areaFilter === '__none') {
+                return empty($item->Member_Area_Request);
+            }
+
+            return $item->Member_Area_Request === $areaFilter;
+        })->values();
     }
 
     private function getPeople()
@@ -342,7 +440,7 @@ class ReportController extends Controller
             ->get(['Id_Member', 'Name_Member'])
             ->map(function ($m) {
                 return (object) [
-                    'id' => 'm_'.$m->Id_Member,
+                    'id' => 'm_' . $m->Id_Member,
                     'name' => $m->Name_Member,
                     'original_id' => $m->Id_Member,
                     'type' => 'member',
@@ -355,7 +453,7 @@ class ReportController extends Controller
             ->get(['Id_User', 'Name_User'])
             ->map(function ($u) {
                 return (object) [
-                    'id' => 'u_'.$u->Id_User,
+                    'id' => 'u_' . $u->Id_User,
                     'name' => $u->Name_User,
                     'original_id' => $u->Id_User,
                     'type' => 'user',
@@ -369,13 +467,13 @@ class ReportController extends Controller
     {
         if (strpos($memberId, 'u_') === 0) {
             $originalId = substr($memberId, 2);
-            $query->where($prefix.'Id_User', $originalId)->where($prefix.'Is_User', 1);
+            $query->where($prefix . 'Id_User', $originalId)->where($prefix . 'Is_User', 1);
         } else {
             $originalId = strpos($memberId, 'm_') === 0 ? substr($memberId, 2) : $memberId;
-            $query->where($prefix.'Id_User', $originalId)
-                  ->where(function($q) use ($prefix) {
-                      $q->where($prefix.'Is_User', 0)->orWhereNull($prefix.'Is_User');
-                  });
+            $query->where($prefix . 'Id_User', $originalId)
+                ->where(function ($q) use ($prefix) {
+                    $q->where($prefix . 'Is_User', 0)->orWhereNull($prefix . 'Is_User');
+                });
         }
     }
 }
