@@ -25,7 +25,7 @@ class MistakeController extends Controller
             ->whereYear('Day_Mistake', $date->year)
             ->where(function ($q) {
                 $q->where('Status_Mistake', '!=', 1)
-                  ->orWhereNull('Status_Mistake');
+                    ->orWhereNull('Status_Mistake');
             })
             ->get();
 
@@ -52,12 +52,12 @@ class MistakeController extends Controller
                     'days' => $days
                 ];
             }
-            
+
             // Sort each category by total descending
             uasort($catData, function ($a, $b) {
                 return $b['total'] <=> $a['total'];
             });
-            
+
             $reportData[$cat] = $catData;
         }
 
@@ -115,13 +115,13 @@ class MistakeController extends Controller
         $month = $request->month;
 
         $member = Member::findOrFail($memberId);
-        
+
         $query = Mistake::with(['request.member', 'request.rack', 'request.record.member', 'withdrawal', 'urgent'])
             ->where('PIC', $member->Name_Member)
             ->where('Category_Mistake', $category)
             ->where(function ($q) {
                 $q->where('Status_Mistake', '!=', 1)
-                  ->orWhereNull('Status_Mistake');
+                    ->orWhereNull('Status_Mistake');
             });
 
         if ($day) {
@@ -136,7 +136,7 @@ class MistakeController extends Controller
         }
 
         $mistakes = $query->get();
-        
+
         return view('admins.mistakes.detail', compact('mistakes', 'member', 'category', 'titlePrefix'));
     }
 
@@ -145,7 +145,7 @@ class MistakeController extends Controller
         $pics = Member::where('Status_Non_Active', '!=', 1)->orWhereNull('Status_Non_Active')
             ->orderBy('Name_Member')
             ->get();
-        
+
         $categories = ['telat request', 'store tengah', 'telat supply', 'telat supply mc', 'shipping', 'perubahan desain', 'lain-lain'];
         return view('admins.mistakes.add', compact('pics', 'categories'));
     }
@@ -216,7 +216,7 @@ class MistakeController extends Controller
             ->whereYear('Day_Mistake', $date->year)
             ->where(function ($q) {
                 $q->where('Status_Mistake', '!=', 1)
-                  ->orWhereNull('Status_Mistake');
+                    ->orWhereNull('Status_Mistake');
             })
             ->get();
 
@@ -225,7 +225,7 @@ class MistakeController extends Controller
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        
+
         $sheet->setCellValue('A1', 'Mistake Daily Report - ' . $date->format('F Y'));
         $sheet->mergeCells('A1:AJ1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
@@ -325,11 +325,11 @@ class MistakeController extends Controller
 
         $writer = new Xlsx($spreadsheet);
         $fileName = 'Mistake_Report_' . $month . '.xlsx';
-        
+
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $fileName . '"');
         header('Cache-Control: max-age=0');
-        
+
         $writer->save('php://output');
         exit;
     }

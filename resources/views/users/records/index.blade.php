@@ -95,6 +95,14 @@
                                     </div>
                                 </div>
 
+                                <div class="col-12 text-center" id="cell_info_box" style="display: none;">
+                                    <div class="alert alert-info py-2 px-4 mb-3 shadow-sm d-inline-block text-center" style="border-left: 4px solid #17a2b8; border-radius: 8px;">
+                                        <span class="font-weight-bold" style="font-size: 1.15rem; color: #0c5460;">
+                                            rak/cell : <span id="label_rak_cell_val" class="badge badge-primary px-3 py-1 font-weight-bold" style="font-size: 1.3rem; letter-spacing: 1px;">-</span>
+                                        </span>
+                                    </div>
+                                </div>
+
                                 <div class="col-12 text-center">
                                     <div class="form-group mb-3">
                                         <label for="Sum_Record" style="font-size: small;">Sum Record</label>
@@ -369,7 +377,8 @@
 
         document.getElementById("Code_Item").value = itemCode;
         itemScanner.clear();
-        // makeCodeItem();
+        // Cari info Cell & Rak dari Iseki Label
+        lookupItemLabel(itemCode);
         checkCorrectness();
     }
 
@@ -416,6 +425,25 @@
     //     makeCodeRack();
     // });
 
+    function formatRakCell(res) {
+        if (!res) return '-/-';
+        let r = res.rack ? res.rack : (res.rack_no ? res.rack_no : (res.expected_rack ? res.expected_rack : '-'));
+        let c = res.cell ? res.cell : '-';
+        return r + '/' + c;
+    }
+
+    function lookupItemLabel(itemCode) {
+        if (!itemCode) return;
+        let cleanItem = itemCode.replace(/[^\w]/g, '');
+        $.get("{{ route('record.itemInfo') }}", { Code_Item: cleanItem }, function(res) {
+            if (res.found) {
+                let rc = formatRakCell(res);
+                $("#label_rak_cell_val").text(rc);
+                $("#cell_info_box").show();
+            }
+        });
+    }
+
     function checkCorrectness() {
         let itemValue = $("#Code_Item").val().trim();
         let rackValue = $("#Code_Rack").val().trim();
@@ -425,26 +453,38 @@
         itemValue = itemValue.replace(/[^\w]/g, '');
 
         if (itemValue === "" || rackValue === "") {
-            statusCode.html("").removeClass("bg-gradient-success bg-gradient-danger text-white");
+            statusCode.html("").removeClass("bg-gradient-success bg-gradient-danger text-white").css('height', 'auto');
             return;
         }
 
         // AJAX request ke server
-        $.get('./record/check', {
+        $.get("{{ route('record.check') }}", {
             Code_Rack: rackValue,
             Code_Item: itemValue
         }, function(response) {
+            // Update box rak/cell
+            let rc = formatRakCell(response);
+            $("#label_rak_cell_val").text(rc);
+            $("#cell_info_box").show();
+
             if (response.status === "correct") {
+                let cellHtml = `
+                    <div class="mt-2 px-3 py-1 bg-white text-dark rounded shadow-sm font-weight-bold" style="font-size: 1.25rem; border: 2px solid #28a745;">
+                        rak/cell : <span class="text-success font-weight-bolder" style="font-size: 1.4rem;">${rc}</span>
+                    </div>
+                `;
+
                 statusCode
                     .html(`
-                            <div style="font-size: 3rem;">✅</div>
+                            <div style="font-size: 2.8rem;">✅</div>
                             <div style="font-size: 1.8rem; font-weight: bold;">Correct!</div>
-                            <div style="font-size: 2rem;">😊</div>
+                            ${cellHtml}
+                            <div style="font-size: 1.6rem;" class="mt-1">😊</div>
                         `)
                     .removeClass("bg-gradient-danger")
                     .addClass("text-white bg-gradient-success p-3 rounded")
                     .css({
-                        height: '180px',
+                        minHeight: '180px',
                         display: 'flex',
                         'flex-direction': 'column',
                         'align-items': 'center',
@@ -458,16 +498,23 @@
                 });
                 document.getElementById("Correctness").value = 1;
             } else {
+                let hintHtml = `
+                    <div class="mt-2 px-3 py-1 bg-white text-danger rounded shadow-sm font-weight-bold" style="font-size: 1.15rem; border: 2px solid #dc3545;">
+                        rak/cell : <span class="font-weight-bolder">${rc}</span>
+                    </div>
+                `;
+
                 statusCode
                     .html(`
-                            <div style="font-size: 3rem;">❌</div>
+                            <div style="font-size: 2.8rem;">❌</div>
                             <div style="font-size: 1.8rem; font-weight: bold;">Incorrect!</div>
-                            <div style="font-size: 2rem;">😢</div>
+                            ${hintHtml}
+                            <div style="font-size: 1.6rem;" class="mt-1">😢</div>
                         `)
                     .removeClass("bg-gradient-success")
                     .addClass("text-white bg-gradient-danger p-3 rounded")
                     .css({
-                        height: '180px',
+                        minHeight: '180px',
                         display: 'flex',
                         'flex-direction': 'column',
                         'align-items': 'center',
@@ -481,11 +528,14 @@
                 });
                 document.getElementById("Correctness").value = 2;
             }
-
         });
     }
 
-    $("#Code_Item, #Code_Rack").on("blur", checkCorrectness);
+    $("#Code_Item").on("change blur", function() {
+        lookupItemLabel($(this).val().trim());
+        checkCorrectness();
+    });
+    $("#Code_Rack").on("change blur", checkCorrectness);
 
     function resolveRequest() {
         let codeItem = $("#Code_Item").val();

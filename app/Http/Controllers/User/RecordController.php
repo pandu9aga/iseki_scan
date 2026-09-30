@@ -4,6 +4,8 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Member;
+use App\Models\Rack;
+use App\Models\RackPartList;
 use App\Models\Record;
 use App\Models\Request as RequestModel;
 use App\Models\SumMismatch;
@@ -214,29 +216,67 @@ class RecordController extends Controller
 
     public function check(Request $request)
     {
-        $codeRack = $request->input('Code_Rack');
-        $codeItem = substr($request->input('Code_Item'), 0, 10); // Ambil 10 karakter pertama saja
+        $codeRack = trim((string) $request->input('Code_Rack'));
+        $rawItem = (string) $request->input('Code_Item');
+        $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
+        $codeItem = substr($cleanItem, 0, 10); // Ambil 10 karakter pertama
 
-        $exists = DB::table('racks')
-            ->where('Code_Rack', $codeRack)
-            ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
-            ->exists();
+        $exists = false;
+        $cell = null;
+        $rackLocation = null;
+        $partName = null;
+        $expectedRack = null;
 
-        if (! $exists) {
-            $exists = DB::connection('label')->table('rack_part_lists')
-                ->where('rack_no', $codeRack)
+        // Helper memformat array JSON (misal ["1A"]) atau string biasa
+        $formatLabelField = function ($val) {
+            if (!$val) return null;
+            $decoded = json_decode($val, true);
+            if (is_array($decoded)) {
+                return implode(', ', array_filter($decoded));
+            }
+            return trim($val, '[]"\' ');
+        };
+
+        // 1. Prioritas: Cek pencocokan langsung di iseki_label (rack_part_lists)
+        try {
+            $labelDirect = RackPartList::where('rack_no', $codeRack)
                 ->where('item_code', 'LIKE', '%' . $codeItem . '%')
-                ->exists();
+                ->first();
+
+            if ($labelDirect) {
+                $exists = true;
+                $cell = $formatLabelField($labelDirect->cell);
+                $rackLocation = $formatLabelField($labelDirect->rack);
+                $partName = $labelDirect->part_name;
+                $expectedRack = $labelDirect->rack_no;
+            }
+        } catch (\Throwable $e) {
+            // fallback bila koneksi label bermasalah
         }
 
-        if (! $exists) {
+        // 2. Cek di tabel racks lokal iseki_scan
+        if (!$exists) {
+            $rackItem = DB::table('racks')
+                ->where('Code_Rack', $codeRack)
+                ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
+                ->first();
+
+            if ($rackItem) {
+                $exists = true;
+                $partName = $rackItem->Name_Item_Rack;
+            }
+        }
+
+        // 3. Cek di tabel requests aktif (Waiting)
+        if (!$exists) {
             $exists = RequestModel::where('Code_Rack', $codeRack)
                 ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
                 ->where('Status_Request', 'Waiting')
                 ->exists();
         }
 
-        if (! $exists) {
+        // 4. Cek request design changes
+        if (!$exists) {
             $exists = RequestModel::where('Code_Rack', $codeRack)
                 ->where('Status_Request', 'Waiting')
                 ->whereNotNull('Design_Changes_Request')
@@ -244,9 +284,98 @@ class RecordController extends Controller
                 ->exists();
         }
 
+        // 5. Selalu cari Cell dari iseki_label bila belum terambil
+        try {
+            if (!$cell && $codeRack !== '') {
+                $labelByRack = RackPartList::where('rack_no', $codeRack)->first();
+                if ($labelByRack && $labelByRack->cell) {
+                    $cell = $formatLabelField($labelByRack->cell);
+                    $rackLocation = $formatLabelField($labelByRack->rack);
+                    if (!$partName) {
+                        $partName = $labelByRack->part_name;
+                    }
+                }
+            }
+
+            if (!$cell && $codeItem !== '') {
+                $labelByItem = RackPartList::where('item_code', 'LIKE', '%' . $codeItem . '%')->first();
+                if ($labelByItem) {
+                    if (!$cell && $labelByItem->cell) {
+                        $cell = $formatLabelField($labelByItem->cell);
+                        $rackLocation = $formatLabelField($labelByItem->rack);
+                    }
+                    if (!$partName && $labelByItem->part_name) {
+                        $partName = $labelByItem->part_name;
+                    }
+                    $expectedRack = $labelByItem->rack_no;
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
         return response()->json([
             'status' => $exists ? 'correct' : 'incorrect',
+            'cell' => $cell,
+            'rack' => $rackLocation,
+            'part_name' => $partName,
+            'rack_no' => $codeRack,
+            'expected_rack' => $expectedRack,
         ]);
+    }
+
+    /**
+     * Preview informasi rak dan cell dari iseki_label saat kode item discan/diinput.
+     */
+    public function getItemInfo(Request $request)
+    {
+        $rawItem = (string) $request->input('Code_Item');
+        $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
+        $codeItem = substr($cleanItem, 0, 10);
+
+        if ($codeItem === '') {
+            return response()->json(['found' => false]);
+        }
+
+        $formatLabelField = function ($val) {
+            if (!$val) return null;
+            $decoded = json_decode($val, true);
+            if (is_array($decoded)) {
+                return implode(', ', array_filter($decoded));
+            }
+            return trim($val, '[]"\' ');
+        };
+
+        try {
+            $label = RackPartList::where('item_code', 'LIKE', '%' . $codeItem . '%')->first();
+            if ($label) {
+                return response()->json([
+                    'found' => true,
+                    'rack_no' => $label->rack_no,
+                    'cell' => $formatLabelField($label->cell),
+                    'rack' => $formatLabelField($label->rack),
+                    'part_name' => $label->part_name,
+                    'type_tractor' => $label->type_tractor,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        // Fallback ke racks lokal
+        $localRack = DB::table('racks')->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')->first();
+        if ($localRack) {
+            return response()->json([
+                'found' => true,
+                'rack_no' => $localRack->Code_Rack,
+                'cell' => null,
+                'rack' => null,
+                'part_name' => $localRack->Name_Item_Rack,
+                'type_tractor' => $localRack->Type_Tractor_Rack,
+            ]);
+        }
+
+        return response()->json(['found' => false]);
     }
 
     public function getData(Request $request)

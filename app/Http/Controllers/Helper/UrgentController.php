@@ -53,7 +53,7 @@ class UrgentController extends Controller
     public function getData(Request $request)
     {
         if ($request->ajax()) {
-            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'withdrawal.rack', 'mistake', 'record'])
+$query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'withdrawal.rack', 'mistake', 'record', 'rack'])
                 ->orderBy('Time_Urgent', 'desc');
 
             // Custom Filter logic
@@ -145,16 +145,10 @@ class UrgentController extends Controller
                     return '<span class="badge badge-'.$class.'">'.$label.'</span>';
                 })
                 ->addColumn('Type_Tractor', function ($urgent) {
-                    if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
-                        return optional(optional($urgent->withdrawal)->rack)->Type_Tractor_Rack ?? '-';
-                    }
-                    return optional(optional($urgent->requestModel)->rack)->Type_Tractor_Rack ?? '-';
+                    return self::resolveTypeTractor($urgent);
                 })
                 ->addColumn('Name_Part', function ($urgent) {
-                    if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
-                        return optional(optional($urgent->withdrawal)->rack)->Name_Item_Rack ?? '-';
-                    }
-                    return optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
+                    return self::resolvePartName($urgent);
                 })
                 ->addColumn('Request_Details', function ($urgent) {
                     if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
@@ -1032,7 +1026,7 @@ class UrgentController extends Controller
     public function getUnrecordedData(Request $request)
     {
         if ($request->ajax()) {
-            $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'withdrawal.rack', 'mistake'])
+$query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 'withdrawal.rack', 'mistake', 'rack'])
                 ->whereDoesntHave('record')
                 ->orderBy('Time_Urgent', 'desc');
 
@@ -1135,10 +1129,7 @@ class UrgentController extends Controller
                     return '<span class="badge badge-'.$class.'">'.$label.'</span>';
                 })
                 ->addColumn('Name_Part', function ($urgent) {
-                    if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
-                        return optional(optional($urgent->withdrawal)->rack)->Name_Item_Rack ?? '-';
-                    }
-                    return optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
+                    return self::resolvePartName($urgent);
                 })
                 ->addColumn('Request_Details', function ($urgent) {
                     if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
@@ -1273,12 +1264,7 @@ class UrgentController extends Controller
                 }
             }
 
-            $namePart = '-';
-            if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
-                $namePart = optional(optional($urgent->withdrawal)->rack)->Name_Item_Rack ?? '-';
-            } else {
-                $namePart = optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
-            }
+            $namePart = self::resolvePartName($urgent);
 
             $pic = $urgent->member ? $urgent->member->Name_Member : '-';
             if ($urgent->mistake && strtolower($urgent->mistake->Category_Mistake) === 'telat qc') {
@@ -1416,12 +1402,7 @@ class UrgentController extends Controller
                 }
             }
 
-            $namePart = '-';
-            if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
-                $namePart = optional(optional($urgent->withdrawal)->rack)->Name_Item_Rack ?? '-';
-            } else {
-                $namePart = optional(optional($urgent->requestModel)->rack)->Name_Item_Rack ?? '-';
-            }
+            $namePart = self::resolvePartName($urgent);
 
             $pic = $urgent->member ? $urgent->member->Name_Member : '-';
             if ($urgent->Is_Marshalling) {
@@ -1484,5 +1465,114 @@ class UrgentController extends Controller
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Resolves Name Part consistently from withdrawal rack, request rack, direct rack, or iseki_label rack_part_lists.
+     * Guaranteed to display Part Name even when there are no request details.
+     */
+    public static function resolvePartName($urgent): string
+    {
+        // 1. Dari Withdrawal jika jenis withdrawal
+        if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+            $name = optional(optional($urgent->withdrawal)->rack)->Name_Item_Rack;
+            if ($name && $name !== '-') return $name;
+        }
+
+        // 2. Dari Request rack jika ada request detail
+        $name = optional(optional($urgent->requestModel)->rack)->Name_Item_Rack;
+        if ($name && $name !== '-') return $name;
+
+        // 3. Dari relasi rack langsung pada Urgent (melalui Code_Rack)
+        $name = optional($urgent->rack)->Name_Item_Rack;
+        if ($name && $name !== '-') return $name;
+
+        // 4. Fallback: Cari di tabel racks lokal dengan trim Code_Rack
+        $cleanRack = trim((string) $urgent->Code_Rack);
+        if ($cleanRack !== '') {
+            $rack = Rack::where('Code_Rack', $cleanRack)->first();
+            if ($rack && !empty($rack->Name_Item_Rack) && $rack->Name_Item_Rack !== '-') {
+                return $rack->Name_Item_Rack;
+            }
+
+            // 5. Fallback: Cari di database iseki_label (rack_part_lists)
+            try {
+                $labelPart = RackPartList::where('rack_no', $cleanRack)
+                    ->whereNotNull('part_name')
+                    ->where('part_name', '!=', '')
+                    ->where('part_name', '!=', '-')
+                    ->value('part_name');
+                if ($labelPart) return $labelPart;
+            } catch (\Throwable $e) {
+                // ignore
+            }
+        }
+
+        // 6. Jika urgent memiliki relasi request dengan Code_Item_Rack
+        if ($urgent->requestModel && !empty($urgent->requestModel->Code_Item_Rack)) {
+            $itemCode = trim((string) $urgent->requestModel->Code_Item_Rack);
+            $cleanItem = substr(preg_replace('/[^\p{L}\p{N}]/u', '', $itemCode), 0, 10);
+            if ($cleanItem !== '') {
+                $rackByItem = Rack::where('Code_Item_Rack', 'LIKE', '%' . $cleanItem . '%')->first();
+                if ($rackByItem && !empty($rackByItem->Name_Item_Rack) && $rackByItem->Name_Item_Rack !== '-') {
+                    return $rackByItem->Name_Item_Rack;
+                }
+                try {
+                    $labelByItem = RackPartList::where('item_code', 'LIKE', '%' . $cleanItem . '%')
+                        ->whereNotNull('part_name')
+                        ->where('part_name', '!=', '')
+                        ->where('part_name', '!=', '-')
+                        ->value('part_name');
+                    if ($labelByItem) return $labelByItem;
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+            }
+        }
+
+        return '-';
+    }
+
+    /**
+     * Resolves Type Tractor consistently across all fallbacks.
+     */
+    public static function resolveTypeTractor($urgent): string
+    {
+        // 1. Dari Withdrawal
+        if ($urgent->mistake && $urgent->mistake->Is_Withdrawal) {
+            $type = optional(optional($urgent->withdrawal)->rack)->Type_Tractor_Rack;
+            if ($type && $type !== '-') return $type;
+        }
+
+        // 2. Dari Request rack
+        $type = optional(optional($urgent->requestModel)->rack)->Type_Tractor_Rack;
+        if ($type && $type !== '-') return $type;
+
+        // 3. Dari relasi rack langsung
+        $type = optional($urgent->rack)->Type_Tractor_Rack;
+        if ($type && $type !== '-') return $type;
+
+        // 4. Fallback tabel racks dengan trim
+        $cleanRack = trim((string) $urgent->Code_Rack);
+        if ($cleanRack !== '') {
+            $rack = Rack::where('Code_Rack', $cleanRack)->first();
+            if ($rack && !empty($rack->Type_Tractor_Rack) && $rack->Type_Tractor_Rack !== '-') {
+                return $rack->Type_Tractor_Rack;
+            }
+
+            // 5. Fallback ke iseki_label
+            try {
+                $labelType = RackPartList::where('rack_no', $cleanRack)
+                    ->whereNotNull('type_tractor')
+                    ->where('type_tractor', '!=', '')
+                    ->where('type_tractor', '!=', '-')
+                    ->value('type_tractor');
+                if ($labelType) return $labelType;
+            } catch (\Throwable $e) {
+                // ignore
+            }
+        }
+
+        return '-';
     }
 }

@@ -63,4 +63,9 @@ class Urgent extends Model
     {
         return $this->belongsTo(Record::class, 'Id_Request', 'Id_Request');
     }
+
+    public function rack()
+    {
+        return $this->belongsTo(Rack::class, 'Code_Rack', 'Code_Rack');
+    }
 }
