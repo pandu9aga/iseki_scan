@@ -83,6 +83,10 @@
                 <i class="fas fa-chart-line mr-1"></i> Preview Bad News
             </button>
 
+            <button id="btnGenerateRangkuman" class="btn btn-outline-success btn-sm shadow-sm" type="button">
+                <i class="fas fa-satellite-dish mr-1"></i> Generate Rangkuman WA
+            </button>
+
             <button id="btnAutoSend" class="btn btn-success btn-sm shadow-sm">
                 <i class="fas fa-paper-plane mr-1"></i> Mulai Auto-Send
             </button>
@@ -227,9 +231,9 @@
 
                     <label class="font-weight-bold small text-muted text-uppercase mb-1">Isi Pesan (Target Group: <code>120363026880582483@g.us</code>):</label>
                     <textarea class="form-control msg-preview" id="achMessagePreview" rows="12" readonly style="font-size: 0.85rem; line-height: 1.4;"></textarea>
-                    
+
                     <small class="text-muted mt-2 d-block">
-                        <i class="fas fa-info-circle text-primary mr-1"></i> 
+                        <i class="fas fa-info-circle text-primary mr-1"></i>
                         <strong>Otomatisasi:</strong> Jika halaman WA Queue ini tetap dibuka, sistem akan otomatis mengantrekan pesan ini 1x per hari pada jam <strong>16:50 WIB (Jumat)</strong> atau <strong>16:20 WIB (Senin-Kamis/Sabtu-Minggu)</strong>.
                     </small>
                 </div>
@@ -272,9 +276,9 @@
 
                     <label class="font-weight-bold small text-muted text-uppercase mb-1">Isi Pesan (Target Group: <code>120363160707493007@g.us</code>):</label>
                     <textarea class="form-control msg-preview" id="opSummaryMessagePreview" rows="14" readonly style="font-size: 0.85rem; line-height: 1.4;"></textarea>
-                    
+
                     <small class="text-muted mt-2 d-block">
-                        <i class="fas fa-info-circle text-primary mr-1"></i> 
+                        <i class="fas fa-info-circle text-primary mr-1"></i>
                         <strong>Otomatisasi:</strong> Sistem akan otomatis mengantrekan pesan ini 1x per hari pada jam <strong>16:50 WIB (Jumat)</strong> atau <strong>16:20 WIB (Senin-Kamis/Sabtu-Minggu)</strong>.
                     </small>
                 </div>
@@ -383,7 +387,7 @@
                 return true;
             } else {
                 console.error('Wablas Proxy Error:', result);
-                
+
                 // Mark as failed on server
                 await fetch(FAIL_URL(id), {
                     method: 'PATCH',
@@ -721,7 +725,7 @@
     // ── Auto-Check Jam Cutoff (Jumat: 16:50, Hari lain: 16:20) Setiap 20 Detik ──
     let autoAchCheckedToday = {{ $achievementQueuedToday ? 'true' : 'false' }};
     let autoOpSummaryCheckedToday = {{ $summaryQueuedToday ? 'true' : 'false' }};
-    const targetCutoffMinutes = {{ $isFriday ? 50 : 20 }};
+    const targetCutoffMinutes = {{ $isFriday ? 56 : 26 }};
     setInterval(async () => {
         if (autoAchCheckedToday && autoOpSummaryCheckedToday) return;
 
@@ -733,12 +737,59 @@
         if (hours > 16 || (hours === 16 && minutes >= targetCutoffMinutes)) {
             console.log(`Jam >= 16:${targetCutoffMinutes} tercapai, menyinkronkan antrean WA...`);
             await refreshQueue();
+            await generateRangkumanQueue();
             autoAchCheckedToday = true;
             autoOpSummaryCheckedToday = true;
             updateAchBadgeStatus(true);
             updateOpSummaryBadgeStatus(true);
+
         }
     }, 20000);
+
+    // ── Generate Rangkuman WA (GET ke sistem iseki_podium) ──────
+    const RANGKUMAN_GENERATE_URL = 'http://localhost/iseki_podium/public/api/admin/wa-rangkuman/generate-queue';
+
+    async function generateRangkumanQueue(date) {
+        const targetDate = date || new Date().toISOString().slice(0, 10);
+
+        try {
+            const resp = await fetch(`${RANGKUMAN_GENERATE_URL}?date=${encodeURIComponent(targetDate)}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                },
+            });
+            const data = await resp.json();
+
+            if (data.status === 'success') {
+                console.log(`Rangkuman WA berhasil diantrekan (queue #${data.queue_id}, ${data.date}).`);
+                return { success: true, data };
+            }
+
+            console.error('Gagal generate rangkuman WA:', data);
+            return { success: false, data };
+        } catch (err) {
+            console.error('Network error saat generate rangkuman WA:', err);
+            return { success: false, data: null };
+        }
+    }
+
+    document.getElementById('btnGenerateRangkuman').addEventListener('click', async function () {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Memproses...';
+
+        const result = await generateRangkumanQueue();
+
+        if (result.success) {
+            alert(result.data.message || 'Rangkuman berhasil diantrekan ke WhatsApp.');
+        } else {
+            alert((result.data && result.data.message) || 'Gagal generate rangkuman WA.');
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-satellite-dish mr-1"></i> Generate Rangkuman WA';
+    });
 </script>
 @endsection
 
