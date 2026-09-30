@@ -129,10 +129,16 @@ class RequestController extends Controller
     public function check(Request $request)
     {
         $codeRack = $request->input('Code_Rack');
-        $codeItem = substr($request->input('Code_Item'), 0, 10);
+        $rawItem = (string) $request->input('Code_Item');
+        $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
+        $codeItem = substr($cleanItem, 0, 12);
 
         $exists = RequestModel::where('Code_Rack', $codeRack)
-            ->where('Code_Item_Request', 'LIKE', '%' . $codeItem . '%')
+            ->where(function ($q) use ($cleanItem, $codeItem) {
+                $q->where('Code_Item_Rack', $cleanItem)
+                  ->orWhere('Code_Item_Rack', $codeItem)
+                  ->orWhere('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%');
+            })
             ->exists();
 
         return response()->json([

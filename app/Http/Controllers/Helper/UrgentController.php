@@ -1511,18 +1511,29 @@ $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 
         // 6. Jika urgent memiliki relasi request dengan Code_Item_Rack
         if ($urgent->requestModel && !empty($urgent->requestModel->Code_Item_Rack)) {
             $itemCode = trim((string) $urgent->requestModel->Code_Item_Rack);
-            $cleanItem = substr(preg_replace('/[^\p{L}\p{N}]/u', '', $itemCode), 0, 10);
+            $cleanItem = substr(preg_replace('/[^\p{L}\p{N}]/u', '', $itemCode), 0, 12);
             if ($cleanItem !== '') {
-                $rackByItem = Rack::where('Code_Item_Rack', 'LIKE', '%' . $cleanItem . '%')->first();
+                $rackByItem = Rack::where('Code_Item_Rack', $cleanItem)->first();
+                if (!$rackByItem) {
+                    $rackByItem = Rack::where('Code_Item_Rack', 'LIKE', '%' . $cleanItem . '%')->first();
+                }
                 if ($rackByItem && !empty($rackByItem->Name_Item_Rack) && $rackByItem->Name_Item_Rack !== '-') {
                     return $rackByItem->Name_Item_Rack;
                 }
                 try {
-                    $labelByItem = RackPartList::where('item_code', 'LIKE', '%' . $cleanItem . '%')
+                    $labelByItem = RackPartList::where('item_code', $cleanItem)
                         ->whereNotNull('part_name')
                         ->where('part_name', '!=', '')
                         ->where('part_name', '!=', '-')
                         ->value('part_name');
+
+                    if (!$labelByItem) {
+                        $labelByItem = RackPartList::where('item_code', 'LIKE', '%' . $cleanItem . '%')
+                            ->whereNotNull('part_name')
+                            ->where('part_name', '!=', '')
+                            ->where('part_name', '!=', '-')
+                            ->value('part_name');
+                    }
                     if ($labelByItem) return $labelByItem;
                 } catch (\Throwable $e) {
                     // ignore

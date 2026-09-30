@@ -219,7 +219,7 @@ class RecordController extends Controller
         $codeRack = trim((string) $request->input('Code_Rack'));
         $rawItem = (string) $request->input('Code_Item');
         $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
-        $codeItem = substr($cleanItem, 0, 10); // Ambil 10 karakter pertama
+        $codeItem = substr($cleanItem, 0, 12); // Ambil sampai 12 karakter
 
         $exists = false;
         $cell = null;
@@ -240,8 +240,17 @@ class RecordController extends Controller
         // 1. Prioritas: Cek pencocokan langsung di iseki_label (rack_part_lists)
         try {
             $labelDirect = RackPartList::where('rack_no', $codeRack)
-                ->where('item_code', 'LIKE', '%' . $codeItem . '%')
+                ->where(function ($q) use ($cleanItem, $codeItem) {
+                    $q->where('item_code', $cleanItem)
+                      ->orWhere('item_code', $codeItem);
+                })
                 ->first();
+
+            if (!$labelDirect) {
+                $labelDirect = RackPartList::where('rack_no', $codeRack)
+                    ->where('item_code', 'LIKE', '%' . $codeItem . '%')
+                    ->first();
+            }
 
             if ($labelDirect) {
                 $exists = true;
@@ -258,8 +267,18 @@ class RecordController extends Controller
         if (!$exists) {
             $rackItem = DB::table('racks')
                 ->where('Code_Rack', $codeRack)
-                ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
+                ->where(function ($q) use ($cleanItem, $codeItem) {
+                    $q->where('Code_Item_Rack', $cleanItem)
+                      ->orWhere('Code_Item_Rack', $codeItem);
+                })
                 ->first();
+
+            if (!$rackItem) {
+                $rackItem = DB::table('racks')
+                    ->where('Code_Rack', $codeRack)
+                    ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
+                    ->first();
+            }
 
             if ($rackItem) {
                 $exists = true;
@@ -270,7 +289,11 @@ class RecordController extends Controller
         // 3. Cek di tabel requests aktif (Waiting)
         if (!$exists) {
             $exists = RequestModel::where('Code_Rack', $codeRack)
-                ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
+                ->where(function ($q) use ($cleanItem, $codeItem) {
+                    $q->where('Code_Item_Rack', $cleanItem)
+                      ->orWhere('Code_Item_Rack', $codeItem)
+                      ->orWhere('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%');
+                })
                 ->where('Status_Request', 'Waiting')
                 ->exists();
         }
@@ -297,8 +320,15 @@ class RecordController extends Controller
                 }
             }
 
-            if (!$cell && $codeItem !== '') {
-                $labelByItem = RackPartList::where('item_code', 'LIKE', '%' . $codeItem . '%')->first();
+            if (!$cell && $cleanItem !== '') {
+                $labelByItem = RackPartList::where('item_code', $cleanItem)
+                    ->orWhere('item_code', $codeItem)
+                    ->first();
+
+                if (!$labelByItem) {
+                    $labelByItem = RackPartList::where('item_code', 'LIKE', '%' . $codeItem . '%')->first();
+                }
+
                 if ($labelByItem) {
                     if (!$cell && $labelByItem->cell) {
                         $cell = $formatLabelField($labelByItem->cell);
@@ -331,9 +361,9 @@ class RecordController extends Controller
     {
         $rawItem = (string) $request->input('Code_Item');
         $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
-        $codeItem = substr($cleanItem, 0, 10);
+        $codeItem = substr($cleanItem, 0, 12);
 
-        if ($codeItem === '') {
+        if ($cleanItem === '') {
             return response()->json(['found' => false]);
         }
 
@@ -347,7 +377,15 @@ class RecordController extends Controller
         };
 
         try {
-            $label = RackPartList::where('item_code', 'LIKE', '%' . $codeItem . '%')->first();
+            // Prioritaskan exact match
+            $label = RackPartList::where('item_code', $cleanItem)
+                ->orWhere('item_code', $codeItem)
+                ->first();
+
+            if (!$label) {
+                $label = RackPartList::where('item_code', 'LIKE', '%' . $codeItem . '%')->first();
+            }
+
             if ($label) {
                 return response()->json([
                     'found' => true,
@@ -363,7 +401,15 @@ class RecordController extends Controller
         }
 
         // Fallback ke racks lokal
-        $localRack = DB::table('racks')->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')->first();
+        $localRack = DB::table('racks')
+            ->where('Code_Item_Rack', $cleanItem)
+            ->orWhere('Code_Item_Rack', $codeItem)
+            ->first();
+
+        if (!$localRack) {
+            $localRack = DB::table('racks')->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')->first();
+        }
+
         if ($localRack) {
             return response()->json([
                 'found' => true,
@@ -503,11 +549,15 @@ class RecordController extends Controller
         $rawItem = $request->input('Code_Item');
 
         $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
-        $codeItem = substr($cleanItem, 0, 10);
+        $codeItem = substr($cleanItem, 0, 12);
 
         // 1. Pencocokan berdasarkan code rack dan code item dengan status request waiting
         $requests = RequestModel::where('Code_Rack', $codeRack)
-            ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
+            ->where(function ($q) use ($cleanItem, $codeItem) {
+                $q->where('Code_Item_Rack', $cleanItem)
+                  ->orWhere('Code_Item_Rack', $codeItem)
+                  ->orWhere('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%');
+            })
             ->where('Status_Request', 'Waiting')
             ->get(['Id_Request', 'Area_Request']);
 
