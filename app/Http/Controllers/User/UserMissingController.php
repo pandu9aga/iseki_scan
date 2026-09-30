@@ -104,7 +104,9 @@ class UserMissingController extends Controller
             $row++;
         }
 
-        $sheet->getStyle('H2:H1000')->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $lastRow = $row - 1;
+        $targetRow = max(1000, $lastRow);
+        $sheet->getStyle('H2:H'.$targetRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
 
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);

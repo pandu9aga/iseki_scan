@@ -404,7 +404,8 @@ class McMissingController extends Controller
             }
         }
 
-        $sheet->getStyle('L2:L1000')->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $targetRow = max(1000, $lastRow);
+        $sheet->getStyle('L2:L'.$targetRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
         $validation = $sheet->getCell('L2')->getDataValidation();
         $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
         $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
@@ -417,7 +418,7 @@ class McMissingController extends Controller
         $validation->setPrompt('Format: DD/MM/YYYY');
         $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
         $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(\Carbon\Carbon::parse('1900-01-01')));
-        $sheet->setDataValidation('L2:L1000', $validation);
+        $sheet->setDataValidation('L2:L'.$targetRow, $validation);
 
         // 🔑 Auto size kolom
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
@@ -559,7 +560,9 @@ class McMissingController extends Controller
             $row++;
         }
 
-        $sheet->getStyle('H2:H1000')->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $lastRow = $row - 1;
+        $targetRow = max(1000, $lastRow);
+        $sheet->getStyle('H2:H'.$targetRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
         $validation = $sheet->getCell('H2')->getDataValidation();
         $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
         $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
@@ -572,7 +575,7 @@ class McMissingController extends Controller
         $validation->setPrompt('Format: DD/MM/YYYY');
         $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
         $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(\Carbon\Carbon::parse('1900-01-01')));
-        $sheet->setDataValidation('H2:H1000', $validation);
+        $sheet->setDataValidation('H2:H'.$targetRow, $validation);
 
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
@@ -679,7 +682,9 @@ class McMissingController extends Controller
             $row++;
         }
 
-        $sheet->getStyle('H2:H1000')->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $lastRow = $row - 1;
+        $targetRow = max(1000, $lastRow);
+        $sheet->getStyle('H2:H'.$targetRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
 
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);

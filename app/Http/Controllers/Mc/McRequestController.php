@@ -338,8 +338,8 @@ class McRequestController extends Controller
         }
 
         // Apply Date Format & Data Validation to Estimation Date column (K)
-        // Up to row 1000 so empty rows also have the date picker
-        $sheet->getStyle('K2:K1000')->getNumberFormat()
+        $targetRow = max(1000, $lastRow);
+        $sheet->getStyle('K2:K' . $targetRow)->getNumberFormat()
             ->setFormatCode('DD/MM/YYYY');
 
         $validation = $sheet->getCell('K2')->getDataValidation();
@@ -356,7 +356,7 @@ class McRequestController extends Controller
         $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
         $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(Carbon::parse('1900-01-01')));
 
-        $sheet->setDataValidation('K2:K1000', $validation);
+        $sheet->setDataValidation('K2:K' . $targetRow, $validation);
 
         // 🔑 Auto size kolom
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
@@ -772,7 +772,8 @@ class McRequestController extends Controller
             }
         }
 
-        $sheet->getStyle('K2:K1000')->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $targetRow = max(1000, $lastRow);
+        $sheet->getStyle('K2:K' . $targetRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
         $validation = $sheet->getCell('K2')->getDataValidation();
         $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
         $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
@@ -785,7 +786,7 @@ class McRequestController extends Controller
         $validation->setPrompt('Format: DD/MM/YYYY');
         $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
         $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(Carbon::parse('1900-01-01')));
-        $sheet->setDataValidation('K2:K1000', $validation);
+        $sheet->setDataValidation('K2:K' . $targetRow, $validation);
 
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
