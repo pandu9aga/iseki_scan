@@ -58,11 +58,17 @@ class TransitScanController extends Controller
 
     public function check(Request $request)
     {
-        $codeItem = substr($request->input('Code_Item'), 0, 10); // Ambil 10 karakter pertama saja
+        $rawItem = (string) $request->input('Code_Item');
+        $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
+        $codeItem = substr($cleanItem, 0, 12);
 
-        // Cari request dengan Code_Item_Rack (like) dimana Status_Request bukan 'Done' dan Ready_Request null
+        // Cari request dengan Code_Item_Rack dimana Status_Request bukan 'Done' dan Ready_Request null
         $requestModel = RequestModel::with(['member', 'rack'])
-            ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
+            ->where(function ($q) use ($cleanItem, $codeItem) {
+                $q->where('Code_Item_Rack', $cleanItem)
+                  ->orWhere('Code_Item_Rack', $codeItem)
+                  ->orWhere('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%');
+            })
             ->where('Status_Request', '!=', 'Done')
             ->whereNull('Ready_Request')
             ->orderBy('Time_Request', 'asc')

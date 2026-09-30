@@ -112,23 +112,37 @@ class AdminRecordingController extends Controller
     public function check(Request $request)
     {
         $codeRack = $request->input('Code_Rack');
-        $codeItem = substr($request->input('Code_Item'), 0, 10);
+        $rawItem = (string) $request->input('Code_Item');
+        $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
+        $codeItem = substr($cleanItem, 0, 12);
 
         $exists = DB::table('racks')
             ->where('Code_Rack', $codeRack)
-            ->where('Code_Item_Rack', 'LIKE', '%'.$codeItem.'%')
+            ->where(function ($q) use ($cleanItem, $codeItem) {
+                $q->where('Code_Item_Rack', $cleanItem)
+                  ->orWhere('Code_Item_Rack', $codeItem)
+                  ->orWhere('Code_Item_Rack', 'LIKE', '%'.$codeItem.'%');
+            })
             ->exists();
 
         if (! $exists) {
             $exists = DB::connection('label')->table('rack_part_lists')
                 ->where('rack_no', $codeRack)
-                ->where('item_code', 'LIKE', '%'.$codeItem.'%')
+                ->where(function ($q) use ($cleanItem, $codeItem) {
+                    $q->where('item_code', $cleanItem)
+                      ->orWhere('item_code', $codeItem)
+                      ->orWhere('item_code', 'LIKE', '%'.$codeItem.'%');
+                })
                 ->exists();
         }
 
         if (! $exists) {
             $exists = RequestModel::where('Code_Rack', $codeRack)
-                ->where('Code_Item_Rack', 'LIKE', '%'.$codeItem.'%')
+                ->where(function ($q) use ($cleanItem, $codeItem) {
+                    $q->where('Code_Item_Rack', $cleanItem)
+                      ->orWhere('Code_Item_Rack', $codeItem)
+                      ->orWhere('Code_Item_Rack', 'LIKE', '%'.$codeItem.'%');
+                })
                 ->where('Status_Request', 'Waiting')
                 ->exists();
         }
@@ -178,11 +192,15 @@ class AdminRecordingController extends Controller
         $rawItem = $request->input('Code_Item');
 
         $cleanItem = preg_replace('/[^\p{L}\p{N}]/u', '', $rawItem);
-        $codeItem = substr($cleanItem, 0, 10);
+        $codeItem = substr($cleanItem, 0, 12);
 
         // 1. Pencocokan berdasarkan code rack dan code item dengan status request waiting
         $requests = RequestModel::where('Code_Rack', $codeRack)
-            ->where('Code_Item_Rack', 'LIKE', '%'.$codeItem.'%')
+            ->where(function ($q) use ($cleanItem, $codeItem) {
+                $q->where('Code_Item_Rack', $cleanItem)
+                  ->orWhere('Code_Item_Rack', $codeItem)
+                  ->orWhere('Code_Item_Rack', 'LIKE', '%'.$codeItem.'%');
+            })
             ->where('Status_Request', 'Waiting')
             ->get(['Id_Request', 'Area_Request', 'Sum_Request']);
 
