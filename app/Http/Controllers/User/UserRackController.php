@@ -105,7 +105,8 @@ class UserRackController extends Controller
             'excel' => 'required|file|mimes:xlsx,xls'
         ]);
 
-        ini_set('max_execution_time', 600);
+        ini_set('max_execution_time', 0);
+        set_time_limit(0);
         ini_set('memory_limit', '512M');
 
         $file = $request->file('excel');
@@ -155,6 +156,10 @@ class UserRackController extends Controller
 
     public function export()
     {
+        ini_set('max_execution_time', 0);
+        set_time_limit(0);
+        ini_set('memory_limit', '512M');
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
@@ -226,7 +231,8 @@ class UserRackController extends Controller
             'excel' => 'required|file|mimes:xlsx,xls'
         ]);
 
-        ini_set('max_execution_time', 600);
+        ini_set('max_execution_time', 0);
+        set_time_limit(0);
         ini_set('memory_limit', '512M');
 
         $file = $request->file('excel');
@@ -267,6 +273,10 @@ class UserRackController extends Controller
 
     public function typeExport()
     {
+        ini_set('max_execution_time', 0);
+        set_time_limit(0);
+        ini_set('memory_limit', '512M');
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
