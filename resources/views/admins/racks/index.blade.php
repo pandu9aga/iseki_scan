@@ -34,6 +34,8 @@
                                 <th>Rack Code</th>
                                 <th>Item Code</th>
                                 <th>Item Name</th>
+                                <th>Rack</th>
+                                <th>Cell</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -43,6 +45,8 @@
                                 <th>Rack Code</th>
                                 <th>Item Code</th>
                                 <th>Item Name</th>
+                                <th>Rack</th>
+                                <th>Cell</th>
                                 <th>Action</th>
                             </tr>
                         </tfoot>
@@ -53,6 +57,8 @@
                                     <td>{{ $i->Code_Rack }}</td>
                                     <td>{{ $i->Code_Item_Rack }}</td>
                                     <td>{{ $i->Name_Item_Rack }}</td>
+                                    <td>{{ $i->label_rack ?? '-' }}</td>
+                                    <td>{{ $i->label_cell ?? '-' }}</td>
                                     <td>
                                         <a href="{{ route('rack.edit', $i->Id_Rack) }}" class="btn btn-sm btn-warning">edit</a>
                                         {{-- <a href="{{ route('rack.destroy', $i->Id_Rack) }}"

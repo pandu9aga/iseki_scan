@@ -46,6 +46,8 @@
                             <th>Item Code</th>
                             <th>Item Name</th>
                             <th>Type Tractor</th>
+                            <th>Rack</th>
+                            <th>Cell</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,6 +63,12 @@
                             <td>{{ $i->Name_Item_Rack }}</td>
                             <td>
                                 <span class="text-secondary small">{{ $i->Type_Tractor_Rack ?? '-' }}</span>
+                            </td>
+                            <td>
+                                <span class="text-secondary small">{{ $i->label_rack ?? '-' }}</span>
+                            </td>
+                            <td>
+                                <span class="text-secondary small">{{ $i->label_cell ?? '-' }}</span>
                             </td>
                         </tr>
                         @endforeach

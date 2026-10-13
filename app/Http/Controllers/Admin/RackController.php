@@ -14,7 +14,19 @@ use App\Models\Rack;
 class RackController extends Controller
 {
     public function index(){
-        $rack = Rack::all();
+        $rack = DB::table('racks')
+            ->leftJoin('iseki_label.rack_part_lists', function($join) {
+                $join->on('racks.Code_Rack', '=', 'iseki_label.rack_part_lists.rack_no')
+                     ->on('racks.Code_Item_Rack', '=', 'iseki_label.rack_part_lists.item_code');
+            })
+            ->select('racks.*', 'iseki_label.rack_part_lists.rack as label_rack', 'iseki_label.rack_part_lists.cell as label_cell')
+            ->get()->map(function($item) {
+                $labelRack = json_decode($item->label_rack, true);
+                $labelCell = json_decode($item->label_cell, true);
+                $item->label_rack = is_array($labelRack) ? implode(', ', $labelRack) : $item->label_rack;
+                $item->label_cell = is_array($labelCell) ? implode(', ', $labelCell) : $item->label_cell;
+                return $item;
+            });
         return view('admins.racks.index', compact('rack'));
     }
 
