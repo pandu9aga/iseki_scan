@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Yajra\DataTables\Facades\DataTables;
+use App\Http\Controllers\Helper\LabelRackHelper;
 
 class SubmissionController extends Controller
 {
@@ -155,19 +156,21 @@ class SubmissionController extends Controller
 
         $submissions = $query->get();
 
+        $noRackMap = LabelRackHelper::getNoRackMap($submissions);
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'No Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Header style
-        $sheet->getStyle('A1:Q1')->applyFromArray([
+        $sheet->getStyle('A1:R1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ]);
-        $sheet->getStyle('A1:Q1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:R1')->getAlignment()->setWrapText(true);
 
         $row = 2;
         $lastUser = null;
@@ -178,7 +181,7 @@ class SubmissionController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $submission->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 17, '-'), // 17 kolom sesuai header
+                    array_fill(0, 18, '-'), // 18 kolom sesuai header
                     null,
                     'A' . $row
                 );
@@ -223,11 +226,14 @@ class SubmissionController extends Controller
                 );
             }
 
+            $noRack = LabelRackHelper::resolveNoRack($submission->Code_Rack, $submission->Code_Item_Rack, $noRackMap);
+
             $sheet->fromArray([
                 $no,
                 $timeRequest,
                 $submission->Area_Request ?? '',
                 $submission->Code_Rack,
+                $noRack,
                 $submission->Sum_Request,
                 $submission->Urgent_Request == 1 ? '✓' : '',
                 $submission->Code_Item_Rack,
@@ -243,9 +249,9 @@ class SubmissionController extends Controller
                 $submission->Updated_At_Request,
             ], null, 'A' . $row);
 
-            // Set background color for readonly Sum Stock based on status
+            // Set background color for readonly Sum Stock based on status (Kolom K sekarang)
             if ($statusCode == '2') {
-                $sheet->getStyle('J' . $row)->applyFromArray([
+                $sheet->getStyle('K' . $row)->applyFromArray([
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'ADD8E6'] // Light Blue
@@ -255,7 +261,7 @@ class SubmissionController extends Controller
                     ]
                 ]);
             } elseif ($statusCode == '4') {
-                $sheet->getStyle('J' . $row)->applyFromArray([
+                $sheet->getStyle('K' . $row)->applyFromArray([
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'FFFFE0'] // Light Yellow
@@ -273,8 +279,8 @@ class SubmissionController extends Controller
 
         $lastRow = $row - 1;
         $targetRow = max(1000, $lastRow);
-        $sheet->getStyle('L2:L'.$targetRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
-        $validation = $sheet->getCell('L2')->getDataValidation();
+        $sheet->getStyle('M2:M'.$targetRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $validation = $sheet->getCell('M2')->getDataValidation();
         $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
         $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
         $validation->setAllowBlank(true);
@@ -323,9 +329,18 @@ class SubmissionController extends Controller
                 }
             }
 
-            return DataTables::eloquent($query)
+            $dataTable = DataTables::eloquent($query);
+            $noRackMap = null;
+
+            return $dataTable
                 ->editColumn('Day_Request', function ($r) {
                     return $r->Day_Request . ' ' . $r->Time_Request;
+                })
+                ->addColumn('No_Rack', function ($r) use (&$noRackMap, $dataTable) {
+                    if ($noRackMap === null) {
+                        $noRackMap = LabelRackHelper::getNoRackMap($dataTable->results());
+                    }
+                    return LabelRackHelper::resolveNoRack($r->Code_Rack, $r->Code_Item_Rack, $noRackMap);
                 })
                 ->addColumn('Urgent_Request', function ($r) {
                     return $r->Urgent_Request == 1 ? '✓' : '';

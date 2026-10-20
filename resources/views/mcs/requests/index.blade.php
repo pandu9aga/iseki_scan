@@ -130,6 +130,7 @@
                             <th>Time Request</th>
                             <th>Area</th>
                             <th>Rack</th>
+                            <th>No Rack</th>
                             <th>Type Tractor</th>
                             <th>Sum Request</th>
                             <th>Urgenity</th>
@@ -153,6 +154,7 @@
                             <th>Time Request</th>
                             <th>Area</th>
                             <th>Rack</th>
+                            <th>No Rack</th>
                             <th>Type Tractor</th>
                             <th>Sum Request</th>
                             <th>Urgenity</th>
@@ -177,6 +179,7 @@
                             <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>
                             <td>{{ $s->Area_Request ?? '' }}</td>
                             <td>{{ $s->Code_Rack }}</td>
+                            <td><span class="badge badge-light border text-dark font-weight-bold">{{ $s->No_Rack ?? '-' }}</span></td>
                             <td title="{{ $s->rack->Type_Tractor_Rack ?? '-' }}">
                                 {{ \Illuminate\Support\Str::limit($s->rack->Type_Tractor_Rack ?? '-', 20) }}
                             </td>

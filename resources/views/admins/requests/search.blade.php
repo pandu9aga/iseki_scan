@@ -25,6 +25,7 @@
                                 <th>Name</th>
                                 <th>Item</th>
                                 <th>Rack <span class="text-white">-------</span></th>
+                                <th>No Rack</th>
                                 <th>Type Tractor</th>
                                 <th>Time Request</th>
                                 <th>Ready Stock</th>
@@ -169,6 +170,7 @@
                     { data: 'Name', name: 'Name', searchable: false },
                     { data: 'Code_Item_Rack', name: 'Code_Item_Rack', searchable: true },
                     { data: 'Code_Rack', name: 'Code_Rack', searchable: true, width: 'auto' },
+                    { data: 'No_Rack', name: 'No_Rack', searchable: false, orderable: false },
                     { data: 'Type_Tractor_Rack', name: 'Type_Tractor_Rack', searchable: false, orderable: false },
                     { data: 'Day_Request', name: 'Day_Request', searchable: true, orderable: true },
                     { data: 'ready_status_display', name: 'ready_status_display', searchable: true, orderable: true },
@@ -183,7 +185,7 @@
                     { data: 'Member_Record', name: 'Member_Record', searchable: false },
                     { data: 'Updated_At_Request', name: 'Updated_At_Request', searchable: false }
                 ],
-                order: [[6, 'desc']], // urutkan berdasarkan Time Request
+                order: [[7, 'desc']], // urutkan berdasarkan Time Request
                 drawCallback: function () {
                     this.api().column(0, { search: 'applied', order: 'applied' }).nodes().each(function (cell, i) {
                         cell.innerHTML = i + 1;
@@ -207,7 +209,7 @@
                     var filterRow = header.find('tr.filter-row');
                     filterRow.empty();
 
-                    const filterable = [1, 3, 4, 7, 13];
+                    const filterable = [1, 3, 4, 8, 14];
 
                     api.columns().every(function (index) {
                         var column = this;
@@ -217,7 +219,7 @@
                             return;
                         }
 
-                        if (index === 13) {
+                        if (index === 14) {
                             // Kolom Member Request → dropdown
                             var select = $(`<select class="form-control form-control-sm member-filter"><option value="">All</option></select>`);
                             members.forEach(member => {
@@ -227,7 +229,7 @@
                                 column.search(this.value).draw();
                             });
                             filterRow.append($('<th>').append(select));
-                        } else if (index === 7) {
+                        } else if (index === 8) {
                             // Kolom Ready Stock → status dropdown
                             var select = $(`<select class="form-control form-control-sm status-filter">
                                                                         <option value="">All Status</option>

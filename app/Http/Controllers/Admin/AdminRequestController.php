@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Yajra\DataTables\Facades\DataTables;
+use App\Http\Controllers\Helper\LabelRackHelper;
 
 class AdminRequestController extends Controller
 {
@@ -143,13 +144,15 @@ class AdminRequestController extends Controller
 
         $requests = $query->get();
 
+        $noRackMap = LabelRackHelper::getNoRackMap($requests);
+
         // Buat Spreadsheet
-        $spreadsheet = new Spreadsheet;
+        $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
         $headers = [
-            'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
+            'No', 'Time Request', 'Area', 'Rack', 'No Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
             "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request',
             'Member Record', 'Updated',
         ];
@@ -160,8 +163,8 @@ class AdminRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
-        $sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
-        $sheet->getStyle('A1:Q1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:R1')->getAlignment()->setWrapText(true);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -176,7 +179,7 @@ class AdminRequestController extends Controller
             // Reset nomor & kasih spasi kalau ganti user
             if ($lastUser !== null && $lastUser != $request->Id_User) {
                 $sheet->fromArray(
-                    array_fill(0, 17, '-'), // 17 kolom sesuai header
+                    array_fill(0, 18, '-'), // 18 kolom sesuai header
                     null,
                     'A'.$row
                 );
@@ -232,11 +235,14 @@ class AdminRequestController extends Controller
                 );
             }
 
+            $noRack = LabelRackHelper::resolveNoRack($request->Code_Rack, $request->Code_Item_Rack, $noRackMap);
+
             $sheet->fromArray([
                 $no,
                 $timeRequest,
                 $request->Area_Request ?? '',
                 $request->Code_Rack,
+                $noRack,
                 $request->Sum_Request,
                 $request->Urgent_Request == 1 ? '✓' : '',
                 $request->Code_Item_Rack,
@@ -259,8 +265,8 @@ class AdminRequestController extends Controller
 
         $lastRow = $row - 1;
         $targetRow = max(1000, $lastRow);
-        $sheet->getStyle('L2:L'.$targetRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
-        $validation = $sheet->getCell('L2')->getDataValidation();
+        $sheet->getStyle('M2:M'.$targetRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $validation = $sheet->getCell('M2')->getDataValidation();
         $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
         $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
         $validation->setAllowBlank(true);
@@ -272,7 +278,7 @@ class AdminRequestController extends Controller
         $validation->setPrompt('Format: DD/MM/YYYY');
         $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
         $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(\Carbon\Carbon::parse('1900-01-01')));
-        $sheet->setDataValidation('L2:L'.$targetRow, $validation);
+        $sheet->setDataValidation('M2:M'.$targetRow, $validation);
 
         // 🔑 Auto size kolom
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
@@ -331,7 +337,9 @@ class AdminRequestController extends Controller
 
         $requests = $query->get();
 
-        // Buat Spreadsheet (sama persis dengan export di MC Request)
+        $noRackMap = LabelRackHelper::getNoRackMap($requests);
+
+        // Buat Spreadsheet (sama persis dengan export di Request)
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
@@ -340,6 +348,7 @@ class AdminRequestController extends Controller
             'Time Request',
             'Area',
             'Rack',
+            'No Rack',
             'Sum Request',
             'Urgenity',
             'Item',
@@ -361,8 +370,8 @@ class AdminRequestController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
-        $sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
-        $sheet->getStyle('A1:R1')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:S1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:S1')->getAlignment()->setWrapText(true);
         $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
 
         $row = 2;
@@ -371,7 +380,7 @@ class AdminRequestController extends Controller
 
         foreach ($requests as $req) {
             if ($lastUser !== null && $lastUser != $req->Id_User) {
-                $sheet->fromArray(array_fill(0, 18, '-'), null, 'A'.$row);
+                $sheet->fromArray(array_fill(0, 19, '-'), null, 'A'.$row);
                 $row++;
                 $no = 1;
             }
@@ -421,11 +430,14 @@ class AdminRequestController extends Controller
                 );
             }
 
+            $noRack = LabelRackHelper::resolveNoRack($req->Code_Rack, $req->Code_Item_Rack, $noRackMap);
+
             $sheet->fromArray([
                 $no,
                 $timeRequest,
                 $req->Area_Request ?? '',
                 $req->Code_Rack,
+                $noRack,
                 $req->Sum_Request,
                 $req->Urgent_Request == 1 ? '✓' : '',
                 $req->Code_Item_Rack,
@@ -449,7 +461,7 @@ class AdminRequestController extends Controller
 
         $lastRow = $row - 1;
         if ($lastRow >= 2) {
-            $columnsToCenter = ['E', 'F', 'I', 'J', 'K', 'N'];
+            $columnsToCenter = ['F', 'G', 'J', 'K', 'L', 'O'];
             foreach ($columnsToCenter as $col) {
                 $sheet->getStyle($col.'2:'.$col.$lastRow)
                     ->getAlignment()
@@ -458,8 +470,8 @@ class AdminRequestController extends Controller
         }
 
         $targetRow = max(1000, $lastRow);
-        $sheet->getStyle('K2:K'.$targetRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
-        $validation = $sheet->getCell('K2')->getDataValidation();
+        $sheet->getStyle('L2:L'.$targetRow)->getNumberFormat()->setFormatCode('DD/MM/YYYY');
+        $validation = $sheet->getCell('L2')->getDataValidation();
         $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_DATE);
         $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
         $validation->setAllowBlank(true);
@@ -471,7 +483,7 @@ class AdminRequestController extends Controller
         $validation->setPrompt('Format: DD/MM/YYYY');
         $validation->setOperator(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::OPERATOR_GREATERTHANOREQUAL);
         $validation->setFormula1(\PhpOffice\PhpSpreadsheet\Shared\Date::PHPToExcel(Carbon::parse('1900-01-01')));
-        $sheet->setDataValidation('K2:K'.$targetRow, $validation);
+        $sheet->setDataValidation('L2:L'.$targetRow, $validation);
 
         foreach (range('A', $sheet->getHighestColumn()) as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
@@ -507,9 +519,18 @@ class AdminRequestController extends Controller
                 }
             }
 
-            return DataTables::eloquent($query)
+            $dataTable = DataTables::eloquent($query);
+            $noRackMap = null;
+
+            return $dataTable
                 ->editColumn('Day_Request', function ($r) {
                     return $r->Day_Request.' '.$r->Time_Request;
+                })
+                ->addColumn('No_Rack', function ($r) use (&$noRackMap, $dataTable) {
+                    if ($noRackMap === null) {
+                        $noRackMap = LabelRackHelper::getNoRackMap($dataTable->results());
+                    }
+                    return LabelRackHelper::resolveNoRack($r->Code_Rack, $r->Code_Item_Rack, $noRackMap);
                 })
                 ->addColumn('Urgent_Request', function ($r) {
                     return $r->Urgent_Request == 1 ? '✓' : '';
