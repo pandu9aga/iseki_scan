@@ -401,30 +401,62 @@ class McRequestController extends Controller
         $headerRow = $rows[1] ?? [];
         unset($rows[1]);
 
-        // Deteksi kolom dari header
+        // Deteksi kolom dari header & deteksi apakah Excel versi baru (ada kolom No Rack)
+        $hasNoRack = false;
         $colStock = null;
         $colStatus = null;
         $colEstimation = null;
+        $colId = null;
 
         foreach ($headerRow as $colLetter => $headerName) {
             if ($headerName === null) continue;
             $cleaned = strtolower(trim(strval($headerName)));
-            if (str_contains($cleaned, 'sum stock')) $colStock = $colLetter;
-            if (str_contains($cleaned, '1=ready')) $colStatus = $colLetter;
-            if (str_contains($cleaned, 'estimation')) $colEstimation = $colLetter;
+
+            if (str_contains($cleaned, 'no rack')) {
+                $hasNoRack = true;
+            }
+            if (str_contains($cleaned, 'sum stock')) {
+                $colStock = $colLetter;
+            }
+            if (str_contains($cleaned, '1=ready') || str_contains($cleaned, 'ready,2=ship') || str_contains($cleaned, 'prod,4=design')) {
+                $colStatus = $colLetter;
+            }
+            if (str_contains($cleaned, 'estimation')) {
+                $colEstimation = $colLetter;
+            }
+            if ($cleaned === 'id' || str_contains($cleaned, 'id request')) {
+                $colId = $colLetter;
+            }
         }
 
-        $colStock = $colStock ?? 'J';
-        $colStatus = $colStatus ?? 'I';
-        $colEstimation = $colEstimation ?? 'K';
+        // Jika header "no rack" tidak ditemukan lewat teks, cek dari jumlah kolom (>= 20 kolom berarti versi baru)
+        if (!$hasNoRack && count($headerRow) >= 20) {
+            $hasNoRack = true;
+        }
+
+        // Tentukan fallback default jika header tidak terdeteksi
+        if ($hasNoRack) {
+            // Format Baru (dengan kolom No Rack di E):
+            // I: Name, J: Status, K: Sum Stock, L: Estimation Date, T: Id
+            $colStatus = $colStatus ?? 'J';
+            $colStock = $colStock ?? 'K';
+            $colEstimation = $colEstimation ?? 'L';
+            $colId = $colId ?? 'T';
+        } else {
+            // Format Lama (tanpa kolom No Rack):
+            // H: Name, I: Status, J: Sum Stock, K: Estimation Date, S: Id
+            $colStatus = $colStatus ?? 'I';
+            $colStock = $colStock ?? 'J';
+            $colEstimation = $colEstimation ?? 'K';
+            $colId = $colId ?? 'S';
+        }
 
         $savedCount = 0;
         $skippedEstimation = 0;
 
         foreach ($rows as $row) {
-            // Kolom terakhir = ID Request
-            $colId = array_key_last($row);
-            $rawId = $row[$colId] ?? null;
+            // Ambil ID Request dari kolom ID yang terdeteksi, atau fallback ke kolom terakhir
+            $rawId = $row[$colId] ?? ($row[array_key_last($row)] ?? null);
 
             if ($rawId === null || $rawId === '' || $rawId === '-') continue;
 
