@@ -58,7 +58,9 @@ class WaQueueController extends Controller
 
         $achievementCutoffLabel = $this->getAchievementCutoffLabel($today);
         $achievementCutoffTime = $this->getAchievementCutoffTime($today);
+        $targetCutoffMinutes = $this->getTargetCutoffMinutes($today);
         $isFriday = $today->isFriday();
+        $isWeekend = $today->isWeekend();
 
         return view('admins.wa_queue', compact(
             'queues',
@@ -66,7 +68,9 @@ class WaQueueController extends Controller
             'summaryQueuedToday',
             'achievementCutoffLabel',
             'achievementCutoffTime',
-            'isFriday'
+            'targetCutoffMinutes',
+            'isFriday',
+            'isWeekend'
         ));
     }
 
@@ -84,23 +88,37 @@ class WaQueueController extends Controller
     }
 
     /**
-     * Waktu cutoff perolehan achievement:
-     * - Hari Jumat: 16:50:00 (16.50 WIB)
-     * - Hari selain Jumat: 16:20:00 (16.20 WIB)
+     * Waktu cutoff perolehan achievement & bad news:
+     * - Hari Jumat: 16:58:00 (16.58 WIB)
+     * - Hari biasa (Senin-Kamis, Sabtu-Minggu): 16:28:00 (16.28 WIB)
      */
     public function getAchievementCutoffTime(Carbon $date): string
     {
-        return $date->isFriday() ? '16:50:00' : '16:20:00';
+        if ($date->isFriday()) {
+            return '16:58:00';
+        }
+        return '16:28:00';
     }
 
     public function getAchievementCutoffLabel(Carbon $date): string
     {
-        return $date->isFriday() ? '16.50 WIB' : '16.20 WIB';
+        if ($date->isFriday()) {
+            return '16.58 WIB';
+        }
+        return '16.28 WIB';
+    }
+
+    public function getTargetCutoffMinutes(Carbon $date): int
+    {
+        if ($date->isFriday()) {
+            return 58; // 16.58 untuk Jumat
+        }
+        return 28; // 16.28 untuk hari biasa
     }
 
     /**
      * Otomatis mengantrekan pesan perolehan hari ini jika jam sudah >= cutoff
-     * (Jumat: 16:50, hari lain: 16:20) dan belum pernah terinsert untuk hari ini.
+     * (Jumat: 16:58, hari biasa: 16:28) dan belum pernah terinsert untuk hari ini.
      */
     public function autoQueueDailyAchievement(): ?WaQueue
     {

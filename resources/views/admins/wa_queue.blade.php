@@ -234,7 +234,7 @@
 
                     <small class="text-muted mt-2 d-block">
                         <i class="fas fa-info-circle text-primary mr-1"></i>
-                        <strong>Otomatisasi:</strong> Jika halaman WA Queue ini tetap dibuka, sistem akan otomatis mengantrekan pesan ini 1x per hari pada jam <strong>16:50 WIB (Jumat)</strong> atau <strong>16:20 WIB (Senin-Kamis/Sabtu-Minggu)</strong>.
+                        <strong>Otomatisasi:</strong> Jika halaman WA Queue ini tetap dibuka, sistem akan otomatis mengantrekan pesan ini 1x per hari pada jam <strong>16:58 WIB (Jumat)</strong> atau <strong>16:28 WIB (Hari biasa)</strong>.
                     </small>
                 </div>
                 <div class="modal-footer">
@@ -279,7 +279,7 @@
 
                     <small class="text-muted mt-2 d-block">
                         <i class="fas fa-info-circle text-primary mr-1"></i>
-                        <strong>Otomatisasi:</strong> Sistem akan otomatis mengantrekan pesan ini 1x per hari pada jam <strong>16:50 WIB (Jumat)</strong> atau <strong>16:20 WIB (Senin-Kamis/Sabtu-Minggu)</strong>.
+                        <strong>Otomatisasi:</strong> Sistem akan otomatis mengantrekan pesan ini 1x per hari pada jam <strong>16:58 WIB (Jumat)</strong> atau <strong>16:28 WIB (Hari biasa)</strong>.
                     </small>
                 </div>
                 <div class="modal-footer">
@@ -722,10 +722,10 @@
         }
     }
 
-    // ── Auto-Check Jam Cutoff (Jumat: 16:50, Hari lain: 16:20) Setiap 20 Detik ──
+    // ── Auto-Check Jam Cutoff (Jumat: 16:58, Hari biasa: 16:28) Setiap 20 Detik ──
     let autoAchCheckedToday = {{ $achievementQueuedToday ? 'true' : 'false' }};
     let autoOpSummaryCheckedToday = {{ $summaryQueuedToday ? 'true' : 'false' }};
-    const targetCutoffMinutes = {{ $isFriday ? 56 : 26 }};
+    const targetCutoffMinutes = {{ $targetCutoffMinutes ?? ($isFriday ? 58 : 28) }};
     setInterval(async () => {
         if (autoAchCheckedToday && autoOpSummaryCheckedToday) return;
 
@@ -733,7 +733,7 @@
         const hours = now.getHours();
         const minutes = now.getMinutes();
 
-        // Cek jika jam saat ini sudah >= jam cutoff (Jumat: 16:50, hari lain: 16:20)
+        // Cek jika jam saat ini sudah >= menit trigger antrean (Jumat: 16:58, Hari biasa: 16:28)
         if (hours > 16 || (hours === 16 && minutes >= targetCutoffMinutes)) {
             console.log(`Jam >= 16:${targetCutoffMinutes} tercapai, menyinkronkan antrean WA...`);
             await refreshQueue();
