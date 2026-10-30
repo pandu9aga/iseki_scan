@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Request as RequestModel; // alias supaya tidak bentrok
+use Illuminate\Support\Facades\DB;
 
 class RequestController extends Controller
 {
@@ -21,7 +22,6 @@ class RequestController extends Controller
 
         return view('users.requests.index', compact('area', 'check_id', 'code_rack', 'code_item', 'filter_date', 'filter_month', 'filter_checker'));
     }
-
 
 
     public function create(Request $request)
@@ -42,88 +42,114 @@ class RequestController extends Controller
             'Sum_Request.min' => 'Jumlah permintaan minimal 1',
         ]);
 
+        $codeRack = strtoupper(trim($request->input('Code_Rack')));
         $codeItem = substr($request->input('Code_Item'), 0, 12);
-
-        // Cek apakah sudah ada request dengan status Waiting
-        $existing = RequestModel::where('Code_Rack', $request->input('Code_Rack')) //where('Id_User', $Id_User)
-            ->where('Code_Item_Rack', $codeItem)
-            ->where('Status_Request', 'Waiting')
-            ->where('Area_Request', $request->input('Area_Request'))
-            ->first();
-
-        if ($existing) {
-            // return redirect()->route('submission')->with('error', 'Item ini sudah pernah direquest dan masih menunggu.');
-            return redirect()->back()->with('error', 'Item ini sudah pernah direquest dan masih menunggu.');
-        }
-
-        // Tentukan waktu efektif: Urgent bypass cutoff, non-urgent pakai aturan 15:30
+        $areaRequest = $request->input('Area_Request');
+        $sumRequest = $request->input('Sum_Request');
         $isUrgent = $request->has('Urgent_Request') && $request->input('Urgent_Request');
-        $shifted = false;
-
-        if ($isUrgent) {
-            $date = $now->format('Y-m-d');
-            $timeNow = $now->format('H:i:s');
-        } else {
-            $effective = \App\Models\SpecialDate::resolveEffectiveRequestTime($now);
-            $date = $effective['date'];
-            $timeNow = $effective['time'];
-            $shifted = $effective['shifted'];
-        }
-
-        $newRequest = new RequestModel();
-        $newRequest->Day_Request = $date;
-        $newRequest->Time_Request = $timeNow;
-        $newRequest->Actual_Submitted_At = $now;
-        $newRequest->Code_Item_Rack = $codeItem;
-        $newRequest->Code_Rack = $request->input('Code_Rack');
-        $newRequest->Id_User = $Id_User;
-        $newRequest->Status_Request = 'Waiting';
-        $newRequest->Sum_Request = $request->input('Sum_Request');
-
-        if ($request->filled('Correctness')) {
-            $newRequest->Correctness_Request = $request->input('Correctness');
-        }
-
-        if ($request->input('Area_Request') !== '') {
-            $newRequest->Area_Request = $request->input('Area_Request');
-        }
-
-        // Snapshot area member saat request dibuat
-        if ($Id_User) {
-            $member = \App\Models\Member::find($Id_User);
-            if ($member && !empty($member->Member_Area)) {
-                $newRequest->Member_Area_Request = $member->Member_Area;
-            }
-        }
-
-        // tambahkan urgent_request
-        $newRequest->Urgent_Request = $isUrgent ? 1 : 0;
-
-        $newRequest->save();
-
+        $correctness = $request->input('Correctness');
+        $checkId = $request->input('check_id');
+        $returnToCheck = $request->input('return_to_check');
         $filterParams = array_filter($request->only(['date', 'month', 'checker']));
 
-        if ($request->has('check_id') && !empty($request->input('check_id'))) {
-            $check = \App\Models\Check::find($request->input('check_id'));
-            if ($check) {
-                $check->Status_Check = null;
-                $check->save();
-            }
-            if ($request->input('return_to_check') == 1) {
-                return redirect()->route('user.check', $filterParams)->with('success', 'Request berhasil dibuat dan Check ditandai Selesai.');
-            }
-        }
+        // Transaction & pessimistic locking untuk mencegah race condition / double submit
+        try {
+            $result = DB::transaction(function () use (
+                $now, $Id_User, $codeRack, $codeItem,
+                $areaRequest, $sumRequest, $isUrgent, $correctness,
+                $checkId, $returnToCheck, $filterParams
+            ) {
+                // Kunci pengecekan: hanya boleh 1 request aktif (Status_Request != 'Done') untuk nomor rak yang sama
+                $existing = RequestModel::where('Code_Rack', $codeRack)
+                    ->where('Status_Request', '!=', 'Done')
+                    ->lockForUpdate()
+                    ->first();
 
-        // Flash message: beritahu user jika request digeser
-        if ($shifted) {
-            $msg = 'Request melewati jam 15:30, dicatat sebagai request tanggal '
-                . Carbon::parse($date)->translatedFormat('d F Y') . ' jam 07:00.';
-        } else {
-            $msg = 'Request berhasil dibuat.';
-        }
+                if ($existing) {
+                    return [
+                        'status' => 'error',
+                        'message' => 'Part dengan kode Rack ' . $codeRack . ' sedang dalam status ' . $existing->Status_Request . ' dan belum selesai (Done). Tidak dapat request ganda.'
+                    ];
+                }
 
-        // return redirect()->route('submission')->with('success', 'Request berhasil dibuat.');
-        return redirect()->back()->with('success', $msg);
+                // Tentukan waktu efektif: Urgent bypass cutoff, non-urgent pakai aturan 15:30
+                $shifted = false;
+                if ($isUrgent) {
+                    $date = $now->format('Y-m-d');
+                    $timeNow = $now->format('H:i:s');
+                } else {
+                    $effective = \App\Models\SpecialDate::resolveEffectiveRequestTime($now);
+                    $date = $effective['date'];
+                    $timeNow = $effective['time'];
+                    $shifted = $effective['shifted'];
+                }
+
+                $newRequest = new RequestModel();
+                $newRequest->Day_Request = $date;
+                $newRequest->Time_Request = $timeNow;
+                $newRequest->Actual_Submitted_At = $now;
+                $newRequest->Code_Item_Rack = $codeItem;
+                $newRequest->Code_Rack = $codeRack;
+                $newRequest->Id_User = $Id_User;
+                $newRequest->Status_Request = 'Waiting';
+                $newRequest->Sum_Request = $sumRequest;
+
+                if (!empty($correctness)) {
+                    $newRequest->Correctness_Request = $correctness;
+                }
+
+                if ($areaRequest !== '') {
+                    $newRequest->Area_Request = $areaRequest;
+                }
+
+                // Snapshot area member saat request dibuat
+                if ($Id_User) {
+                    $member = \App\Models\Member::find($Id_User);
+                    if ($member && !empty($member->Member_Area)) {
+                        $newRequest->Member_Area_Request = $member->Member_Area;
+                    }
+                }
+
+                $newRequest->Urgent_Request = $isUrgent ? 1 : 0;
+                $newRequest->save();
+
+                if (!empty($checkId)) {
+                    $check = \App\Models\Check::find($checkId);
+                    if ($check) {
+                        $check->Status_Check = null;
+                        $check->save();
+                    }
+                }
+
+                return [
+                    'status' => 'success',
+                    'shifted' => $shifted,
+                    'date' => $date,
+                    'return_to_check' => $returnToCheck,
+                    'filter_params' => $filterParams,
+                ];
+            });
+
+            if ($result['status'] === 'error') {
+                return redirect()->back()->with('error', $result['message']);
+            }
+
+            if (!empty($result['return_to_check']) && $result['return_to_check'] == 1) {
+                return redirect()->route('user.check', $result['filter_params'])->with('success', 'Request berhasil dibuat dan Check ditandai Selesai.');
+            }
+
+            if ($result['shifted']) {
+                $msg = 'Request melewati jam 15:30, dicatat sebagai request tanggal '
+                    . Carbon::parse($result['date'])->translatedFormat('d F Y') . ' jam 07:00.';
+            } else {
+                $msg = 'Request berhasil dibuat.';
+            }
+
+            return redirect()->back()->with('success', $msg);
+
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memproses request: ' . $e->getMessage());
+        }
     }
 
     public function check(Request $request)
@@ -175,17 +201,25 @@ class RequestController extends Controller
 
     public function checkDuplicate(Request $request)
     {
-        $codeRack = $request->input('Code_Rack');
+        $codeRack = strtoupper(trim($request->input('Code_Rack')));
 
         $existing = RequestModel::where('Code_Rack', $codeRack)
             ->where('Status_Request', '!=', 'Done')
-            ->with('member')
+            ->with(['member', 'user'])
             ->first();
 
         if ($existing) {
+            $name = 'Unknown';
+            if ($existing->Is_User == 1) {
+                $name = optional($existing->user)->Username_User ? ($existing->user->Username_User . ' (Admin)') : 'Admin';
+            } else {
+                $name = optional($existing->member)->Name_Member ?? 'Unknown';
+            }
+
             return response()->json([
                 'exists' => true,
-                'name' => $existing->member->Name_Member ?? 'Unknown',
+                'name' => $name,
+                'status' => $existing->Status_Request,
                 'day' => $existing->Day_Request,
                 'time' => $existing->Time_Request,
             ]);

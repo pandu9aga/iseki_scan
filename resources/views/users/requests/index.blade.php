@@ -29,7 +29,7 @@
                                 </button>
                             </div>
                         @endif
-                        <form class="user text-center" action="{{ route('request.create') }}" method="POST" enctype="multipart/form-data">
+                        <form id="requestForm" class="user text-center" action="{{ route('request.create') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <div class="row">
                                 <div class="col-lg-12 col-md-12 text-center">
@@ -132,7 +132,7 @@
                             <div class="row">
                                 <div class="col-lg-3 col-md-3 text-center"></div>
                                 <div class="col-lg-6 col-md-6 text-center">
-                                    <button type="submit" class="btn btn-info btn-user" style="padding-left: 50px; padding-right: 50px;">
+                                    <button type="submit" id="btnSubmitRequest" class="btn btn-info btn-user" style="padding-left: 50px; padding-right: 50px;">
                                         Save
                                     </button>
                                 </div>
@@ -287,6 +287,22 @@
     //     height: width
     // });
 
+    // Helper untuk mengubah state tombol submit
+    function setSubmitState(disabled, text) {
+        var btn = document.getElementById("btnSubmitRequest");
+        if (btn) {
+            btn.disabled = disabled;
+            if (text) {
+                btn.innerHTML = text;
+            } else {
+                btn.innerHTML = 'Save';
+            }
+        }
+    }
+
+    let isScanningRack = false;
+    let isSubmitting = false;
+
     // === fungsi reset form ke state awal ===
     function resetRequestForm() {
         document.getElementById("Code_Rack").value = '';
@@ -297,6 +313,8 @@
         document.getElementById("customCheckDays").value = '';
         document.getElementById("Correctness").value = '';
         document.getElementById("status_code").innerHTML = '';
+        isScanningRack = false;
+        setSubmitState(false, 'Save');
     }
 
     // === fungsi simpan check otomatis saat scan (silent, no redirect) ===
@@ -317,7 +335,6 @@
                 if (response.saved) {
                     showAutoCheckToast(response.message, 'success');
                 }
-                // Jika sudah ada (false), tidak perlu notif — scan tetap dilanjutkan
             },
             error: function() {
                 // Gagal simpan check — abaikan, tidak blok alur scan
@@ -345,6 +362,9 @@
     function fetchCodeItemRack(codeRack) {
         if (!codeRack) return;
 
+        // Kunci tombol submit selama validasi dan pengambilan data berlangsung
+        setSubmitState(true, '<i class="fas fa-spinner fa-spin"></i> Memeriksa...');
+
         $.ajax({
             url: './api/get-code-item',  
             method: 'POST',
@@ -360,21 +380,24 @@
                 // Step 1: catat check dulu (bukti fisik scan) — selalu berjalan
                 autoCheckSave(codeRack, codeItem);
 
-                // Step 2: baru cek status request ganda
-                // Lanjut cek stock hanya jika tidak ada request ganda
-                checkDuplicateRequest(codeRack, function() {
-                    checkStockItem(codeRack);
-                });
-
-                // Beri tahu jika item tidak ditemukan (setelah check tetap tercatat)
                 if (!codeItem) {
                     alert('Code Item not found for this Code Rack');
+                    setSubmitState(true, 'Save');
+                    return;
                 }
+
+                // Step 2: baru cek status request ganda
+                checkDuplicateRequest(codeRack, function() {
+                    // Hanya buka tombol submit jika lolos cek duplikat
+                    setSubmitState(false, 'Save');
+                    checkStockItem(codeRack);
+                });
             },
             error: function() {
                 // Tetap catat check walau gagal fetch item
                 autoCheckSave(codeRack, '');
-                alert('Error fetching Code Item');
+                alert('Gagal mengambil data Code Item karena gangguan jaringan.');
+                setSubmitState(true, 'Save');
             }
         });
     }
@@ -382,6 +405,8 @@
     // === fungsi cek duplicate request ===
     function checkDuplicateRequest(codeRack, onNoDuplicate) {
         if (!codeRack) return;
+
+        setSubmitState(true, '<i class="fas fa-spinner fa-spin"></i> Validasi Rak...');
 
         $.ajax({
             url: '{{ route("request.checkDuplicate") }}',
@@ -392,45 +417,79 @@
             },
             success: function(response) {
                 if (response.exists) {
+                    // Kunci tombol submit secara permanen untuk rak ini sampai form di-reset
+                    setSubmitState(true, '<i class="fas fa-ban"></i> Request Ganda');
+
                     // Tampilkan modal warning
                     var msg = 'Part dengan kode Rack <strong>' + codeRack + '</strong> telah di request oleh <strong>' + response.name + '</strong> pada <strong>' + response.day + ' ' + response.time + '</strong> dan belum di Record.';
                     document.getElementById('duplicateRequestBody').innerHTML = msg;
                     $('#duplicateRequestModal').modal('show');
-                } else if (typeof onNoDuplicate === 'function') {
-                    // Tidak ada duplikat
-                    onNoDuplicate();
+                } else {
+                    setSubmitState(false, 'Save');
+                    if (typeof onNoDuplicate === 'function') {
+                        onNoDuplicate();
+                    }
                 }
             },
             error: function() {
-                // Jika error cek duplikat, tetap lanjut
-                if (typeof onNoDuplicate === 'function') {
-                    onNoDuplicate();
-                }
+                // JIKA ERROR JARINGAN: JANGAN lanjut! Cegah bypass duplikasi
+                setSubmitState(true, 'Save');
+                alert('Peringatan: Gagal memeriksa status duplikat untuk rak ' + codeRack + ' karena gangguan koneksi jaringan. Silakan coba scan ulang.');
+                resetRequestForm();
             }
         });
     }
 
-
-
     // === callback qr scanner ===
     function onScanSuccessRack(decodedText, decodedResult) {
+        if (isScanningRack) return;
+        isScanningRack = true;
+
         document.getElementById("Code_Rack").value = decodedText;
+
+        try {
+            rackScanner.clear();
+        } catch (e) {
+            console.error('Error clearing scanner', e);
+        }
 
         // Catat check dulu (Step 1), baru cek request ganda (Step 2)
         fetchCodeItemRack(decodedText);
-
-        rackScanner.clear();
     }
 
     // === tombol scan ===
     document.getElementById("scanRack").addEventListener("click", function () {
+        isScanningRack = false;
         rackScanner.render(onScanSuccessRack);
     });
 
     // === saat blur ===
     $("#Code_Rack").on("blur", function () {
         let codeRack = $(this).val();
-        fetchCodeItemRack(codeRack);
+        if (codeRack) {
+            fetchCodeItemRack(codeRack);
+        }
+    });
+
+    // === Cegah double submit dari operator saat jaringan lambat ===
+    $('#requestForm').on('submit', function(e) {
+        if (isSubmitting) {
+            e.preventDefault();
+            return false;
+        }
+
+        var codeRack = document.getElementById("Code_Rack").value.trim();
+        var codeItem = document.getElementById("Code_Item").value.trim();
+
+        if (!codeRack || !codeItem) {
+            e.preventDefault();
+            alert('Rack Code dan Item Code wajib terisi sebelum menyimpan!');
+            return false;
+        }
+
+        isSubmitting = true;
+        setSubmitState(true, '<i class="fas fa-spinner fa-spin"></i> Menyimpan...');
+        return true;
     });
 
     // === fungsi cek stock item ===
