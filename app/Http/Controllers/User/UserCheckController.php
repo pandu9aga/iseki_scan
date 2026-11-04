@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Check;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class UserCheckController extends Controller
 {
@@ -170,38 +169,35 @@ class UserCheckController extends Controller
         $codeItem  = substr(($request->input('code_item') ?? ''), 0, 12);
         $area      = $request->input('area');
 
-        return DB::transaction(function () use ($idMember, $today, $codeRack, $codeItem, $area) {
-            // Cek: apakah user ini sudah scan rak yang sama hari ini (khusus record auto-scan)?
-            $alreadyExists = Check::where('Code_Rack', $codeRack)
-                ->where('Id_User', $idMember)
-                ->where('Is_User', 0)
-                ->where('Auto_Check', 1)
-                ->whereDate('Time_Check', $today)
-                ->lockForUpdate()
-                ->exists();
+        // Cek: apakah user ini sudah scan rak yang sama hari ini (khusus record auto-scan)?
+        $alreadyExists = Check::where('Code_Rack', $codeRack)
+            ->where('Id_User', $idMember)
+            ->where('Is_User', 0)
+            ->where('Auto_Check', 1)
+            ->whereDate('Time_Check', $today)
+            ->exists();
 
-            if ($alreadyExists) {
-                return response()->json([
-                    'saved'   => false,
-                    'message' => 'Check untuk rak ini sudah tercatat hari ini.',
-                ]);
-            }
-
-            Check::create([
-                'Time_Check'    => Carbon::now(),
-                'Code_Rack'     => $codeRack,
-                'Code_Item_Rack' => $codeItem ?: '',
-                'Id_User'       => $idMember,
-                'Status_Check'  => null,   // Target date null — tidak perlu pilih hari
-                'Is_User'       => 0,
-                'Auto_Check'    => 1,
-                'Area_Check'    => $area,
-            ]);
-
+        if ($alreadyExists) {
             return response()->json([
-                'saved'   => true,
-                'message' => $codeRack . ' berhasil dicatat ke Check.',
+                'saved'   => false,
+                'message' => 'Check untuk rak ini sudah tercatat hari ini.',
             ]);
-        });
+        }
+
+        Check::create([
+            'Time_Check'    => Carbon::now(),
+            'Code_Rack'     => $codeRack,
+            'Code_Item_Rack' => $codeItem ?: '',
+            'Id_User'       => $idMember,
+            'Status_Check'  => null,   // Target date null — tidak perlu pilih hari
+            'Is_User'       => 0,
+            'Auto_Check'    => 1,
+            'Area_Check'    => $area,
+        ]);
+
+        return response()->json([
+            'saved'   => true,
+            'message' => $codeRack . ' berhasil dicatat ke Check.',
+        ]);
     }
 }
