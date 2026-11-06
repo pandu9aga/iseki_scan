@@ -73,7 +73,7 @@
                                         <span style="font-size: small;">Rack Code</span>
                                         <input type="text" onkeyup="this.value = this.value.toUpperCase();" name="Code_Rack" id="Code_Rack" class="form-control form-control-user mb-2 @error('Code_Rack') is-invalid @enderror" value="{{ old('Code_Rack', $code_rack ?? '') }}" required>
                                         <span style="font-size: small;">Item Code</span>
-                                        <input type="text" name="Code_Item" id="Code_Item" class="form-control form-control-user @error('Code_Item') is-invalid @enderror" value="{{ old('Code_Item', $code_item ?? '') }}" readonly required>
+                                        <input type="text" name="Code_Item" id="Code_Item" class="form-control form-control-user @error('Code_Item') is-invalid @enderror" value="{{ old('Code_Item', $code_item ?? '') }}" readonly>
                                         <span style="font-size: small;">Tractor Type</span>
                                         <input type="text" name="Type_Tractor" id="Type_Tractor" class="form-control form-control-user" readonly>
                                         @error('Code_Rack')
@@ -343,7 +343,15 @@
 
     // === fungsi fetch code item ===
     function fetchCodeItemRack(codeRack) {
-        if (!codeRack) return;
+        if (!codeRack) {
+            document.getElementById("Code_Item").value = '';
+            document.getElementById("Type_Tractor").value = '';
+            return;
+        }
+
+        // Kosongkan sementara field item & tipe traktor agar tidak menampilkan sisa rack sebelumnya saat fetch
+        document.getElementById("Code_Item").value = '';
+        document.getElementById("Type_Tractor").value = '';
 
         $.ajax({
             url: './api/get-code-item',  

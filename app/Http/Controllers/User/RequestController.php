@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Request as RequestModel; // alias supaya tidak bentrok
+use App\Models\Rack;
 
 class RequestController extends Controller
 {
@@ -30,30 +31,35 @@ class RequestController extends Controller
         $Id_User = session('Id_Member');
 
         $request->validate([
-            'Code_Item' => 'required',
             'Code_Rack' => 'required',
             'Sum_Request' => 'required|integer|min:1',
             'Urgent_Request' => 'nullable|boolean',
         ], [
-            'Code_Item.required' => 'Kode item wajib diisi',
             'Code_Rack.required' => 'Kode rack wajib diisi',
             'Sum_Request.required' => 'Jumlah permintaan wajib diisi',
             'Sum_Request.integer' => 'Jumlah permintaan harus berupa angka',
             'Sum_Request.min' => 'Jumlah permintaan minimal 1',
         ]);
 
-        $codeItem = substr($request->input('Code_Item'), 0, 12);
+        $codeRack = $request->input('Code_Rack');
+        $rack = Rack::where('Code_Rack', $codeRack)->first();
 
-        // Cek apakah sudah ada request dengan status Waiting
-        $existing = RequestModel::where('Code_Rack', $request->input('Code_Rack')) //where('Id_User', $Id_User)
-            ->where('Code_Item_Rack', $codeItem)
+        if (!$rack || empty($rack->Code_Item_Rack)) {
+            return redirect()->back()->withInput()->with('error', "Kode rack '{$codeRack}' tidak ditemukan atau belum memiliki kode item.");
+        }
+
+        $codeItem = substr($rack->Code_Item_Rack, 0, 12);
+
+        // Cek apakah sudah ada request untuk kode rack ini yang masih berstatus Waiting
+        $existing = RequestModel::where('Code_Rack', $codeRack)
             ->where('Status_Request', 'Waiting')
-            ->where('Area_Request', $request->input('Area_Request'))
+            ->with('member')
             ->first();
 
         if ($existing) {
-            // return redirect()->route('submission')->with('error', 'Item ini sudah pernah direquest dan masih menunggu.');
-            return redirect()->back()->with('error', 'Item ini sudah pernah direquest dan masih menunggu.');
+            $memberName = $existing->member->Name_Member ?? 'Member lain';
+            $waktu = $existing->Day_Request . ' ' . substr($existing->Time_Request, 0, 5);
+            return redirect()->back()->withInput()->with('error', "Kode rack '{$codeRack}' sudah pernah direquest oleh {$memberName} ({$waktu}) dan saat ini masih berstatus Waiting.");
         }
 
         // Tentukan waktu efektif: Urgent bypass cutoff, non-urgent pakai aturan 15:30
@@ -75,7 +81,7 @@ class RequestController extends Controller
         $newRequest->Time_Request = $timeNow;
         $newRequest->Actual_Submitted_At = $now;
         $newRequest->Code_Item_Rack = $codeItem;
-        $newRequest->Code_Rack = $request->input('Code_Rack');
+        $newRequest->Code_Rack = $codeRack;
         $newRequest->Id_User = $Id_User;
         $newRequest->Status_Request = 'Waiting';
         $newRequest->Sum_Request = $request->input('Sum_Request');
