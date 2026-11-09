@@ -327,11 +327,16 @@
                         });
                         filterRow.append($('<th>').append(statusSelect));
 
-                        // Index 2, 3, 6 → Code Rack, Code Item, Area Check: input text
+                        // Index 2, 3, 6 → Code Rack, Code Item, Area Check: input text (debounce 400ms)
                     } else {
+                        var searchTimeout;
                         var input = $('<input type="text" class="form-control form-control-sm" placeholder="Cari..." />');
                         input.on('keyup change clear', function() {
-                            column.search(this.value).draw();
+                            var val = this.value;
+                            clearTimeout(searchTimeout);
+                            searchTimeout = setTimeout(function() {
+                                column.search(val).draw();
+                            }, 400);
                         });
                         filterRow.append($('<th>').append(input));
                     }

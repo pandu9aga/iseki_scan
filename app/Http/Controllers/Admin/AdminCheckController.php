@@ -280,7 +280,8 @@ class AdminCheckController extends Controller
     public function search()
     {
         if (request()->ajax()) {
-            $query = Check::with(['member', 'user', 'rack']);
+            $query = Check::with(['member', 'user', 'rack'])
+                ->where('Time_Check', '>=', Carbon::now()->subMonths(3)->startOfDay());
 
             if ($statusFilter = request('statusFilter')) {
                 if ($statusFilter === 'scan') {

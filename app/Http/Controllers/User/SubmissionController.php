@@ -310,7 +310,8 @@ class SubmissionController extends Controller
     public function search()
     {
         if (request()->ajax()) {
-            $query = RequestModel::with('member', 'record', 'rack');
+            $query = RequestModel::with('member', 'record', 'rack')
+                ->where('Day_Request', '>=', Carbon::now()->subMonths(3)->startOfDay());
 
             if ($statusFilter = request('statusFilter')) {
                 switch ($statusFilter) {

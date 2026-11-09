@@ -244,10 +244,15 @@
                             });
                             filterRow.append($('<th>').append(select));
                         } else {
-                            // Kolom lain → input text
+                            // Kolom lain → input text (debounce 400ms agar tidak spam request setiap ketikan)
+                            var searchTimeout;
                             var input = $(`<input type="text" class="form-control form-control-sm" placeholder="Search" />`)
                                 .on('keyup change clear', function () {
-                                    column.search(this.value).draw();
+                                    var val = this.value;
+                                    clearTimeout(searchTimeout);
+                                    searchTimeout = setTimeout(function () {
+                                        column.search(val).draw();
+                                    }, 400);
                                 });
                             filterRow.append($('<th>').append(input));
                         }
