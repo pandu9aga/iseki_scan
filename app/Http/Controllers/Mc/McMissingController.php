@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use App\Http\Controllers\Helper\LabelRackHelper;
 
 class McMissingController extends Controller
 {
@@ -48,8 +49,9 @@ class McMissingController extends Controller
 
         $formattedDate = Carbon::parse($date)->locale('en')->isoFormat('dddd, D-MMM-YY');
         $totalRequests = $requests->count();
+        $noRackMap = LabelRackHelper::getNoRackMap($requests);
 
-        return view('mcs.missings.index', compact('requests', 'totalRequests', 'formattedDate', 'date'));
+        return view('mcs.missings.index', compact('requests', 'totalRequests', 'formattedDate', 'date', 'noRackMap'));
     }
 
     public function export(Request $request)
@@ -90,8 +92,10 @@ class McMissingController extends Controller
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
 
+        $noRackMap = LabelRackHelper::getNoRackMap($requests);
+
         // Header kolom
-        $headers = ['No', 'Rack', 'Item', 'Name', 'Sum', 'Time Request', 'Ready Stock', 'Day(s)', 'Hour(s) Minute(s)', 'PIC'];
+        $headers = ['No', 'Rack', 'No Rack', 'Item', 'Name', 'Sum', 'Time Request', 'Ready Stock', 'Day(s)', 'Hour(s) Minute(s)', 'PIC'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Style header (tebal & background abu-abu)
@@ -99,7 +103,7 @@ class McMissingController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
         ];
-        $sheet->getStyle('A1:J1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
 
         $sheet->setAutoFilter(
             $sheet->calculateWorksheetDimension() // otomatis dari A1 sampai kolom terakhir
@@ -172,10 +176,13 @@ class McMissingController extends Controller
                 $overdueHM = '-';
             }
 
+            $noRack = LabelRackHelper::resolveNoRack($request->Code_Rack, $request->Code_Item_Rack, $noRackMap);
+
             // === 4. Tulis ke Excel ===
             $sheet->fromArray([
                 $index + 1,
                 $request->Code_Rack,
+                $noRack,
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
                 $request->Sum_Request,

@@ -39,6 +39,7 @@
                         <tr>
                             <th>No</th>
                             <th>Rack</th>
+                            <th>No Rack</th>
                             <th>Item</th>
                             <th>Name</th>
                             <th>Sum</th>
@@ -53,6 +54,7 @@
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $s->Code_Rack }}</td>
+                            <td>{{ \App\Http\Controllers\Helper\LabelRackHelper::resolveNoRack($s->Code_Rack, $s->Code_Item_Rack, $noRackMap ?? []) }}</td>
                             <td>{{ $s->Code_Item_Rack }}</td>
                             <td>{{ $s->rack->Name_Item_Rack ?? '' }}</td>
                             <td>{{ $s->Sum_Request }}</td>
