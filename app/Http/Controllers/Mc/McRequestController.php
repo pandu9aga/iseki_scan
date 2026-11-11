@@ -50,6 +50,9 @@ class McRequestController extends Controller
                         case '4':
                             $q->orWhereNotNull('Design_Changes_Request');
                             break;
+                        case '5':
+                            $q->orWhereNotNull('Qc_Request');
+                            break;
                     }
                 }
             });
@@ -111,6 +114,9 @@ class McRequestController extends Controller
                             break;
                         case '4':
                             $q->orWhereNotNull('Design_Changes_Request');
+                            break;
+                        case '5':
+                            $q->orWhereNotNull('Qc_Request');
                             break;
                     }
                 }
@@ -176,6 +182,9 @@ class McRequestController extends Controller
                         case '4':
                             $q->orWhereNotNull('Design_Changes_Request');
                             break;
+                        case '5':
+                            $q->orWhereNotNull('Qc_Request');
+                            break;
                     }
                 }
             });
@@ -200,7 +209,7 @@ class McRequestController extends Controller
             'Urgenity',
             'Item',
             'Name',
-            "1=Ready,2=Ship,\n3=Prod,4=Design",
+            "1=Ready,2=Ship,\n3=Prod,4=Design,5=QC",
             'Sum Stock',
             'Estimation Date',
             'Ready Stock',
@@ -258,6 +267,9 @@ class McRequestController extends Controller
             if ($request->Design_Changes_Request) {
                 $readyDisplay[] = 'Design: ' . $request->Design_Changes_Request;
             }
+            if ($request->Qc_Request) {
+                $readyDisplay[] = 'QC: ' . $request->Qc_Request;
+            }
 
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
@@ -273,11 +285,13 @@ class McRequestController extends Controller
                 $statusCode = '3';
             } elseif ($request->Design_Changes_Request !== null) {
                 $statusCode = '4';
+            } elseif ($request->Qc_Request !== null) {
+                $statusCode = '5';
             }
 
             // Determine Sum Stock display value
             $sumStockDisplay = '';
-            if ($statusCode == '2' || $statusCode == '4') {
+            if ($statusCode == '2' || $statusCode == '4' || $statusCode == '5') {
                 $sumStockDisplay = ''; // kosongan aja
             } else {
                 $sumStockDisplay = $request->Sum_Stock ?? '';
@@ -332,6 +346,16 @@ class McRequestController extends Controller
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'FFFFE0'] // Light Yellow
+                    ],
+                    'font' => [
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]);
+            } elseif ($statusCode == '5') {
+                $sheet->getStyle('K' . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'FFD6E7'] // Light Pink
                     ],
                     'font' => [
                         'color' => ['rgb' => '000000']
@@ -418,7 +442,7 @@ class McRequestController extends Controller
             if (str_contains($cleaned, 'sum stock')) {
                 $colStock = $colLetter;
             }
-            if (str_contains($cleaned, '1=ready') || str_contains($cleaned, 'ready,2=ship') || str_contains($cleaned, 'prod,4=design')) {
+            if (str_contains($cleaned, '1=ready') || str_contains($cleaned, 'ready,2=ship') || str_contains($cleaned, 'prod,4=design') || str_contains($cleaned, '5=qc')) {
                 $colStatus = $colLetter;
             }
             if (str_contains($cleaned, 'estimation')) {
@@ -469,7 +493,7 @@ class McRequestController extends Controller
             $rawStock = $row[$colStock] ?? null;
             $rawEstimation = $row[$colEstimation] ?? null;
 
-            $hasStatus = in_array($readyStatus, ['1', '2', '3', '4']);
+            $hasStatus = in_array($readyStatus, ['1', '2', '3', '4', '5']);
             $hasStock = ($rawStock !== null && $rawStock !== '' && is_numeric($rawStock));
 
             // VALIDASI per status:
@@ -542,7 +566,8 @@ class McRequestController extends Controller
                 $requestModel->Ready_Request !== null ||
                 $requestModel->Shipping_Request !== null ||
                 $requestModel->Production_Area_Request !== null ||
-                $requestModel->Design_Changes_Request !== null;
+                $requestModel->Design_Changes_Request !== null ||
+                $requestModel->Qc_Request !== null;
 
             if (!$anyStatusFilled) {
                 $now = Carbon::now();
@@ -558,6 +583,9 @@ class McRequestController extends Controller
                         break;
                     case '4':
                         $requestModel->Design_Changes_Request = $now;
+                        break;
+                    case '5':
+                        $requestModel->Qc_Request = $now;
                         break;
                 }
                 $changed = true;
@@ -666,7 +694,8 @@ class McRequestController extends Controller
                 $query->whereNull('Ready_Request')
                     ->whereNull('Shipping_Request')
                     ->whereNull('Production_Area_Request')
-                    ->whereNull('Design_Changes_Request');
+                    ->whereNull('Design_Changes_Request')
+                    ->whereNull('Qc_Request');
                 break;
             case 'ready':
                 $query->whereNotNull('Ready_Request');
@@ -679,6 +708,9 @@ class McRequestController extends Controller
                 break;
             case 'design_change':
                 $query->whereNotNull('Design_Changes_Request');
+                break;
+            case 'qc':
+                $query->whereNotNull('Qc_Request');
                 break;
         }
 
@@ -700,7 +732,7 @@ class McRequestController extends Controller
             'Urgenity',
             'Item',
             'Name',
-            "1=Ready,2=Ship,\n3=Prod,4=Design",
+            "1=Ready,2=Ship,\n3=Prod,4=Design,5=QC",
             'Sum Stock',
             'Estimation Date',
             'Ready Stock',
@@ -738,6 +770,7 @@ class McRequestController extends Controller
             if ($req->Shipping_Request) $readyDisplay[] = 'Shipping: ' . $req->Shipping_Request;
             if ($req->Production_Area_Request) $readyDisplay[] = 'Production: ' . $req->Production_Area_Request;
             if ($req->Design_Changes_Request) $readyDisplay[] = 'Design: ' . $req->Design_Changes_Request;
+            if ($req->Qc_Request) $readyDisplay[] = 'QC: ' . $req->Qc_Request;
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
             $timeRequest = ($req->Day_Request ?? '') . ' ' . ($req->Time_Request ?? '');
@@ -748,10 +781,11 @@ class McRequestController extends Controller
             elseif ($req->Shipping_Request !== null) $statusCode = '2';
             elseif ($req->Production_Area_Request !== null) $statusCode = '3';
             elseif ($req->Design_Changes_Request !== null) $statusCode = '4';
+            elseif ($req->Qc_Request !== null) $statusCode = '5';
 
             // Determine Sum Stock display value
             $sumStockDisplay = '';
-            if ($statusCode == '2' || $statusCode == '4') {
+            if ($statusCode == '2' || $statusCode == '4' || $statusCode == '5') {
                 $sumStockDisplay = ''; // kosongan aja
             } else {
                 $sumStockDisplay = $req->Sum_Stock ?? '';
@@ -805,6 +839,16 @@ class McRequestController extends Controller
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => 'FFFFE0'] // Light Yellow
+                    ],
+                    'font' => [
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]);
+            } elseif ($statusCode == '5') {
+                $sheet->getStyle('K' . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'FFD6E7'] // Light Pink
                     ],
                     'font' => [
                         'color' => ['rgb' => '000000']
@@ -875,6 +919,9 @@ class McRequestController extends Controller
                     case 'design_change':
                         $query->whereNotNull('Design_Changes_Request');
                         break;
+                    case 'qc':
+                        $query->whereNotNull('Qc_Request');
+                        break;
                 }
             }
 
@@ -922,7 +969,7 @@ class McRequestController extends Controller
                     }
                 })
                 ->editColumn('Sum_Stock', function ($r) {
-                    if ($r->Shipping_Request || $r->Design_Changes_Request) {
+                    if ($r->Shipping_Request || $r->Design_Changes_Request || $r->Qc_Request) {
                         return ''; // kosongan aja
                     }
                     return $r->Sum_Stock ?? '';
@@ -959,6 +1006,9 @@ class McRequestController extends Controller
                     if ($r->Design_Changes_Request) {
                         $statuses[] = '<span class="badge badge-warning">Design Change</span>: ' . $r->Design_Changes_Request;
                     }
+                    if ($r->Qc_Request) {
+                        $statuses[] = '<span class="badge badge-danger">QC</span>: ' . $r->Qc_Request;
+                    }
                     return implode(' | ', $statuses);
                 })
                 ->filterColumn('Id_User', function ($query, $keyword) {
@@ -970,7 +1020,7 @@ class McRequestController extends Controller
                     $query->orderBy('Day_Request', $order)->orderBy('Time_Request', $order);
                 })
                 ->orderColumn('ready_status_display', function ($query, $order) {
-                    $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01")) ' . $order);
+                    $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01"), COALESCE(Qc_Request, "1000-01-01")) ' . $order);
                 })
                 ->addColumn('Estimation_Date_Display', function ($r) {
                     if ($r->Estimation_Stock) {

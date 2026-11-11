@@ -169,6 +169,7 @@
                                                                         <option value="shipping">Shipping</option>
                                                                         <option value="production">Production</option>
                                                                         <option value="design_change">Design Change</option>
+                                                                        <option value="qc">QC</option>
                                                                     </select>`);
                             select.on('change', function () {
                                 table.ajax.reload();

@@ -161,6 +161,8 @@
                                     <td>
                                         @if(optional($r->request)->Shipping_Request || optional($r->request)->Design_Changes_Request)
                                             {{ optional($r->request)->Stock_Shipping ?? '' }}
+                                        @elseif(optional($r->request)->Qc_Request)
+                                            {{-- kosongan aja --}}
                                         @else
                                             {{ optional($r->request)->Sum_Stock ?? '' }}
                                         @endif

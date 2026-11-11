@@ -117,11 +117,15 @@ class UserReportController extends Controller
                 $statusCode = '3';
             } elseif ($record->request && $record->request->Design_Changes_Request !== null) {
                 $statusCode = '4';
+            } elseif ($record->request && $record->request->Qc_Request !== null) {
+                $statusCode = '5';
             }
 
             $sumStockDisplay = '';
             if ($statusCode == '2' || $statusCode == '4') {
                 $sumStockDisplay = $record->request->Stock_Shipping ?? '';
+            } elseif ($statusCode == '5') {
+                $sumStockDisplay = '';
             } else {
                 $sumStockDisplay = optional($record->request)->Sum_Stock ?? '';
             }

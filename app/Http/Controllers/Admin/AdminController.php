@@ -60,6 +60,7 @@ class AdminController extends Controller
             ->whereNull('Shipping_Request')
             ->whereNull('Production_Area_Request')
             ->whereNull('Design_Changes_Request')
+            ->whereNull('Qc_Request')
             ->get();
 
         $missingRequests = $mcMiss->filter(function ($mcMiss) use ($now) {

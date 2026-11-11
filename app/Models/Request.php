@@ -30,6 +30,7 @@ class Request extends Model
         'Shipping_Request',
         'Production_Area_Request',
         'Design_Changes_Request',
+        'Qc_Request',
         'Sum_Stock',
         'Stock_Shipping',
         'Updated_At_Request',

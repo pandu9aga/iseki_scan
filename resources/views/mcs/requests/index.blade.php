@@ -64,6 +64,10 @@
                                                 <input class="custom-control-input" type="checkbox" name="statusFilter[]" id="filter4" value="4" {{ in_array('4', request('statusFilter', [])) ? 'checked' : '' }}>
                                                 <label class="custom-control-label" style="font-size: 0.85rem; padding-top:2px;" for="filter4">Design</label>
                                             </div>
+                                            <div class="custom-control custom-checkbox custom-control-inline">
+                                                <input class="custom-control-input" type="checkbox" name="statusFilter[]" id="filter5" value="5" {{ in_array('5', request('statusFilter', [])) ? 'checked' : '' }}>
+                                                <label class="custom-control-label" style="font-size: 0.85rem; padding-top:2px;" for="filter5">QC</label>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="col-lg-2 col-md-6">
@@ -194,11 +198,12 @@
                                 if ($s->Shipping_Request) $statuses[] = '<span class="badge badge-info">Shipping</span>:' . $s->Shipping_Request;
                                 if ($s->Production_Area_Request) $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
                                 if ($s->Design_Changes_Request) $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
+                                if ($s->Qc_Request) $statuses[] = '<span class="badge badge-danger">QC</span>:' . $s->Qc_Request;
                                 echo implode(' | ', $statuses);
                                 @endphp
                             </td>
                             <td>
-                                @if($s->Shipping_Request || $s->Design_Changes_Request)
+                                @if($s->Shipping_Request || $s->Design_Changes_Request || $s->Qc_Request)
                                     {{-- kosongan aja --}}
                                 @else
                                     {{ $s->Sum_Stock ?? '' }}

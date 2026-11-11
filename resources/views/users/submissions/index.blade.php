@@ -35,6 +35,7 @@
                                         <option value="shipping" {{ request('statusFilter') == 'shipping' ? 'selected' : '' }}>Shipping</option>
                                         <option value="production" {{ request('statusFilter') == 'production' ? 'selected' : '' }}>Production</option>
                                         <option value="design_change" {{ request('statusFilter') == 'design_change' ? 'selected' : '' }}>Design Change</option>
+                                        <option value="qc" {{ request('statusFilter') == 'qc' ? 'selected' : '' }}>QC</option>
                                     </select>
                                 </div>
                                 <div class="col-lg-2 col-md-6">
@@ -179,12 +180,16 @@
                                                 $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
                                             if ($s->Design_Changes_Request)
                                                 $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
+                                            if ($s->Qc_Request)
+                                                $statuses[] = '<span class="badge badge-danger">QC</span>:' . $s->Qc_Request;
                                             echo implode(' | ', $statuses);
                                         @endphp
                                     </td>
                                     <td>
                                         @if($s->Shipping_Request || $s->Design_Changes_Request)
                                             {{ $s->Stock_Shipping ?? '' }}
+                                        @elseif($s->Qc_Request)
+                                            {{-- kosongan aja --}}
                                         @else
                                             {{ $s->Sum_Stock ?? '' }}
                                         @endif

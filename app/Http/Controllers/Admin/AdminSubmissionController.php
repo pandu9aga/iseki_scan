@@ -43,7 +43,7 @@ class AdminSubmissionController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header kolom
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design,5=QC", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Style header
@@ -88,6 +88,9 @@ class AdminSubmissionController extends Controller
             if ($request->Design_Changes_Request) {
                 $readyDisplay[] = 'Design: '.$request->Design_Changes_Request;
             }
+            if ($request->Qc_Request) {
+                $readyDisplay[] = 'QC: '.$request->Qc_Request;
+            }
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
             $statusCode = '';
@@ -99,7 +102,11 @@ class AdminSubmissionController extends Controller
                 $statusCode = '3';
             } elseif ($request->Design_Changes_Request !== null) {
                 $statusCode = '4';
+            } elseif ($request->Qc_Request !== null) {
+                $statusCode = '5';
             }
+
+            $sumStockDisplay = $statusCode === '5' ? '' : ($request->Sum_Stock ?? '');
 
             $estimationDisplay = '';
             if ($request->Estimation_Stock) {
@@ -118,7 +125,7 @@ class AdminSubmissionController extends Controller
                 $request->Code_Item_Rack,
                 $request->rack->Name_Item_Rack ?? '',
                 $statusCode,
-                $request->Sum_Stock ?? '',
+                $sumStockDisplay,
                 $readyStockDisplay,
                 $estimationDisplay,
                 $timeRecord,

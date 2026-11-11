@@ -28,7 +28,9 @@ class McMissingController extends Controller
 
         $requests = $allRequests->filter(function ($request) use ($workdaysAgo) {
             $latestStatusTime = null;
-            if ($request->Design_Changes_Request) {
+            if ($request->Qc_Request) {
+                $latestStatusTime = $request->Qc_Request;
+            } elseif ($request->Design_Changes_Request) {
                 $latestStatusTime = $request->Design_Changes_Request;
             } elseif ($request->Production_Area_Request) {
                 $latestStatusTime = $request->Production_Area_Request;
@@ -69,7 +71,9 @@ class McMissingController extends Controller
 
         $requests = $allRequests->filter(function ($request) use ($workdaysAgo) {
             $latestStatusTime = null;
-            if ($request->Design_Changes_Request) {
+            if ($request->Qc_Request) {
+                $latestStatusTime = $request->Qc_Request;
+            } elseif ($request->Design_Changes_Request) {
                 $latestStatusTime = $request->Design_Changes_Request;
             } elseif ($request->Production_Area_Request) {
                 $latestStatusTime = $request->Production_Area_Request;
@@ -129,11 +133,16 @@ class McMissingController extends Controller
             if ($request->Design_Changes_Request) {
                 $statuses[] = 'Design Change: '.$request->Design_Changes_Request;
             }
+            if ($request->Qc_Request) {
+                $statuses[] = 'QC: '.$request->Qc_Request;
+            }
             $readyStockDisplay = implode(' | ', $statuses);
 
             // === 3. Overdue (sama seperti di view) ===
             $statusTimestamp = null;
-            if ($request->Design_Changes_Request) {
+            if ($request->Qc_Request) {
+                $statusTimestamp = $request->Qc_Request;
+            } elseif ($request->Design_Changes_Request) {
                 $statusTimestamp = $request->Design_Changes_Request;
             } elseif ($request->Production_Area_Request) {
                 $statusTimestamp = $request->Production_Area_Request;
@@ -223,6 +232,7 @@ class McMissingController extends Controller
             ->whereNull('Shipping_Request')
             ->whereNull('Production_Area_Request')
             ->whereNull('Design_Changes_Request')
+            ->whereNull('Qc_Request')
             ->get();
 
         $missingRequests = $requests->filter(function ($request) use ($now) {
@@ -267,6 +277,7 @@ class McMissingController extends Controller
             ->whereNull('Shipping_Request')
             ->whereNull('Production_Area_Request')
             ->whereNull('Design_Changes_Request')
+            ->whereNull('Qc_Request')
             ->get();
 
         $missingRequests = $requests->filter(function ($request) use ($now) {
@@ -301,7 +312,7 @@ class McMissingController extends Controller
         // Header kolom
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
-            "1=Ready,2=Ship,\n3=Prod,4=Design", // ← \n = line break
+            "1=Ready,2=Ship,\n3=Prod,4=Design,5=QC", // ← \n = line break
             'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request',
             'Member Record', 'Updated', 'Id',
         ];
@@ -351,6 +362,9 @@ class McMissingController extends Controller
             if ($request->Design_Changes_Request) {
                 $readyDisplay[] = 'Design: '.$request->Design_Changes_Request;
             }
+            if ($request->Qc_Request) {
+                $readyDisplay[] = 'QC: '.$request->Qc_Request;
+            }
 
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
@@ -366,6 +380,8 @@ class McMissingController extends Controller
                 $statusCode = '3';
             } elseif ($request->Design_Changes_Request !== null) {
                 $statusCode = '4';
+            } elseif ($request->Qc_Request !== null) {
+                $statusCode = '5';
             }
 
             $estimationDisplay = '';
@@ -516,6 +532,8 @@ class McMissingController extends Controller
                 $statusLabel = 'Design Change';
             } elseif ($req->Shipping_Request) {
                 $statusLabel = 'Shipping';
+            } elseif ($req->Qc_Request) {
+                $statusLabel = 'QC';
             }
 
             $timeRequest = ($req->Day_Request ?? '').' '.($req->Time_Request ?? '');

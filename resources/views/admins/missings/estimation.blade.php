@@ -61,6 +61,8 @@
                                 <span class="badge badge-warning">Design Change</span>
                                 @elseif($s->Shipping_Request)
                                 <span class="badge badge-info">Shipping</span>
+                                @elseif($s->Qc_Request)
+                                <span class="badge badge-danger">QC</span>
                                 @endif
                             </td>
                             <td>{{ $s->Day_Request }} {{ $s->Time_Request }}</td>

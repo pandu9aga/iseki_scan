@@ -45,6 +45,9 @@ class AdminRequestController extends Controller
                 case 'design_change':
                     $query->whereNotNull('Design_Changes_Request');
                     break;
+                case 'qc':
+                    $query->whereNotNull('Qc_Request');
+                    break;
             }
         }
 
@@ -90,6 +93,9 @@ class AdminRequestController extends Controller
                     break;
                 case 'design_change':
                     $query->whereNotNull('Design_Changes_Request');
+                    break;
+                case 'qc':
+                    $query->whereNotNull('Qc_Request');
                     break;
             }
         }
@@ -139,6 +145,9 @@ class AdminRequestController extends Controller
                 case 'design_change':
                     $query->whereNotNull('Design_Changes_Request');
                     break;
+                case 'qc':
+                    $query->whereNotNull('Qc_Request');
+                    break;
             }
         }
 
@@ -153,7 +162,7 @@ class AdminRequestController extends Controller
         // Header kolom
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'No Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
-            "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request',
+            "1=Ready,2=Ship,\n3=Prod,4=Design,5=QC", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request',
             'Member Record', 'Updated',
         ];
         $sheet->fromArray([$headers], null, 'A1');
@@ -204,6 +213,9 @@ class AdminRequestController extends Controller
                 $prefix = $request->Ok_Stock == 1 ? 'OK Design: ' : 'Design: ';
                 $readyDisplay[] = $prefix.$request->Design_Changes_Request;
             }
+            if ($request->Qc_Request) {
+                $readyDisplay[] = 'QC: '.$request->Qc_Request;
+            }
 
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
@@ -219,11 +231,15 @@ class AdminRequestController extends Controller
                 $statusCode = '3';
             } elseif ($request->Design_Changes_Request !== null) {
                 $statusCode = '4';
+            } elseif ($request->Qc_Request !== null) {
+                $statusCode = '5';
             }
 
             $sumStockDisplay = '';
             if ($statusCode == '2' || $statusCode == '4') {
                 $sumStockDisplay = $request->Stock_Shipping ?? '';
+            } elseif ($statusCode == '5') {
+                $sumStockDisplay = '';
             } else {
                 $sumStockDisplay = $request->Sum_Stock ?? '';
             }
@@ -319,7 +335,8 @@ class AdminRequestController extends Controller
                 $query->whereNull('Ready_Request')
                     ->whereNull('Shipping_Request')
                     ->whereNull('Production_Area_Request')
-                    ->whereNull('Design_Changes_Request');
+                    ->whereNull('Design_Changes_Request')
+                    ->whereNull('Qc_Request');
                 break;
             case 'ready':
                 $query->whereNotNull('Ready_Request');
@@ -332,6 +349,9 @@ class AdminRequestController extends Controller
                 break;
             case 'design_change':
                 $query->whereNotNull('Design_Changes_Request');
+                break;
+            case 'qc':
+                $query->whereNotNull('Qc_Request');
                 break;
         }
 
@@ -353,7 +373,7 @@ class AdminRequestController extends Controller
             'Urgenity',
             'Item',
             'Name',
-            "1=Ready,2=Ship,\n3=Prod,4=Design",
+            "1=Ready,2=Ship,\n3=Prod,4=Design,5=QC",
             'Sum Stock',
             'Estimation Date',
             'Ready Stock',
@@ -400,6 +420,9 @@ class AdminRequestController extends Controller
                 $prefix = $req->Ok_Stock == 1 ? 'OK Design: ' : 'Design: ';
                 $readyDisplay[] = $prefix.$req->Design_Changes_Request;
             }
+            if ($req->Qc_Request) {
+                $readyDisplay[] = 'QC: '.$req->Qc_Request;
+            }
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
             $timeRequest = ($req->Day_Request ?? '').' '.($req->Time_Request ?? '');
@@ -414,11 +437,15 @@ class AdminRequestController extends Controller
                 $statusCode = '3';
             } elseif ($req->Design_Changes_Request !== null) {
                 $statusCode = '4';
+            } elseif ($req->Qc_Request !== null) {
+                $statusCode = '5';
             }
 
             $sumStockDisplay = '';
             if ($statusCode == '2' || $statusCode == '4') {
                 $sumStockDisplay = $req->Stock_Shipping ?? '';
+            } elseif ($statusCode == '5') {
+                $sumStockDisplay = '';
             } else {
                 $sumStockDisplay = $req->Sum_Stock ?? '';
             }
@@ -517,6 +544,9 @@ class AdminRequestController extends Controller
                     case 'design_change':
                         $query->whereNotNull('Design_Changes_Request');
                         break;
+                    case 'qc':
+                        $query->whereNotNull('Qc_Request');
+                        break;
                 }
             }
 
@@ -589,6 +619,9 @@ class AdminRequestController extends Controller
                     if ($r->Shipping_Request || $r->Design_Changes_Request) {
                         return $r->Stock_Shipping ?? '';
                     }
+                    if ($r->Qc_Request) {
+                        return '';
+                    }
 
                     return $r->Sum_Stock ?? '';
                 })
@@ -615,6 +648,9 @@ class AdminRequestController extends Controller
                         $title = $r->Ok_Stock == 1 ? 'OK Design Change' : 'Design Change';
                         $statuses[] = '<span class="badge badge-warning">'.$title.'</span>: '.$r->Design_Changes_Request;
                     }
+                    if ($r->Qc_Request) {
+                        $statuses[] = '<span class="badge badge-danger">QC</span>: '.$r->Qc_Request;
+                    }
 
                     return implode(' | ', $statuses);
                 })
@@ -627,7 +663,7 @@ class AdminRequestController extends Controller
                     $query->orderBy('Day_Request', $order)->orderBy('Time_Request', $order);
                 })
                 ->orderColumn('ready_status_display', function ($query, $order) {
-                    $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01")) '.$order);
+                    $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01"), COALESCE(Qc_Request, "1000-01-01")) '.$order);
                 })
                 ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display', 'Type_Tractor_Rack'])
                 ->make(true);

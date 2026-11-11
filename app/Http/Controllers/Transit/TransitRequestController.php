@@ -44,6 +44,9 @@ class TransitRequestController extends Controller
                 case 'design_change':
                     $query->whereNotNull('Design_Changes_Request');
                     break;
+                case 'qc':
+                    $query->whereNotNull('Qc_Request');
+                    break;
             }
         }
 
@@ -89,6 +92,9 @@ class TransitRequestController extends Controller
                     break;
                 case 'design_change':
                     $query->whereNotNull('Design_Changes_Request');
+                    break;
+                case 'qc':
+                    $query->whereNotNull('Qc_Request');
                     break;
             }
         }
@@ -138,6 +144,9 @@ class TransitRequestController extends Controller
                 case 'design_change':
                     $query->whereNotNull('Design_Changes_Request');
                     break;
+                case 'qc':
+                    $query->whereNotNull('Qc_Request');
+                    break;
             }
         }
 
@@ -148,7 +157,7 @@ class TransitRequestController extends Controller
 
         $headers = [
             'No', 'Time Request', 'Area', 'Rack', 'Sum Request', 'Urgenity', 'Item', 'Name',
-            "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 
+            "1=Ready,2=Ship,\n3=Prod,4=Design,5=QC", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 
             'Member Record', 'Updated', 'Id'
         ];
         $sheet->fromArray([$headers], null, 'A1');
@@ -178,6 +187,7 @@ class TransitRequestController extends Controller
             if ($requestItem->Shipping_Request) $readyDisplay[] = 'Shipping: ' . $requestItem->Shipping_Request;
             if ($requestItem->Production_Area_Request) $readyDisplay[] = 'Production: ' . $requestItem->Production_Area_Request;
             if ($requestItem->Design_Changes_Request) $readyDisplay[] = 'Design: ' . $requestItem->Design_Changes_Request;
+            if ($requestItem->Qc_Request) $readyDisplay[] = 'QC: ' . $requestItem->Qc_Request;
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
             $timeRequest = ($requestItem->Day_Request ?? '') . " " . ($requestItem->Time_Request ?? '');
@@ -188,6 +198,7 @@ class TransitRequestController extends Controller
             elseif ($requestItem->Shipping_Request !== null) $statusCode = '2';
             elseif ($requestItem->Production_Area_Request !== null) $statusCode = '3';
             elseif ($requestItem->Design_Changes_Request !== null) $statusCode = '4';
+            elseif ($requestItem->Qc_Request !== null) $statusCode = '5';
 
             $estimationDisplay = '';
             if ($requestItem->Estimation_Stock) {
@@ -206,7 +217,7 @@ class TransitRequestController extends Controller
                 $requestItem->Code_Item_Rack,
                 $requestItem->rack->Name_Item_Rack ?? '',
                 $statusCode,
-                $requestItem->Sum_Stock ?? '',
+                $statusCode === '5' ? '' : ($requestItem->Sum_Stock ?? ''),
                 $readyStockDisplay,
                 $estimationDisplay,
                 $timeRecord,
@@ -271,6 +282,9 @@ class TransitRequestController extends Controller
                     case 'design_change':
                         $query->whereNotNull('Design_Changes_Request');
                         break;
+                    case 'qc':
+                        $query->whereNotNull('Qc_Request');
+                        break;
                 }
             }
 
@@ -326,6 +340,9 @@ class TransitRequestController extends Controller
                     if ($r->Design_Changes_Request) {
                         $statuses[] = '<span class="badge badge-warning">Design Change</span>: ' . $r->Design_Changes_Request;
                     }
+                    if ($r->Qc_Request) {
+                        $statuses[] = '<span class="badge badge-danger">QC</span>: ' . $r->Qc_Request;
+                    }
                     return implode(' | ', $statuses);
                 })
                 ->filterColumn('Id_User', function ($query, $keyword) {
@@ -337,7 +354,7 @@ class TransitRequestController extends Controller
                     $query->orderBy('Day_Request', $order)->orderBy('Time_Request', $order);
                 })
                 ->orderColumn('ready_status_display', function ($query, $order) {
-                    $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01")) ' . $order);
+                    $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01"), COALESCE(Qc_Request, "1000-01-01")) ' . $order);
                 })
                 ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display'])
                 ->make(true);

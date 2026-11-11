@@ -172,11 +172,15 @@ class ReportController extends Controller
                 $statusCode = '3';
             } elseif (optional($record->request)->Design_Changes_Request !== null) {
                 $statusCode = '4';
+            } elseif (optional($record->request)->Qc_Request !== null) {
+                $statusCode = '5';
             }
 
             $sumStockDisplay = '';
             if ($statusCode == '2' || $statusCode == '4') {
                 $sumStockDisplay = optional($record->request)->Stock_Shipping ?? '';
+            } elseif ($statusCode == '5') {
+                $sumStockDisplay = '';
             } else {
                 $sumStockDisplay = optional($record->request)->Sum_Stock ?? '';
             }

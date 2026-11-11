@@ -70,13 +70,16 @@
                                                 $statuses[] = '<span class="badge badge-primary">Production</span>:' . $s->Production_Area_Request;
                                             if ($s->Design_Changes_Request)
                                                 $statuses[] = '<span class="badge badge-warning">Design Change</span>:' . $s->Design_Changes_Request;
+                                            if ($s->Qc_Request) $statuses[] = '<span class="badge badge-danger">QC</span>:' . $s->Qc_Request;
                                             echo implode(' | ', $statuses);
                                         @endphp
                                     </td>
                                     <td class="text-danger font-weight-bold overdue">
                                         @php
                                             $statusTimestamp = null;
-                                            if ($s->Design_Changes_Request) {
+                                            if ($s->Qc_Request) {
+                                                $statusTimestamp = $s->Qc_Request;
+                                            } elseif ($s->Design_Changes_Request) {
                                                 $statusTimestamp = $s->Design_Changes_Request;
                                             } elseif ($s->Production_Area_Request) {
                                                 $statusTimestamp = $s->Production_Area_Request;

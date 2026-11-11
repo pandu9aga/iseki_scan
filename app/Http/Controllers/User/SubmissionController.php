@@ -45,6 +45,9 @@ class SubmissionController extends Controller
                 case 'design_change':
                     $query->whereNotNull('Design_Changes_Request');
                     break;
+                case 'qc':
+                    $query->whereNotNull('Qc_Request');
+                    break;
             }
         }
 
@@ -96,6 +99,9 @@ class SubmissionController extends Controller
                     break;
                 case 'design_change':
                     $query->whereNotNull('Design_Changes_Request');
+                    break;
+                case 'qc':
+                    $query->whereNotNull('Qc_Request');
                     break;
             }
         }
@@ -151,6 +157,9 @@ class SubmissionController extends Controller
                 case 'design_change':
                     $query->whereNotNull('Design_Changes_Request');
                     break;
+                case 'qc':
+                    $query->whereNotNull('Qc_Request');
+                    break;
             }
         }
 
@@ -162,7 +171,7 @@ class SubmissionController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
 
         // Header
-        $headers = ['No', 'Time Request', 'Area', 'Rack', 'No Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
+        $headers = ['No', 'Time Request', 'Area', 'Rack', 'No Rack', 'Sum Request', 'Urgenity', 'Item', 'Name', "1=Ready,2=Ship,\n3=Prod,4=Design,5=QC", 'Sum Stock', 'Ready Stock', 'Estimation Date', 'Time Record', 'Sum Record', 'Member Request', 'Member Record', 'Updated'];
         $sheet->fromArray([$headers], null, 'A1');
 
         // Header style
@@ -198,6 +207,7 @@ class SubmissionController extends Controller
             if ($submission->Shipping_Request) $readyDisplay[] = 'Shipping: ' . $submission->Shipping_Request;
             if ($submission->Production_Area_Request) $readyDisplay[] = 'Production: ' . $submission->Production_Area_Request;
             if ($submission->Design_Changes_Request) $readyDisplay[] = 'Design: ' . $submission->Design_Changes_Request;
+            if ($submission->Qc_Request) $readyDisplay[] = 'QC: ' . $submission->Qc_Request;
             $readyStockDisplay = implode(' | ', $readyDisplay);
 
             $statusCode = '';
@@ -209,12 +219,16 @@ class SubmissionController extends Controller
                 $statusCode = '3';
             } elseif ($submission->Design_Changes_Request !== null) {
                 $statusCode = '4';
+            } elseif ($submission->Qc_Request !== null) {
+                $statusCode = '5';
             }
 
             // Determine Sum Stock display value
             $sumStockDisplay = '';
             if ($statusCode == '2' || $statusCode == '4') {
                 $sumStockDisplay = $submission->Stock_Shipping ?? '';
+            } elseif ($statusCode == '5') {
+                $sumStockDisplay = '';
             } else {
                 $sumStockDisplay = $submission->Sum_Stock ?? '';
             }
@@ -327,6 +341,9 @@ class SubmissionController extends Controller
                     case 'design_change':
                         $query->whereNotNull('Design_Changes_Request');
                         break;
+                    case 'qc':
+                        $query->whereNotNull('Qc_Request');
+                        break;
                 }
             }
 
@@ -395,6 +412,9 @@ class SubmissionController extends Controller
                     if ($r->Shipping_Request !== null || $r->Design_Changes_Request !== null) {
                         return $r->Stock_Shipping;
                     }
+                    if ($r->Qc_Request !== null) {
+                        return '';
+                    }
                     return $r->Sum_Stock;
                 })
                 ->addColumn('Estimation_Stock', function ($r) {
@@ -417,6 +437,9 @@ class SubmissionController extends Controller
                     if ($r->Design_Changes_Request) {
                         $statuses[] = '<span class="badge badge-warning">Design Change</span>: ' . $r->Design_Changes_Request;
                     }
+                    if ($r->Qc_Request) {
+                        $statuses[] = '<span class="badge badge-danger">QC</span>: ' . $r->Qc_Request;
+                    }
                     return implode(' | ', $statuses);
                 })
                 ->filterColumn('Id_User', function ($query, $keyword) {
@@ -428,7 +451,7 @@ class SubmissionController extends Controller
                     $query->orderBy('Day_Request', $order)->orderBy('Time_Request', $order);
                 })
                 ->orderColumn('ready_status_display', function ($query, $order) {
-                    $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01")) ' . $order);
+                    $query->orderByRaw('GREATEST(COALESCE(Ready_Request, "1000-01-01"), COALESCE(Shipping_Request, "1000-01-01"), COALESCE(Production_Area_Request, "1000-01-01"), COALESCE(Design_Changes_Request, "1000-01-01"), COALESCE(Qc_Request, "1000-01-01")) ' . $order);
                 })
                 ->rawColumns(['Urgent_Request', 'ready_status_display', 'Status_Request_Display', 'Type_Tractor_Rack'])
                 ->make(true);

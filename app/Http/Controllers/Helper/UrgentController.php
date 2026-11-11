@@ -123,6 +123,9 @@ $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 
                     } elseif ($cat == 'telat qc') {
                         $label = 'TELAT QC';
                         $class = 'pink';
+                    } elseif ($cat == 'cek kualitas') {
+                        $label = 'CEK KUALITAS';
+                        $class = 'danger';
                     } elseif ($cat == 'telat return rack') {
                         $label = 'TELAT RETURN RACK';
                         $class = 'secondary';
@@ -478,7 +481,73 @@ $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 
         }
 
         // ============================================================
-        // PRIORITAS 1: Stock → PRIORITAS 2: QC/Return Rack
+        // PRIORITAS 2: Request berstatus QC (label dari MC) → salah MC
+        // ============================================================
+        if ($waitingRequest && $waitingRequest->Qc_Request !== null) {
+            $bossMcMember = Member::where('Name_Member', 'Boss MC')->first();
+            if ($bossMcMember && $bossMcMember->Status_Non_Active == 1) {
+                $systemMember = Member::where('Name_Member', 'system')->first();
+                $idMcPic = $systemMember ? $systemMember->Id_Member : 35;
+                $nameMcPic = 'system';
+            } else {
+                $idMcPic = $bossMcMember ? $bossMcMember->Id_Member : 32;
+                $nameMcPic = 'Boss MC';
+            }
+
+            if ($checkDuplicateToday()) {
+                return redirect()->back()->with('error', 'Double Input dicegah (Sudah ada scan untuk Kode Rak oleh Anda hari ini).');
+            }
+
+            $namePartQc = $rackForOverride ? ($rackForOverride->Name_Item_Rack ?? '-') : '-';
+            $codeItemQc = $rackForOverride ? ($rackForOverride->Code_Item_Rack ?? '-') : '-';
+
+            $mistake = Mistake::create([
+                'Id_Request' => $waitingRequest->Id_Request,
+                'PIC' => $nameMcPic,
+                'Category_Mistake' => 'cek kualitas',
+                'Day_Mistake' => $nowDate,
+                'Status_Mistake' => 0,
+            ]);
+
+            Urgent::create([
+                'Id_User' => $idMemberLogged,
+                'Id_Type_User' => null,
+                'Code_Rack' => $codeRack,
+                'Id_Request' => $waitingRequest->Id_Request,
+                'Id_Member' => $idMcPic,
+                'Time_Urgent' => $nowTime,
+                'Id_Mistake' => $mistake->Id_Mistake,
+            ]);
+
+            $reporter = Member::find($idMemberLogged);
+            $this->queueWaMessage([
+                'time_urgent' => $nowTime,
+                'code_rack' => $codeRack,
+                'pic' => $nameMcPic,
+                'reporter' => $reporter ? $reporter->Name_Member : 'Member',
+                'code_item' => $codeItemQc,
+                'name_part' => $namePartQc,
+                'sum_request' => $waitingRequest->Sum_Request,
+                'category' => 'cek kualitas',
+                'time_request' => $waitingRequest->Day_Request.' '.$waitingRequest->Time_Request,
+            ]);
+
+            return redirect()->back()->with([
+                'success' => 'Urgent Scan Code Rack '.$codeRack.' berhasil diproses (Cek Kualitas).',
+                'scan_success_data' => [
+                    'category' => 'CEK KUALITAS',
+                    'badge_class' => 'danger',
+                    'time_request' => $waitingRequest->Time_Request,
+                    'sum_request' => $waitingRequest->Sum_Request,
+                    'pic' => $nameMcPic,
+                    'code_rack' => $codeRack,
+                    'rack_location' => $this->getRackLocation($codeRack),
+                ],
+            ]);
+        }
+
+        // ============================================================
+        // PRIORITAS 3: Stock → PRIORITAS 4: QC/Return Rack
         // Jika terdeteksi, langsung proses & return (early return)
         // ============================================================
         if (($stockOverride && $waitingRequest) || $qcOverride || $telatReturnRackOverride) {
@@ -915,6 +984,8 @@ $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 
             $category = 'PRODUCTION - MC';
         } elseif ($data['category'] == 'telat qc') {
             $category = 'TELAT QC';
+        } elseif ($data['category'] == 'cek kualitas') {
+            $category = 'CEK KUALITAS - MC';
         } elseif ($data['category'] == 'telat return rack') {
             $category = 'TELAT RETURN RACK - DST';
         } elseif ($data['category'] == 'stock') {
@@ -1107,6 +1178,9 @@ $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 
                     } elseif ($cat == 'telat qc') {
                         $label = 'TELAT QC';
                         $class = 'pink';
+                    } elseif ($cat == 'cek kualitas') {
+                        $label = 'CEK KUALITAS';
+                        $class = 'danger';
                     } elseif ($cat == 'telat return rack') {
                         $label = 'TELAT RETURN RACK';
                         $class = 'secondary';
