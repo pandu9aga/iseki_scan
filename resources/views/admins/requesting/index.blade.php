@@ -333,6 +333,16 @@
                 if (response.exists) {
                     // Tampilkan modal warning
                     var msg = 'Part dengan kode Rack <strong>' + codeRack + '</strong> telah di request oleh <strong>' + response.name + '</strong> pada <strong>' + response.day + ' ' + response.time + '</strong> dan belum di Record.';
+
+                    // Keterangan tambahan sesuai status yang disiapkan MC
+                    if (response.status) {
+                        msg += '<div class="alert alert-' + (response.status_badge || 'secondary') + ' mt-3 mb-0 text-center">' +
+                            '<div class="font-weight-bold" style="font-size:16px;">' + response.status + '</div>' +
+                            (response.status_time ? '<div class="small mt-1">Status MC: ' + response.status_time + '</div>' : '') +
+                            (response.status_note ? '<div class="small mt-1">' + response.status_note + '</div>' : '') +
+                            '</div>';
+                    }
+
                     document.getElementById('duplicateRequestBody').innerHTML = msg;
                     $('#duplicateRequestModal').modal('show');
                 } else {

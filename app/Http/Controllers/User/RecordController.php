@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Helper\LabelRackHelper;
 use App\Models\Member;
 use App\Models\Rack;
 use App\Models\RackPartList;
@@ -579,6 +580,127 @@ class RecordController extends Controller
                     'area' => $r->Area_Request ?: '',
                 ];
             }),
+            'no_request_info' => $requests->isEmpty()
+                ? $this->buildNoRequestInfo($codeRack, $cleanItem, $codeItem)
+                : null,
         ]);
+    }
+
+    /**
+     * Info tambahan saat tidak ada request:
+     * - No Rack yang match dengan kode part (fallback ke kode rack yang discan)
+     * - Riwayat record terakhir (tanggal, jam, oleh siapa)
+     */
+    private function buildNoRequestInfo(string $codeRack, string $cleanItem, string $codeItem): array
+    {
+        $rackNo = null;
+        $source = null;
+
+        // 1. Berdasarkan kode part -> cari No Rack di iseki_label
+        try {
+            if ($cleanItem !== '') {
+                $label = RackPartList::where('item_code', $cleanItem)
+                    ->orWhere('item_code', $codeItem)
+                    ->first();
+
+                if (!$label) {
+                    $label = RackPartList::where('item_code', 'LIKE', '%' . $codeItem . '%')->first();
+                }
+
+                if ($label) {
+                    $noRack = LabelRackHelper::buildNoRack($label->rack, $label->cell);
+                    if ($noRack !== '' && $noRack !== '-') {
+                        $rackNo = $noRack;
+                        $source = 'item';
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Abaikan bila koneksi label bermasalah
+        }
+
+        // 1b. Fallback kode part -> racks lokal
+        if (!$rackNo) {
+            $localRack = DB::table('racks')
+                ->where('Code_Item_Rack', $cleanItem)
+                ->orWhere('Code_Item_Rack', $codeItem)
+                ->first();
+
+            if (!$localRack) {
+                $localRack = DB::table('racks')
+                    ->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%')
+                    ->first();
+            }
+
+            if ($localRack) {
+                $rackNo = $localRack->Code_Rack;
+                $source = 'item';
+            }
+        }
+
+        // 2. Kode part tidak punya No Rack -> fallback ke kode rack yang discan
+        if (!$rackNo) {
+            try {
+                $labelByRack = RackPartList::where('rack_no', $codeRack)->first();
+
+                if ($labelByRack) {
+                    $noRack = LabelRackHelper::buildNoRack($labelByRack->rack, $labelByRack->cell);
+                    if ($noRack !== '' && $noRack !== '-') {
+                        $rackNo = $noRack;
+                        $source = 'rack';
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Abaikan bila koneksi label bermasalah
+            }
+        }
+
+        // 2b. Fallback kode rack -> racks lokal
+        if (!$rackNo) {
+            $localRackByRack = DB::table('racks')->where('Code_Rack', $codeRack)->first();
+            if ($localRackByRack) {
+                $rackNo = $localRackByRack->Code_Rack;
+                $source = 'rack';
+            }
+        }
+
+        // 3. Riwayat record terakhir
+        $recordQuery = Record::with(['member', 'user']);
+
+        if ($source === 'item') {
+            $recordQuery->where(function ($q) use ($cleanItem, $codeItem) {
+                $q->where('Code_Item_Rack', $cleanItem)
+                    ->orWhere('Code_Item_Rack', $codeItem);
+
+                if ($codeItem !== '') {
+                    $q->orWhere('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%');
+                }
+            });
+        } elseif ($source === 'rack') {
+            $recordQuery->where('Code_Rack', $codeRack);
+        } elseif ($cleanItem !== '') {
+            $recordQuery->where('Code_Item_Rack', 'LIKE', '%' . $codeItem . '%');
+        } else {
+            $recordQuery->where('Code_Rack', $codeRack);
+        }
+
+        $lastRecord = $recordQuery
+            ->orderByDesc('Day_Record')
+            ->orderByDesc('Time_Record')
+            ->orderByDesc('Id_Record')
+            ->first();
+
+        return [
+            'rack_no' => $rackNo,
+            'rack_found' => !empty($rackNo),
+            'source' => $source,
+            'code_item' => $cleanItem,
+            'code_rack' => $codeRack,
+            'last_record' => $lastRecord ? [
+                'day' => $lastRecord->Day_Record,
+                'time' => $lastRecord->Time_Record,
+                'user' => $lastRecord->display_name ?: '-',
+            ] : null,
+        ];
     }
 }

@@ -71,6 +71,59 @@ class Request extends Model
         return optional($this->member)->Name_Member ?? '';
     }
 
+    /**
+     * Informasi status yang disiapkan MC untuk request ini.
+     * Dipakai untuk memberi keterangan tambahan saat terdeteksi request ganda.
+     */
+    public function mcStatusInfo(): array
+    {
+        $statuses = [
+            'Ready_Request' => ['label' => 'Ready-Waiting Record', 'badge' => 'success'],
+            'Shipping_Request' => ['label' => 'Shipping', 'badge' => 'info'],
+            'Production_Area_Request' => ['label' => 'Production', 'badge' => 'primary'],
+            'Design_Changes_Request' => ['label' => 'Design Change', 'badge' => 'warning'],
+            'Qc_Request' => ['label' => 'QC', 'badge' => 'danger'],
+        ];
+
+        foreach ($statuses as $field => $meta) {
+            $value = $this->{$field};
+
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            $time = null;
+            try {
+                $time = \Carbon\Carbon::parse($value)->format('d/m/Y H:i');
+            } catch (\Exception $e) {
+                // Abaikan format tanggal yang tidak valid
+            }
+
+            $note = $field === 'Ready_Request'
+                ? 'Part sudah Ready tetapi belum di-Record. Silakan lakukan Record, bukan Request ulang.'
+                : 'Status terakhir dari MC: '.$meta['label'].'.';
+
+            return [
+                'label' => $meta['label'],
+                'badge' => $meta['badge'],
+                'time' => $time,
+                'note' => $note,
+            ];
+        }
+
+        $statusRequest = $this->Status_Request;
+        if ($statusRequest === null || $statusRequest === '') {
+            $statusRequest = 'Waiting';
+        }
+
+        return [
+            'label' => $statusRequest,
+            'badge' => 'secondary',
+            'time' => null,
+            'note' => 'Belum ada status dari MC.',
+        ];
+    }
+
     public function record()
     {
         return $this->hasOne(Record::class, 'Id_Request', 'Id_Request');

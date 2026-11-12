@@ -162,7 +162,22 @@
                                         </button>
                                     </div>
                                     <div class="modal-body">
-                                        <p>Tidak ada request dengan kode part tersebut</p>
+                                        <p class="mb-3">
+                                            Tidak ada request dengan kode part
+                                            <strong id="errorModalCodeItem">-</strong>
+                                            (Rack: <strong id="errorModalCodeRack">-</strong>).
+                                        </p>
+                                        <div class="border rounded bg-light p-3 text-left" style="font-size: 14px;">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span class="text-muted">No Rack</span>
+                                                <strong id="noRequestRackNo" class="text-dark">-</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="text-muted">Record terakhir</span>
+                                                <strong id="noRequestLastRecord" class="text-dark text-right">-</strong>
+                                            </div>
+                                        </div>
+                                        <div id="noRequestSource" class="small text-muted mt-2 text-left"></div>
                                     </div>
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -537,6 +552,39 @@
     });
     $("#Code_Rack").on("change blur", checkCorrectness);
 
+    function showNoRequestModal(info, codeItem, codeRack) {
+        document.getElementById('errorModalCodeItem').textContent = codeItem || '-';
+        document.getElementById('errorModalCodeRack').textContent = codeRack || '-';
+
+        var rackNoEl = document.getElementById('noRequestRackNo');
+        var lastRecordEl = document.getElementById('noRequestLastRecord');
+        var sourceEl = document.getElementById('noRequestSource');
+
+        var rackNo = info && info.rack_found && info.rack_no ? info.rack_no : null;
+        rackNoEl.textContent = rackNo ? rackNo : 'no rak not found';
+        rackNoEl.className = rackNo ? 'font-weight-bold text-dark' : 'font-weight-bold text-danger';
+
+        if (info && info.last_record && info.last_record.day) {
+            var day = String(info.last_record.day);
+            var parts = day.split('-');
+            var formattedDay = parts.length === 3 ? parts[2] + '/' + parts[1] + '/' + parts[0] : day;
+            var time = info.last_record.time ? String(info.last_record.time).substring(0, 5) : '';
+            lastRecordEl.textContent = formattedDay + (time ? ' ' + time : '') + ' oleh ' + (info.last_record.user || '-');
+        } else {
+            lastRecordEl.textContent = '-';
+        }
+
+        if (info && info.source === 'item') {
+            sourceEl.textContent = 'No Rack berdasarkan kode part.';
+        } else if (info && info.source === 'rack') {
+            sourceEl.textContent = 'No Rack berdasarkan kode rack yang discan.';
+        } else {
+            sourceEl.textContent = '';
+        }
+
+        $('#errorModal').modal('show');
+    }
+
     function resolveRequest() {
         let codeItem = $("#Code_Item").val();
         let codeRack = $("#Code_Rack").val();
@@ -558,8 +606,8 @@
             Code_Rack: codeRack
         }, function(response) {
             if (response.count === 0) {
-                // tidak ada request matching -> tampilkan modal error
-                $("#errorModal").modal("show");
+                // tidak ada request matching -> tampilkan modal error + info tambahan
+                showNoRequestModal(response.no_request_info, codeItem, codeRack);
             } else if (response.count === 1) {
                 proceedRecord(response.requests[0].id);
             } else {

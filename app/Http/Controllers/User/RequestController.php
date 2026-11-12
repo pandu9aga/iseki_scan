@@ -50,16 +50,30 @@ class RequestController extends Controller
 
         $codeItem = substr($rack->Code_Item_Rack, 0, 12);
 
-        // Cek apakah sudah ada request untuk kode rack ini yang masih berstatus Waiting
+        // Cek apakah sudah ada request untuk kode rack ini yang belum di-Record
         $existing = RequestModel::where('Code_Rack', $codeRack)
-            ->where('Status_Request', 'Waiting')
+            ->where(function ($q) {
+                $q->where('Status_Request', '!=', 'Done')
+                    ->orWhereNull('Status_Request');
+            })
             ->with('member')
             ->first();
 
         if ($existing) {
             $memberName = $existing->member->Name_Member ?? 'Member lain';
             $waktu = $existing->Day_Request . ' ' . substr($existing->Time_Request, 0, 5);
-            return redirect()->back()->withInput()->with('error', "Kode rack '{$codeRack}' sudah pernah direquest oleh {$memberName} ({$waktu}) dan saat ini masih berstatus Waiting.");
+            $msg = "Kode rack '{$codeRack}' sudah pernah direquest oleh {$memberName} ({$waktu}) dan belum di-Record.";
+
+            $statusInfo = $existing->mcStatusInfo();
+            if ($statusInfo['label']) {
+                $msg .= " Status MC: {$statusInfo['label']}";
+                if ($statusInfo['time']) {
+                    $msg .= " ({$statusInfo['time']})";
+                }
+                $msg .= '.';
+            }
+
+            return redirect()->back()->withInput()->with('error', $msg);
         }
 
         // Tentukan waktu efektif: Urgent bypass cutoff, non-urgent pakai aturan 15:30
@@ -184,16 +198,25 @@ class RequestController extends Controller
         $codeRack = $request->input('Code_Rack');
 
         $existing = RequestModel::where('Code_Rack', $codeRack)
-            ->where('Status_Request', '!=', 'Done')
+            ->where(function ($q) {
+                $q->where('Status_Request', '!=', 'Done')
+                    ->orWhereNull('Status_Request');
+            })
             ->with('member')
             ->first();
 
         if ($existing) {
+            $statusInfo = $existing->mcStatusInfo();
+
             return response()->json([
                 'exists' => true,
                 'name' => $existing->member->Name_Member ?? 'Unknown',
                 'day' => $existing->Day_Request,
                 'time' => $existing->Time_Request,
+                'status' => $statusInfo['label'],
+                'status_badge' => $statusInfo['badge'],
+                'status_time' => $statusInfo['time'],
+                'status_note' => $statusInfo['note'],
             ]);
         }
 
