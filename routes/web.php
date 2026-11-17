@@ -46,6 +46,7 @@ use App\Http\Controllers\User\UserForgotController;
 use App\Http\Controllers\User\UserMistakeController;
 use App\Http\Controllers\User\UserReportController;
 use App\Http\Controllers\User\UserRackController;
+use App\Http\Controllers\User\UserStockItemController;
 use App\Http\Controllers\User\BranchRecord;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AnyAuthMiddleware;
@@ -300,6 +301,12 @@ Route::middleware(AuthMiddleware::class)->group(function () {
 
     // User Rack
     Route::get('/user_rack', [UserRackController::class, 'index'])->name('user.rack');
+
+    // Stock Item (member)
+    Route::get('/user_stock_item', [UserStockItemController::class, 'index'])->name('user_stock_item');
+    Route::post('/user_stock_item/store', [UserStockItemController::class, 'store'])->name('user_stock_item.store');
+    Route::delete('/user_stock_item/delete/{id}', [UserStockItemController::class, 'destroy'])->name('user_stock_item.destroy');
+    Route::post('/user_stock_item/bulk-destroy', [UserStockItemController::class, 'bulkDestroy'])->name('user_stock_item.bulk_destroy');
 
     // Branch Record (standalone, independent from Request cycle)
     Route::get('/branch_record', [BranchRecord::class, 'index'])->name('branch_record');

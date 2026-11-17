@@ -52,6 +52,34 @@
                                         @error('Code_Rack')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
+                                        <span id="stockIndicator" class="badge badge-success mt-2" style="display:none;">
+                                            <i class="fas fa-boxes mr-1"></i>Stock Tersedia
+                                        </span>
+                                    </div>
+
+                                    <!-- Pilih dari Stock -->
+                                    <div class="form-group mb-3">
+                                        <label for="stockSelect" class="small text-muted font-weight-bold">Pilih dari Stock</label>
+                                        <select id="stockSelect" class="form-control select2" style="width:100%;">
+                                            <option value="">-- Pilih rak dari data stock --</option>
+                                            @foreach ($stockItems as $stock)
+                                                <option value="{{ $stock->Code_Rack_Stock_Item }}">{{ $stock->Code_Rack_Stock_Item }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Toggle Mode Stock -->
+                                    <div class="form-group mb-3">
+                                        <div class="custom-control custom-switch d-inline-block">
+                                            <input type="checkbox" class="custom-control-input" id="remove_from_stock"
+                                                name="remove_from_stock" value="1" checked>
+                                            <label class="custom-control-label" for="remove_from_stock">
+                                                Hapus dari Stock setelah record
+                                            </label>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">
+                                            Jika rak ada di data Stock, rak tersebut akan otomatis hilang dari daftar Stock Item.
+                                        </small>
                                     </div>
                                 </div>
                             </div>
@@ -145,6 +173,38 @@
 </script>
 
 <script>
+    // Daftar kode rak yang ada di data Stock Item
+    var stockCodes = @json($stockItems->pluck('Code_Rack_Stock_Item')->map(function ($c) {
+        return strtoupper($c);
+    }));
+
+    // Saat memilih rak dari dropdown stock
+    document.getElementById('stockSelect').addEventListener('change', function() {
+        var code = this.value;
+        if (code) {
+            document.getElementById('Code_Rack').value = code.toUpperCase();
+            document.getElementById('remove_from_stock').checked = true;
+            updateStockIndicator(code);
+        }
+    });
+
+    // Cek indikator stok saat rak diisi manual / scan
+    document.getElementById('Code_Rack').addEventListener('input', function() {
+        updateStockIndicator(this.value);
+    });
+
+    function updateStockIndicator(code) {
+        var indicator = document.getElementById('stockIndicator');
+        var normalized = (code || '').toUpperCase().trim();
+        if (normalized && stockCodes.indexOf(normalized) !== -1) {
+            indicator.style.display = 'inline-block';
+        } else {
+            indicator.style.display = 'none';
+        }
+    }
+</script>
+
+<script>
     function loadBranchData() {
         var date = document.getElementById('filterDateBr').value;
         if (!date) return;
@@ -187,6 +247,24 @@
     }
     document.addEventListener('DOMContentLoaded', function() {
         setTodayBr();
+    });
+</script>
+@endsection
+
+@section('style')
+<link href="{{ asset('css/select2.min.css') }}" rel="stylesheet">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@endsection
+
+@section('script')
+<script src="{{ asset('js/select2.min.js') }}"></script>
+<script>
+    $(document).ready(function() {
+        $('#stockSelect').select2({
+            placeholder: "-- Pilih rak dari data stock --",
+            allowClear: true,
+            width: '100%'
+        });
     });
 </script>
 @endsection

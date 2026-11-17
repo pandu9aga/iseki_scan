@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BranchRecord as BranchRecordModel;
 use App\Models\Member;
 use App\Models\Rack;
+use App\Models\StockItem;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -20,7 +21,9 @@ class BranchRecord extends Controller
      */
     public function index()
     {
-        return view('users.branch_records.index');
+        $stockItems = StockItem::orderBy('Code_Rack_Stock_Item')->get(['Id_Stock_Item', 'Code_Rack_Stock_Item']);
+
+        return view('users.branch_records.index', compact('stockItems'));
     }
 
     /**
@@ -52,6 +55,8 @@ class BranchRecord extends Controller
                 ->with('error', "Kode '{$rawCodeRack}' bukan nomor rak yang valid atau tidak terdaftar dalam master rak.");
         }
 
+        $removeFromStock = $request->boolean('remove_from_stock');
+
         try {
             BranchRecordModel::create([
                 'Day_Branch_Record'        => $date,
@@ -61,7 +66,20 @@ class BranchRecord extends Controller
                 'Updated_At_Branch_Record' => null,
             ]);
 
-            return redirect()->back()->with('success', 'Rak ' . $rack->Code_Rack . ' berhasil dicatat.');
+            // Jika mode stock aktif dan rak ada di data stok, hapus dari data stok
+            $removedFromStock = false;
+            if ($removeFromStock) {
+                $removedFromStock = StockItem::where('Code_Rack_Stock_Item', $rack->Code_Rack)->delete() > 0;
+            }
+
+            $msg = 'Rak ' . $rack->Code_Rack . ' berhasil dicatat.';
+            if ($removeFromStock) {
+                $msg .= $removedFromStock
+                    ? ' Rak ini telah dihapus dari data Stock Item.'
+                    : ' (Rak tidak ditemukan di data Stock Item.)';
+            }
+
+            return redirect()->back()->with('success', $msg);
         } catch (\Throwable $e) {
             Log::error('BranchRecord create failed: ' . $e->getMessage(), [
                 'user_id' => $Id_User,

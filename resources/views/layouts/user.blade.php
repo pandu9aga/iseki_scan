@@ -377,6 +377,13 @@
                     <span>17. Rack</span></a>
             </li>
 
+            <!-- Nav Item - Stock Item -->
+            <li class="nav-item {{ request()->routeIs('user_stock_item') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('user_stock_item') }}">
+                    <i class="fas fa-fw fa-boxes"></i>
+                    <span>18. Stock Item</span></a>
+            </li>
+
 
 
             <!-- Divider -->
