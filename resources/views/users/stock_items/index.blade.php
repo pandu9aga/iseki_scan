@@ -39,6 +39,26 @@
         </div>
     @endif
 
+    <!-- Scan Tambah Stock Item -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-qrcode mr-1"></i> Scan Tambah Stock Item
+            </h6>
+        </div>
+        <div class="card-body">
+            <div id="reader_stock" class="mx-auto" style="max-width: 300px;"></div>
+            <div class="text-center mt-3">
+                <button type="button" id="scanStockBtn" class="btn btn-warning btn-sm">
+                    <i class="fas fa-qrcode mr-1"></i> Scan
+                </button>
+            </div>
+            <small class="text-muted d-block text-center mt-2">
+                Scan kode rak untuk menambahkannya ke Stock Item.
+            </small>
+        </div>
+    </div>
+
     <!-- Action Buttons -->
     <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex flex-wrap align-items-center justify-content-between">
@@ -80,6 +100,7 @@
                             </th>
                             <th style="width:60px;">No</th>
                             <th>Code Rack</th>
+                            <th style="width:160px;">Input By</th>
                             <th style="width:100px;">Action</th>
                         </tr>
                     </thead>
@@ -87,24 +108,35 @@
                         @forelse ($stockItems as $index => $item)
                             <tr>
                                 <td class="text-center">
-                                    <input type="checkbox" class="row-check" value="{{ $item->Id_Stock_Item }}" onclick="updateBulkButton()">
+                                    @if (session('Id_Member') == $item->Id_Member)
+                                        <input type="checkbox" class="row-check" value="{{ $item->Id_Stock_Item }}" onclick="updateBulkButton()">
+                                    @else
+                                        <i class="fas fa-lock text-muted" title="Bukan data Anda"></i>
+                                    @endif
                                 </td>
                                 <td>{{ $index + 1 }}</td>
                                 <td>{{ $item->Code_Rack_Stock_Item }}</td>
+                                <td>{{ $members[$item->Id_Member] ?? '-' }}</td>
                                 <td class="text-center">
-                                    <form action="{{ route('user_stock_item.destroy', $item->Id_Stock_Item) }}" method="POST"
-                                        onsubmit="return confirm('Yakin hapus data Code Rack: {{ $item->Code_Rack_Stock_Item }}?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
+                                    @if (session('Id_Member') == $item->Id_Member)
+                                        <form action="{{ route('user_stock_item.destroy', $item->Id_Stock_Item) }}" method="POST"
+                                            onsubmit="return confirm('Yakin hapus data Code Rack: {{ $item->Code_Rack_Stock_Item }}?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="text-muted" title="Hanya bisa menghapus data yang Anda inputkan">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">Belum ada data stock item.</td>
+                                <td colspan="5" class="text-center text-muted py-4">Belum ada data stock item.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -161,6 +193,12 @@
     @csrf
 </form>
 
+<!-- Hidden Form for Scan Add -->
+<form id="scanStockForm" action="{{ route('user_stock_item.store') }}" method="POST" style="display:none;">
+    @csrf
+    <input type="hidden" name="code_racks" id="scanStockCode">
+</form>
+
 @endsection
 
 @section('style')
@@ -176,7 +214,7 @@
         $('#dataTable').DataTable({
             pageLength: 100,
             lengthMenu: [[25, 50, 100, -1], [25, 50, 100, "All"]],
-            order: [[2, 'asc']]
+            order: [[1, 'asc']]
         });
     });
 
@@ -228,5 +266,22 @@
 
         form.submit();
     }
+</script>
+<script src="{{ asset('js/html5-qrcode.min.js') }}"></script>
+<script>
+    let stockScanner = new Html5QrcodeScanner("reader_stock", {
+        fps: 10,
+        qrbox: { width: 220, height: 220 }
+    });
+
+    function onScanStockSuccess(decodedText) {
+        document.getElementById('scanStockCode').value = decodedText.toUpperCase().trim();
+        stockScanner.clear();
+        document.getElementById('scanStockForm').submit();
+    }
+
+    document.getElementById('scanStockBtn').addEventListener('click', function () {
+        stockScanner.render(onScanStockSuccess);
+    });
 </script>
 @endsection

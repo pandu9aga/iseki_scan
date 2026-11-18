@@ -16,5 +16,6 @@ class StockItem extends Model
 
     protected $fillable = [
         'Code_Rack_Stock_Item',
+        'Id_Member',
     ];
 }

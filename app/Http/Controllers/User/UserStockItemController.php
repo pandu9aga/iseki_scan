@@ -23,7 +23,12 @@ class UserStockItemController extends Controller
 
         $stockItems = $query->orderBy('Id_Stock_Item', 'desc')->get();
 
-        return view('users.stock_items.index', compact('stockItems', 'search'));
+        $memberIds = $stockItems->pluck('Id_Member')->filter()->unique()->values();
+        $members = $memberIds->isNotEmpty()
+            ? \App\Models\Member::whereIn('Id_Member', $memberIds)->pluck('Name_Member', 'Id_Member')->toArray()
+            : [];
+
+        return view('users.stock_items.index', compact('stockItems', 'search', 'members'));
     }
 
     /**
@@ -54,6 +59,7 @@ class UserStockItemController extends Controller
 
             StockItem::create([
                 'Code_Rack_Stock_Item' => $codeRack,
+                'Id_Member' => session('Id_Member'),
             ]);
             $inserted++;
         }
@@ -72,6 +78,12 @@ class UserStockItemController extends Controller
     public function destroy($id)
     {
         $item = StockItem::findOrFail($id);
+
+        // Hanya boleh menghapus data yang diinputkan oleh member sendiri
+        if ((int) $item->Id_Member !== (int) session('Id_Member')) {
+            return redirect()->route('user_stock_item')->with('error', 'Anda hanya dapat menghapus data yang Anda inputkan sendiri.');
+        }
+
         $item->delete();
 
         return redirect()->route('user_stock_item')->with('success', 'Data berhasil dihapus.');
@@ -82,15 +94,21 @@ class UserStockItemController extends Controller
      */
     public function bulkDestroy(Request $request)
     {
-        $ids = $request->input('ids', []);
+        $ids = array_filter(array_map('intval', (array) $request->input('ids', [])));
 
         if (empty($ids)) {
             return redirect()->route('user_stock_item')->with('error', 'Tidak ada data yang dipilih.');
         }
 
-        StockItem::whereIn('Id_Stock_Item', $ids)->delete();
+        // Hanya boleh menghapus data yang diinputkan oleh member sendiri
+        $deleted = StockItem::whereIn('Id_Stock_Item', $ids)
+            ->where('Id_Member', session('Id_Member'))
+            ->delete();
 
-        $count = count($ids);
-        return redirect()->route('user_stock_item')->with('success', "$count data berhasil dihapus.");
+        if ($deleted === 0) {
+            return redirect()->route('user_stock_item')->with('error', 'Data yang dipilih bukan milik Anda.');
+        }
+
+        return redirect()->route('user_stock_item')->with('success', "$deleted data berhasil dihapus.");
     }
 }
