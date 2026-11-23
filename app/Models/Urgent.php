@@ -14,7 +14,7 @@ class Urgent extends Model
      * Jika TRUE, maka semua request part urgent (dari menu iseki_scan maupun iseki_marshalling)
      * DITUTUP dan TIDAK AKAN di-insert ke database.
      */
-    const IS_URGENT_CLOSED = false;
+    const IS_URGENT_CLOSED = true;
 
     /**
      * Helper check apakah request part urgent sedang ditutup.
