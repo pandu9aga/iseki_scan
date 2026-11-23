@@ -9,6 +9,21 @@ class Urgent extends Model
 {
     use HasFactory;
 
+    /**
+     * Switch ON/OFF untuk menutup fitur request part urgent.
+     * Jika TRUE, maka semua request part urgent (dari menu iseki_scan maupun iseki_marshalling)
+     * DITUTUP dan TIDAK AKAN di-insert ke database.
+     */
+    const IS_URGENT_CLOSED = false;
+
+    /**
+     * Helper check apakah request part urgent sedang ditutup.
+     */
+    public static function isUrgentClosed(): bool
+    {
+        return self::IS_URGENT_CLOSED === true;
+    }
+
     protected $table = 'urgents'; // Nama tabel
 
     protected $primaryKey = 'Id_Urgent'; // Nama primary key

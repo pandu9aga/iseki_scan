@@ -33,6 +33,15 @@ class AreaScanController extends Controller
         $nowDate = Carbon::now()->format('Y-m-d');
         $nowTime = Carbon::now()->format('Y-m-d H:i:s');
 
+        // Pengecekan switch penutupan request part urgent
+        if (Urgent::isUrgentClosed()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fitur request part urgent saat ini sedang ditutup. Data tidak diinsert.',
+                'closed' => true,
+            ]);
+        }
+
         if (! $codeRack) {
             return response()->json(['success' => false, 'message' => 'Code Rack tidak boleh kosong']);
         }
@@ -517,6 +526,11 @@ class AreaScanController extends Controller
         $idUserLogged = session('Id_User'); // ID_User of type 4 logged in
         $nowDate = Carbon::now()->format('Y-m-d');
         $nowTime = Carbon::now()->format('Y-m-d H:i:s');
+
+        // Pengecekan switch penutupan request part urgent
+        if (Urgent::isUrgentClosed()) {
+            return redirect()->back()->with('error', 'Fitur scan part urgent saat ini sedang ditutup.');
+        }
 
         if (! $codeRack) {
             return redirect()->back()->with('error', 'Code Rack tidak boleh kosong');
@@ -1067,6 +1081,10 @@ class AreaScanController extends Controller
      */
     private function queueWaMessage(array $data): void
     {
+        if (Urgent::isUrgentClosed()) {
+            return;
+        }
+
         $category = strtoupper($data['category']);
         if ($data['category'] == 'telat supply' || $data['category'] == 'telat request' || $data['category'] == 'store tengah') {
             $category .= ' DST';

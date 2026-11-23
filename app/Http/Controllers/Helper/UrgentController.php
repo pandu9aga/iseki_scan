@@ -341,6 +341,11 @@ $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 
         $nowDate = Carbon::now()->format('Y-m-d');
         $nowTime = Carbon::now()->format('Y-m-d H:i:s');
 
+        // Pengecekan switch penutupan request part urgent
+        if (Urgent::isUrgentClosed()) {
+            return redirect()->back()->with('error', 'Fitur scan part urgent saat ini sedang ditutup.');
+        }
+
         if (! $codeRack) {
             return redirect()->back()->with('error', 'Code Rack tidak boleh kosong');
         }
@@ -975,6 +980,10 @@ $query = Urgent::with(['member', 'user', 'reporterMember', 'requestModel.rack', 
      */
     private function queueWaMessage(array $data): void
     {
+        if (Urgent::isUrgentClosed()) {
+            return;
+        }
+
         $category = strtoupper($data['category']);
         if ($data['category'] == 'telat supply' || $data['category'] == 'telat request' || $data['category'] == 'store tengah') {
             $category .= ' DST';
