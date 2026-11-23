@@ -385,14 +385,16 @@
                                 <small class="text-muted d-block mt-1">
                                     {{ \Carbon\Carbon::parse($w->Date_Part_Ng)->format('d/m/y H:i') }}
                                 </small>
+                                @if($w->Desc_Part_Ng)
+                                <small class="d-block mt-1 text-wrap" style="white-space:normal; max-width:140px; font-size:0.72rem; color:#555;">
+                                    <i class="fas fa-comment-alt mr-1"></i>{{ $w->Desc_Part_Ng }}
+                                </small>
+                                @endif
                                 @elseif($w->Finish_Receiving)
-                                <form action="{{ route('qc.withdrawal.partNgOke', $w->Id_Withdrawal) }}" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-danger btn-action text-white"
-                                        onclick="return confirm('Tandai Part ini sebagai NG Oke? DST akan diminta mengembalikan Part NG ini.')">
-                                        <i class="fas fa-times-circle mr-1"></i>Part NG Oke
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-danger btn-action text-white"
+                                    data-toggle="modal" data-target="#modalPartNgOke{{ $w->Id_Withdrawal }}">
+                                    <i class="fas fa-times-circle mr-1"></i>Part NG Oke
+                                </button>
                                 @else
                                 <span class="text-muted">-</span>
                                 @endif
@@ -400,6 +402,9 @@
                             <td class="td-ng">
                                 @if($w->Date_Return_Ng)
                                 <span class="font-weight-bold">{{ $w->name_return_ng ?? $w->NIK_Return_Ng }}</span><br>
+                                @if($w->NIK_Return_Ng && $w->name_return_ng && $w->name_return_ng != $w->NIK_Return_Ng)
+                                <small class="text-muted d-block">{{ $w->NIK_Return_Ng }}</small>
+                                @endif
                                 <small class="text-muted d-block mt-1">
                                     Rack: {{ $w->Code_Rack_Return_Ng }} <br>
                                     {{ \Carbon\Carbon::parse($w->Date_Return_Ng)->format('d/m/y H:i') }}
@@ -445,6 +450,45 @@
                     <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-info btn-sm">
                         <i class="fas fa-check mr-1"></i>Konfirmasi Selesai
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+@endforeach
+
+{{-- Modal Part NG Oke (per-row) --}}
+@foreach($withdrawals as $w)
+@if($w->Finish_Receiving && !$w->Is_Part_Ng)
+<div class="modal fade" id="modalPartNgOke{{ $w->Id_Withdrawal }}" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <form action="{{ route('qc.withdrawal.partNgOke', $w->Id_Withdrawal) }}" method="POST">
+                @csrf
+                <div class="modal-header bg-danger text-white">
+                    <h6 class="modal-title font-weight-bold">
+                        <i class="fas fa-times-circle mr-1"></i>Part NG Oke &mdash; {{ $w->Code_Item_Withdrawal }}
+                    </h6>
+                    <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:0.85rem;" class="mb-2">
+                        Tandai item <strong>{{ $w->Code_Item_Withdrawal }}</strong> sebagai <span class="text-danger font-weight-bold">Part NG</span>?
+                        DST akan diminta mengembalikan part ini.
+                    </p>
+                    <div class="form-group mb-0">
+                        <label style="font-size:0.82rem;font-weight:600;">Keterangan Part NG <span class="text-danger">*</span></label>
+                        <textarea name="Desc_Part_Ng" class="form-control" rows="3"
+                            placeholder="Masukkan keterangan kondisi part ..." maxlength="255" required></textarea>
+                        <small class="text-muted">Keterangan kondisi/kerusakan part terkait</small>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fas fa-check mr-1"></i>Ya, Part NG
                     </button>
                 </div>
             </form>

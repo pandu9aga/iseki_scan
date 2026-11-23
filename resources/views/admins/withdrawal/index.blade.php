@@ -324,6 +324,11 @@
                                 <small class="text-muted d-block">
                                     {{ \Carbon\Carbon::parse($w->Date_Part_Ng)->format('d/m/y H:i') }}
                                 </small>
+                                @if($w->Desc_Part_Ng)
+                                <small class="d-block mt-1 text-wrap" style="white-space:normal; max-width:140px; font-size:0.72rem; color:#555;">
+                                    <i class="fas fa-comment-alt mr-1"></i>{{ $w->Desc_Part_Ng }}
+                                </small>
+                                @endif
                                 @elseif($w->Finish_Receiving)
                                 <button class="btn btn-warning btn-action font-weight-bold" data-toggle="modal" data-target="#modalPartNgOke{{ $w->Id_Withdrawal }}">
                                     <i class="fas fa-exclamation-triangle mr-1"></i>Part NG
@@ -337,6 +342,9 @@
                             <td class="td-ng">
                                 @if($w->Date_Return_Ng)
                                 <span class="font-weight-bold">{{ $w->name_return_ng ?? $w->NIK_Return_Ng }}</span><br>
+                                @if($w->NIK_Return_Ng && $w->name_return_ng && $w->name_return_ng != $w->NIK_Return_Ng)
+                                <small class="text-muted d-block">{{ $w->NIK_Return_Ng }}</small>
+                                @endif
                                 <span class="badge badge-secondary mb-1">Rak: {{ $w->Code_Rack_Return_Ng ?? '-' }}</span><br>
                                 <small class="text-muted d-block">
                                     {{ \Carbon\Carbon::parse($w->Date_Return_Ng)->format('d/m/y H:i') }}
@@ -480,13 +488,30 @@
                         Pastikan barcode rak yang discan adalah <strong>{{ $w->rack_no }}</strong>
                     </div>
                     <div class="form-group mb-2">
-                        <label style="font-size:0.82rem;font-weight:600;">NIK Member DST (Opsional jika ceklis Admin)</label>
-                        <input type="text" name="NIK_Return" class="form-control nik-input"
-                            placeholder="Masukkan NIK Member" id="nikRet{{ $w->Id_Withdrawal }}">
+                        @php
+                            $defaultNikRet = $w->NIK_Withdrawal ?: '';
+                            $defaultNameRet = $w->name_disiapkan ?: '';
+                        @endphp
+                        <label style="font-size:0.82rem;font-weight:600;">NIK Member DST <span class="text-danger">*</span></label>
+                        <input type="text" name="NIK_Return" class="form-control nik-input font-weight-bold"
+                            placeholder="Masukkan NIK Member" id="nikRet{{ $w->Id_Withdrawal }}"
+                            value="{{ $defaultNikRet }}" required autocomplete="off">
+                        <div id="nikRetHelp{{ $w->Id_Withdrawal }}" class="mt-1">
+                            @if($defaultNameRet && $defaultNameRet != '-')
+                            <small class="text-success font-weight-bold">
+                                <i class="fas fa-user-check mr-1"></i>Nama: {{ $defaultNameRet }} (NIK: {{ $defaultNikRet }})
+                            </small>
+                            @else
+                            <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>NIK member otomatis terisi dari data pengajuan</small>
+                            @endif
+                        </div>
                         <div class="custom-control custom-checkbox mt-2 mb-3">
                             <input type="checkbox" class="custom-control-input cb-admin" name="Is_User"
-                                id="cbAdminRet{{ $w->Id_Withdrawal }}" value="1" data-target="#nikRet{{ $w->Id_Withdrawal }}" checked>
-                            <label class="custom-control-label font-weight-bold" for="cbAdminRet{{ $w->Id_Withdrawal }}" style="font-size:0.82rem;">
+                                id="cbAdminRet{{ $w->Id_Withdrawal }}" value="1"
+                                data-target="#nikRet{{ $w->Id_Withdrawal }}"
+                                data-member-nik="{{ $defaultNikRet }}"
+                                data-member-name="{{ $defaultNameRet }}">
+                            <label class="custom-control-label font-weight-bold" for="cbAdminRet{{ $w->Id_Withdrawal }}" style="font-size:0.82rem; cursor:pointer;">
                                 Centang jika dimasukkan oleh Admin ({{ session('Username_User', 'Admin') }})
                             </label>
                         </div>
@@ -544,10 +569,15 @@
                     <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
-                    <p style="font-size:0.85rem;" class="mb-1">
+                    <p style="font-size:0.85rem;" class="mb-2">
                         Tandai item <strong>{{ $w->Code_Item_Withdrawal }}</strong> sebagai <span class="text-danger font-weight-bold">Part NG</span>?
                     </p>
-                    <p style="font-size:0.8rem;" class="text-muted mb-0">Part akan menunggu proses Return NG ke rak.</p>
+                    <div class="form-group mb-0">
+                        <label style="font-size:0.82rem;font-weight:600;">Keterangan Part NG <span class="text-danger">*</span></label>
+                        <textarea name="Desc_Part_Ng" class="form-control" rows="3"
+                            placeholder="Masukkan keterangan kondisi part ..." maxlength="255" required></textarea>
+                        <small class="text-muted">Keterangan kondisi/kerusakan part terkait</small>
+                    </div>
                 </div>
                 <div class="modal-footer py-2">
                     <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Batal</button>
@@ -575,18 +605,19 @@
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
+                    <div class="alert alert-warning py-2 mb-3" style="font-size:0.8rem;">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        Pastikan barcode rak yang discan adalah <strong>{{ $w->rack_no }}</strong>
+                    </div>
+
                     <div class="form-group mb-2">
-                        <label style="font-size:0.82rem;font-weight:600;">NIK Member DST (Opsional jika ceklis Admin)</label>
-                        <input type="text" name="NIK_Return_Ng" class="form-control"
-                            placeholder="Masukkan NIK Member" id="nikRetNg{{ $w->Id_Withdrawal }}">
-                        <div class="custom-control custom-checkbox mt-2">
-                            <input type="checkbox" class="custom-control-input cb-admin-ng" name="Is_User"
-                                id="cbAdminNg{{ $w->Id_Withdrawal }}" value="1"
-                                data-target="#nikRetNg{{ $w->Id_Withdrawal }}" checked>
-                            <label class="custom-control-label" for="cbAdminNg{{ $w->Id_Withdrawal }}" style="font-size:0.82rem;font-weight:600;">
-                                Centang jika dikembalikan oleh Admin ({{ session('Username_User', 'Admin') }})
-                            </label>
-                        </div>
+                        <label style="font-size:0.82rem;font-weight:600;">PIC Return NG (NIK / Nama) <span class="text-danger">*</span></label>
+                        <input type="text" name="NIK_Return_Ng" class="form-control font-weight-bold"
+                            placeholder="NIK / Nama PIC" id="nikRetNg{{ $w->Id_Withdrawal }}"
+                            value="{{ session('Username_User', 'Admin') }} (Admin)" required autocomplete="off">
+                        <small class="text-muted d-block mt-1">
+                            <i class="fas fa-user-shield mr-1"></i>Otomatis terisi akun yang sedang login. Bisa diubah ke NIK member bila perlu.
+                        </small>
                     </div>
 
                     <div class="custom-control custom-checkbox mb-3 p-2 bg-light rounded border">
@@ -708,13 +739,23 @@
         // ── Checkbox Admin Flow ────────────────────────────────
         $(document).on('change', '.cb-admin', function() {
             var target = $(this).data('target');
+            var defaultNik = $(this).data('member-nik') || '';
+            var defaultName = $(this).data('member-name') || '';
+            var adminName = "{{ session('Username_User', 'Admin') }} (Admin)";
+            var helpId = target.replace('#', '') + 'Help';
+
             if ($(this).is(':checked')) {
-                $(target).prop('disabled', true).val('');
+                $(target).val(adminName).prop('readonly', true).removeClass('is-invalid');
                 $(target).removeAttr('required');
+                $('#' + helpId).html('<span class="text-primary font-weight-bold"><i class="fas fa-user-shield mr-1"></i>Dimasukkan oleh Admin: ' + adminName + '</span>');
             } else {
-                $(target).prop('disabled', false);
+                $(target).val(defaultNik).prop('readonly', false);
                 $(target).attr('required', true);
-                $(target).focus();
+                if (defaultName && defaultName !== '-') {
+                    $('#' + helpId).html('<small class="text-success font-weight-bold"><i class="fas fa-user-check mr-1"></i>Nama: ' + defaultName + ' (NIK: ' + defaultNik + ')</small>');
+                } else {
+                    $('#' + helpId).html('<small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Masukkan NIK Member</small>');
+                }
             }
         });
 
@@ -744,12 +785,8 @@
         // Initialize state on modal open
         $('.modal').on('show.bs.modal', function() {
             var $cb = $(this).find('.cb-admin');
-            if ($cb.length) {
-                $cb.prop('checked', true).trigger('change');
-
-                // Auto-fill UNAME from session AFTER trigger change (so it's not cleared by the listener)
-                var target = $cb.data('target');
-                $(target).val("{{ session('Username_User') }}");
+            if ($cb.length && $cb.is(':checked')) {
+                $cb.trigger('change');
             }
         });
 
@@ -796,19 +833,6 @@
             $(this).find('.cb-daichi-ng').prop('checked', false).trigger('change');
         });
 
-        // ── Admin-NG checkbox (NIK toggle for Return NG modal) ──
-        $(document).on('change', '.cb-admin-ng', function() {
-            var target = $(this).data('target');
-            if ($(this).is(':checked')) {
-                $(target).prop('disabled', true).val('');
-                $(target).removeAttr('required');
-            } else {
-                $(target).prop('disabled', false);
-                $(target).attr('required', true);
-                $(target).focus();
-            }
-        });
-
         // ── Item DAICHI for Return NG ──────────────────────────
         $(document).on('change', '.cb-daichi-ng', function() {
             const isChecked = $(this).is(':checked');
@@ -827,14 +851,6 @@
             } else {
                 $(targetInput).val('').removeAttr('readonly').removeClass('bg-light font-weight-bold text-primary');
                 $(scanBtn).removeClass('disabled').css('pointer-events', 'auto').removeAttr('tabindex');
-            }
-        });
-
-        // Initialize admin-ng checkbox state on Return NG modal open
-        $(document).on('show.bs.modal', '[id^="modalReturnNg"]', function() {
-            var $cb = $(this).find('.cb-admin-ng');
-            if ($cb.length) {
-                $cb.prop('checked', true).trigger('change');
             }
         });
 
