@@ -208,6 +208,8 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::post('/admin_withdrawal/arrive/{id}', [AdminWithdrawalController::class, 'arrive'])->name('admin.withdrawal.arrive');
     Route::post('/admin_withdrawal/finish/{id}', [AdminWithdrawalController::class, 'finish'])->name('admin.withdrawal.finish');
     Route::post('/admin_withdrawal/return/{id}', [AdminWithdrawalController::class, 'returnRack'])->name('admin.withdrawal.return');
+    Route::post('/admin_withdrawal/part-ng-oke/{id}', [AdminWithdrawalController::class, 'partNgOke'])->name('admin.withdrawal.partNgOke');
+    Route::post('/admin_withdrawal/return-ng/{id}', [AdminWithdrawalController::class, 'returnNg'])->name('admin.withdrawal.returnNg');
     Route::delete('/admin_withdrawal/destroy/{id}', [AdminWithdrawalController::class, 'destroy'])->name('admin.withdrawal.destroy');
     Route::get('/admin_withdrawal/export', [AdminWithdrawalController::class, 'export'])->name('admin.withdrawal.export');
 

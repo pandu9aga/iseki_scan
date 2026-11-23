@@ -52,6 +52,7 @@ class AdminWithdrawalController extends Controller
         // Optimasi: Kumpulkan NIK unik
         $niks = $withdrawals->pluck('NIK_Withdrawal')
             ->merge($withdrawals->pluck('NIK_Return'))
+            ->merge($withdrawals->pluck('NIK_Return_Ng'))
             ->filter()
             ->unique();
 
@@ -112,6 +113,20 @@ class AdminWithdrawalController extends Controller
                 }
             } else {
                 $w->name_return = '-';
+            }
+
+            if ($w->NIK_Return_Ng) {
+                if ($w->Is_User && isset($usersMap[$w->NIK_Return_Ng])) {
+                    $w->name_return_ng = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } elseif (isset($membersMap[$w->NIK_Return_Ng])) {
+                    $w->name_return_ng = $membersMap[$w->NIK_Return_Ng];
+                } elseif (isset($usersMap[$w->NIK_Return_Ng])) {
+                    $w->name_return_ng = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } else {
+                    $w->name_return_ng = $w->NIK_Return_Ng;
+                }
+            } else {
+                $w->name_return_ng = '-';
             }
 
             $rackInfo = $racksMap[$w->Code_Item_Withdrawal] ?? null;
@@ -301,6 +316,94 @@ class AdminWithdrawalController extends Controller
     }
 
     /**
+     * Admin clicks "Part NG Oke" – marks the item as NG (waiting for return)
+     */
+    public function partNgOke($id)
+    {
+        $withdrawal = Withdrawal::findOrFail($id);
+
+        if ($withdrawal->Is_Part_Ng) {
+            return back()->withErrors(['error' => 'Part sudah ditandai sebagai NG sebelumnya.']);
+        }
+
+        if (!$withdrawal->Finish_Receiving) {
+            return back()->withErrors(['error' => 'QC harus menyelesaikan proses (Selesai) terlebih dahulu sebelum bisa menandai Part NG.']);
+        }
+
+        $withdrawal->update([
+            'Is_Part_Ng' => true,
+            'Date_Part_Ng' => Carbon::now(),
+        ]);
+
+        return back()->with('success', 'Part ditandai sebagai NG Oke, menunggu untuk Return Part NG.');
+    }
+
+    /**
+     * Admin Return NG part to rack — uses session('Id_User') or NIK Member
+     * Input: Code_Rack_Return_Ng (scanned barcode)
+     */
+    public function returnNg($id, Request $request)
+    {
+        $adminId = session('Id_User');
+        if (!$adminId) {
+            return back()->withErrors(['error' => 'Session expired. Silakan login ulang.']);
+        }
+
+        $request->validate([
+            'Code_Rack_Return_Ng' => 'required|string',
+        ]);
+
+        try {
+            $withdrawal = Withdrawal::findOrFail($id);
+
+            if (!$withdrawal->Is_Part_Ng) {
+                return back()->withErrors(['error' => 'Part belum ditandai sebagai NG oleh QC.']);
+            }
+            if ($withdrawal->Date_Return_Ng) {
+                return back()->withErrors(['error' => 'Part NG sudah di-return sebelumnya.']);
+            }
+
+            if ($request->Code_Rack_Return_Ng !== 'DAICHI') {
+                $rack = Rack::where('Code_Rack', $request->Code_Rack_Return_Ng)->first();
+                if (!$rack) {
+                    return back()->withErrors(['Code_Rack_Return_Ng' => 'Kode rak tidak ditemukan.']);
+                }
+
+                // Normalisasi perbandingan string
+                if (trim(strtolower($rack->Code_Item_Rack)) !== trim(strtolower($withdrawal->Code_Item_Withdrawal))) {
+                    return back()->withErrors([
+                        'Code_Rack_Return_Ng' => 'Salah Barang! Discan: ' . $rack->Code_Item_Rack .
+                            ', Seharusnya: ' . $withdrawal->Code_Item_Withdrawal
+                    ]);
+                }
+            }
+
+            $isUser = $request->has('Is_User');
+            $nikRetNg = $isUser ? $adminId : $request->input('NIK_Return_Ng');
+
+            if (!$isUser && empty($nikRetNg)) {
+                return back()->withErrors(['error' => 'NIK Member harus diisi jika tidak dilakukan sebagai Admin.']);
+            }
+
+            $withdrawal->update([
+                'NIK_Return_Ng' => $nikRetNg,
+                'Code_Rack_Return_Ng' => $request->Code_Rack_Return_Ng,
+                'Date_Return_Ng' => Carbon::now(),
+                'Is_User' => $isUser ? 1 : 0,
+            ]);
+
+            $username = $isUser ? session('Username_User', 'Admin') . ' (Admin)' : 'Member dengan NIK ' . $nikRetNg;
+            return back()->with('success', 'Part NG telah dikembalikan ke rak oleh ' . $username);
+        } catch (\Exception $e) {
+            Log::error('Admin Withdrawal returnNg failed: ' . $e->getMessage(), [
+                'withdrawal_id' => $id,
+                'admin_id' => $adminId
+            ]);
+            return back()->withErrors(['error' => 'Gagal mengembalikan part NG.']);
+        }
+    }
+
+    /**
      * Admin deletes withdrawal — can delete regardless of status
      */
     public function destroy($id)
@@ -349,6 +452,7 @@ class AdminWithdrawalController extends Controller
         // Build maps
         $niks = $withdrawals->pluck('NIK_Withdrawal')
             ->merge($withdrawals->pluck('NIK_Return'))
+            ->merge($withdrawals->pluck('NIK_Return_Ng'))
             ->filter()
             ->unique();
 
@@ -399,7 +503,12 @@ class AdminWithdrawalController extends Controller
             'Description Finish',
             'PIC Return',
             'No Rack Return',
-            'Date Return'
+            'Date Return',
+            'Part NG Oke',
+            'Date Part NG',
+            'PIC Return NG',
+            'No Rack Return NG',
+            'Date Return NG'
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
@@ -407,7 +516,7 @@ class AdminWithdrawalController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:S1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:W1')->applyFromArray($headerStyle);
 
         $row = 2;
         foreach ($withdrawals as $index => $w) {
@@ -439,6 +548,19 @@ class AdminWithdrawalController extends Controller
                 }
             }
 
+            $nameReturnNg = '-';
+            if ($w->NIK_Return_Ng) {
+                if ($w->Is_User && isset($usersMap[$w->NIK_Return_Ng])) {
+                    $nameReturnNg = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } elseif (isset($membersMap[$w->NIK_Return_Ng])) {
+                    $nameReturnNg = $membersMap[$w->NIK_Return_Ng];
+                } elseif (isset($usersMap[$w->NIK_Return_Ng])) {
+                    $nameReturnNg = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } else {
+                    $nameReturnNg = $w->NIK_Return_Ng;
+                }
+            }
+
             $rackInfo = $racksMap[$w->Code_Item_Withdrawal] ?? null;
 
             $sheet->fromArray([
@@ -461,6 +583,11 @@ class AdminWithdrawalController extends Controller
                 $w->Date_Return ? $nameReturn : '-',
                 $w->Code_Rack_Return ?? '-',
                 $w->Date_Return ? Carbon::parse($w->Date_Return)->format('d/m/Y H:i') : '-',
+                $w->Is_Part_Ng ? 'Ya' : '-',
+                $w->Date_Part_Ng ? Carbon::parse($w->Date_Part_Ng)->format('d/m/Y H:i') : '-',
+                $w->Date_Return_Ng ? $nameReturnNg : '-',
+                $w->Code_Rack_Return_Ng ?? '-',
+                $w->Date_Return_Ng ? Carbon::parse($w->Date_Return_Ng)->format('d/m/Y H:i') : '-',
             ], null, 'A' . $row);
 
             $row++;
