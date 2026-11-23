@@ -47,6 +47,7 @@ class UserWithdrawalController extends Controller
         // Optimasi: Kumpulkan NIK unik
         $niks = $withdrawals->pluck('NIK_Withdrawal')
             ->merge($withdrawals->pluck('NIK_Return'))
+            ->merge($withdrawals->pluck('NIK_Return_Ng'))
             ->filter()
             ->unique();
 
@@ -107,6 +108,20 @@ class UserWithdrawalController extends Controller
                 }
             } else {
                 $w->name_return = '-';
+            }
+
+            if ($w->NIK_Return_Ng) {
+                if ($w->Is_User && isset($usersMap[$w->NIK_Return_Ng])) {
+                    $w->name_return_ng = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } elseif (isset($membersMap[$w->NIK_Return_Ng])) {
+                    $w->name_return_ng = $membersMap[$w->NIK_Return_Ng];
+                } elseif (isset($usersMap[$w->NIK_Return_Ng])) {
+                    $w->name_return_ng = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } else {
+                    $w->name_return_ng = $w->NIK_Return_Ng;
+                }
+            } else {
+                $w->name_return_ng = '-';
             }
 
             $rackInfo = $racksMap[$w->Code_Item_Withdrawal] ?? null;
@@ -252,7 +267,7 @@ class UserWithdrawalController extends Controller
      */
     public function returnNg($id, Request $request)
     {
-        $nikMember = session('NIK_Member');
+        $nikMember = session('NIK_Member') ?? $request->input('NIK_Return_Ng');
         if (!$nikMember) {
             return back()->withErrors(['error' => 'Session expired. Silakan login ulang.']);
         }
@@ -333,6 +348,7 @@ class UserWithdrawalController extends Controller
 
         $niks = $withdrawals->pluck('NIK_Withdrawal')
             ->merge($withdrawals->pluck('NIK_Return'))
+            ->merge($withdrawals->pluck('NIK_Return_Ng'))
             ->filter()
             ->unique();
 
@@ -386,6 +402,7 @@ class UserWithdrawalController extends Controller
             'Date Return',
             'Part NG Oke',
             'Date Part NG',
+            'Description Part NG',
             'PIC Return NG',
             'No Rack Return NG',
             'Date Return NG'
@@ -396,7 +413,7 @@ class UserWithdrawalController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:X1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:Y1')->applyFromArray($headerStyle);
 
         $row = 2;
         foreach ($withdrawals as $index => $w) {
@@ -464,6 +481,7 @@ class UserWithdrawalController extends Controller
                 $w->Date_Return ? Carbon::parse($w->Date_Return)->format('d/m/Y H:i') : '-',
                 $w->Is_Part_Ng ? 'Ya' : '-',
                 $w->Date_Part_Ng ? Carbon::parse($w->Date_Part_Ng)->format('d/m/Y H:i') : '-',
+                $w->Desc_Part_Ng ?? '-',
                 $w->Date_Return_Ng ? $nameReturnNg : '-',
                 $w->Code_Rack_Return_Ng ?? '-',
                 $w->Date_Return_Ng ? Carbon::parse($w->Date_Return_Ng)->format('d/m/Y H:i') : '-',

@@ -31,6 +31,7 @@ class Withdrawal extends Model
         'Date_Return',
         'Is_Part_Ng',
         'Date_Part_Ng',
+        'Desc_Part_Ng',
         'NIK_Return_Ng',
         'Code_Rack_Return_Ng',
         'Date_Return_Ng',

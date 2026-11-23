@@ -304,7 +304,9 @@ class AdminWithdrawalController extends Controller
                 'Is_User' => $isUser ? 1 : 0,
             ]);
 
-            $username = $isUser ? session('Username_User', 'Admin') . ' (Admin)' : 'Member dengan NIK ' . $nikRet;
+            $memberName = Member::where('NIK_Member', $nikRet)->value('Name_Member');
+            $displayName = $memberName ? $memberName . " (NIK: {$nikRet})" : 'Member dengan NIK ' . $nikRet;
+            $username = $isUser ? session('Username_User', 'Admin') . ' (Admin)' : $displayName;
             return back()->with('success', 'Barang dikembalikan ke rak oleh ' . $username);
         } catch (\Exception $e) {
             Log::error('Admin Withdrawal return failed: ' . $e->getMessage(), [
@@ -318,8 +320,12 @@ class AdminWithdrawalController extends Controller
     /**
      * Admin clicks "Part NG Oke" – marks the item as NG (waiting for return)
      */
-    public function partNgOke($id)
+    public function partNgOke($id, Request $request)
     {
+        $request->validate([
+            'Desc_Part_Ng' => 'required|string|max:255',
+        ]);
+
         $withdrawal = Withdrawal::findOrFail($id);
 
         if ($withdrawal->Is_Part_Ng) {
@@ -333,13 +339,14 @@ class AdminWithdrawalController extends Controller
         $withdrawal->update([
             'Is_Part_Ng' => true,
             'Date_Part_Ng' => Carbon::now(),
+            'Desc_Part_Ng' => $request->Desc_Part_Ng,
         ]);
 
         return back()->with('success', 'Part ditandai sebagai NG Oke, menunggu untuk Return Part NG.');
     }
 
     /**
-     * Admin Return NG part to rack — uses session('Id_User') or NIK Member
+     * Admin Return NG part to rack — PIC otomatis memakai akun admin yang sedang login
      * Input: Code_Rack_Return_Ng (scanned barcode)
      */
     public function returnNg($id, Request $request)
@@ -350,6 +357,7 @@ class AdminWithdrawalController extends Controller
         }
 
         $request->validate([
+            'NIK_Return_Ng' => 'required|string|max:100',
             'Code_Rack_Return_Ng' => 'required|string',
         ]);
 
@@ -378,11 +386,34 @@ class AdminWithdrawalController extends Controller
                 }
             }
 
-            $isUser = $request->has('Is_User');
-            $nikRetNg = $isUser ? $adminId : $request->input('NIK_Return_Ng');
+            // PIC Return NG: default akun admin yang login, tetap bisa diubah manual
+            $adminUsername = session('Username_User', 'Admin');
+            $input = trim((string) $request->input('NIK_Return_Ng'));
+            $inputName = preg_replace('/\s*\(admin\)\s*$/i', '', $input);
 
-            if (!$isUser && empty($nikRetNg)) {
-                return back()->withErrors(['error' => 'NIK Member harus diisi jika tidak dilakukan sebagai Admin.']);
+            $isUser = false;
+            $nikRetNg = $input;
+
+            if ($input === (string) $adminId || strcasecmp($inputName, $adminUsername) === 0) {
+                // Memakai akun admin yang sedang login
+                $nikRetNg = $adminId;
+                $isUser = true;
+            } elseif (ctype_digit($input)) {
+                // Angka → coba NIK member dulu, lalu Id_User admin
+                if (Member::where('NIK_Member', $input)->exists()) {
+                    $nikRetNg = $input;
+                } elseif ($user = User::where('Id_User', $input)->first()) {
+                    $nikRetNg = $user->Id_User;
+                    $isUser = true;
+                } else {
+                    return back()->withErrors(['NIK_Return_Ng' => 'NIK tidak ditemukan di data member/admin.'])->withInput();
+                }
+            } elseif ($user = User::where('Username_User', $inputName)->first()) {
+                // Nama akun admin
+                $nikRetNg = $user->Id_User;
+                $isUser = true;
+            } else {
+                return back()->withErrors(['NIK_Return_Ng' => 'NIK/akun tidak ditemukan.'])->withInput();
             }
 
             $withdrawal->update([
@@ -392,8 +423,10 @@ class AdminWithdrawalController extends Controller
                 'Is_User' => $isUser ? 1 : 0,
             ]);
 
-            $username = $isUser ? session('Username_User', 'Admin') . ' (Admin)' : 'Member dengan NIK ' . $nikRetNg;
-            return back()->with('success', 'Part NG telah dikembalikan ke rak oleh ' . $username);
+            $displayName = $isUser
+                ? (User::where('Id_User', $nikRetNg)->value('Username_User') ?? $adminUsername) . ' (Admin)'
+                : (Member::where('NIK_Member', $nikRetNg)->value('Name_Member') ?? 'Member dengan NIK ' . $nikRetNg);
+            return back()->with('success', 'Part NG telah dikembalikan ke rak oleh ' . $displayName);
         } catch (\Exception $e) {
             Log::error('Admin Withdrawal returnNg failed: ' . $e->getMessage(), [
                 'withdrawal_id' => $id,
@@ -506,6 +539,7 @@ class AdminWithdrawalController extends Controller
             'Date Return',
             'Part NG Oke',
             'Date Part NG',
+            'Description Part NG',
             'PIC Return NG',
             'No Rack Return NG',
             'Date Return NG'
@@ -516,7 +550,7 @@ class AdminWithdrawalController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:W1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:X1')->applyFromArray($headerStyle);
 
         $row = 2;
         foreach ($withdrawals as $index => $w) {
@@ -585,6 +619,7 @@ class AdminWithdrawalController extends Controller
                 $w->Date_Return ? Carbon::parse($w->Date_Return)->format('d/m/Y H:i') : '-',
                 $w->Is_Part_Ng ? 'Ya' : '-',
                 $w->Date_Part_Ng ? Carbon::parse($w->Date_Part_Ng)->format('d/m/Y H:i') : '-',
+                $w->Desc_Part_Ng ?? '-',
                 $w->Date_Return_Ng ? $nameReturnNg : '-',
                 $w->Code_Rack_Return_Ng ?? '-',
                 $w->Date_Return_Ng ? Carbon::parse($w->Date_Return_Ng)->format('d/m/Y H:i') : '-',

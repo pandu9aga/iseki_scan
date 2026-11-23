@@ -49,6 +49,7 @@ class WithdrawalController extends Controller
         // Optimasi: Kumpulkan NIK unik
         $niks = $withdrawals->pluck('NIK_Withdrawal')
             ->merge($withdrawals->pluck('NIK_Return'))
+            ->merge($withdrawals->pluck('NIK_Return_Ng'))
             ->filter()
             ->unique();
 
@@ -108,6 +109,20 @@ class WithdrawalController extends Controller
                 }
             } else {
                 $w->name_return = '-';
+            }
+
+            if ($w->NIK_Return_Ng) {
+                if ($w->Is_User && isset($usersMap[$w->NIK_Return_Ng])) {
+                    $w->name_return_ng = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } elseif (isset($membersMap[$w->NIK_Return_Ng])) {
+                    $w->name_return_ng = $membersMap[$w->NIK_Return_Ng];
+                } elseif (isset($usersMap[$w->NIK_Return_Ng])) {
+                    $w->name_return_ng = $usersMap[$w->NIK_Return_Ng] . ' (Admin)';
+                } else {
+                    $w->name_return_ng = $w->NIK_Return_Ng;
+                }
+            } else {
+                $w->name_return_ng = '-';
             }
             // Rack info based on stored snapshot first, fallback to racks table
             $rackInfo = $racksMap[$w->Code_Item_Withdrawal] ?? null;
@@ -268,8 +283,12 @@ class WithdrawalController extends Controller
     /**
      * QC clicks "Part NG Oke" - indicates the part is NG and waiting for DST to return it
      */
-    public function partNgOke($id)
+    public function partNgOke($id, Request $request)
     {
+        $request->validate([
+            'Desc_Part_Ng' => 'required|string|max:255',
+        ]);
+
         $withdrawal = Withdrawal::findOrFail($id);
 
         if ($withdrawal->Is_Part_Ng) {
@@ -284,6 +303,7 @@ class WithdrawalController extends Controller
         $withdrawal->update([
             'Is_Part_Ng' => true,
             'Date_Part_Ng' => Carbon::now(),
+            'Desc_Part_Ng' => $request->Desc_Part_Ng,
         ]);
 
         return back()->with('success', 'Part ditandai sebagai NG Oke, menunggu DST untuk Return Part NG.');
@@ -364,6 +384,7 @@ class WithdrawalController extends Controller
 
         $niks = $withdrawals->pluck('NIK_Withdrawal')
             ->merge($withdrawals->pluck('NIK_Return'))
+            ->merge($withdrawals->pluck('NIK_Return_Ng'))
             ->filter()
             ->unique();
 
@@ -401,7 +422,7 @@ class WithdrawalController extends Controller
             'Sampai di QC', 'Date Sampai QC',
             'Received', 'Date Received', 'Finish', 'Date Finish', 'Description Finish',
             'PIC Return', 'No Rack Return', 'Date Return',
-            'Part NG Oke', 'Date Part NG', 'PIC Return NG', 'No Rack Return NG', 'Date Return NG'
+            'Part NG Oke', 'Date Part NG', 'Description Part NG', 'PIC Return NG', 'No Rack Return NG', 'Date Return NG'
         ];
         $sheet->fromArray([$headers], null, 'A1');
 
@@ -409,7 +430,7 @@ class WithdrawalController extends Controller
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']]
         ];
-        $sheet->getStyle('A1:X1')->applyFromArray($headerStyle);
+        $sheet->getStyle('A1:Y1')->applyFromArray($headerStyle);
 
         $row = 2;
         foreach ($withdrawals as $index => $w) {
@@ -477,6 +498,7 @@ class WithdrawalController extends Controller
                 $w->Date_Return ? Carbon::parse($w->Date_Return)->format('d/m/Y H:i') : '-',
                 $w->Is_Part_Ng ? 'Ya' : '-',
                 $w->Date_Part_Ng ? Carbon::parse($w->Date_Part_Ng)->format('d/m/Y H:i') : '-',
+                $w->Desc_Part_Ng ?? '-',
                 $w->Date_Return_Ng ? $nameReturnNg : '-',
                 $w->Code_Rack_Return_Ng ?? '-',
                 $w->Date_Return_Ng ? Carbon::parse($w->Date_Return_Ng)->format('d/m/Y H:i') : '-',

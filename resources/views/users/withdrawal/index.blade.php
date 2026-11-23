@@ -306,6 +306,11 @@
                                 <small class="text-muted d-block">
                                     {{ \Carbon\Carbon::parse($w->Date_Part_Ng)->format('d/m/y H:i') }}
                                 </small>
+                                @if($w->Desc_Part_Ng)
+                                <small class="d-block mt-1 text-wrap" style="white-space:normal; max-width:140px; font-size:0.72rem; color:#555;">
+                                    <i class="fas fa-comment-alt mr-1"></i>{{ $w->Desc_Part_Ng }}
+                                </small>
+                                @endif
                                 @elseif($w->Date_Return)
                                 <span class="text-muted">Menunggu QC</span>
                                 @else
@@ -315,6 +320,9 @@
                             <td class="td-ng">
                                 @if($w->Date_Return_Ng)
                                 <span class="font-weight-bold">{{ $w->name_return_ng ?? $w->NIK_Return_Ng }}</span><br>
+                                @if($w->NIK_Return_Ng && $w->name_return_ng && $w->name_return_ng != $w->NIK_Return_Ng)
+                                <small class="text-muted d-block">{{ $w->NIK_Return_Ng }}</small>
+                                @endif
                                 <span class="badge badge-secondary mb-1">Rak: {{ $w->Code_Rack_Return_Ng ?? '-' }}</span><br>
                                 <small class="text-muted d-block">
                                     {{ \Carbon\Carbon::parse($w->Date_Return_Ng)->format('d/m/y H:i') }}
@@ -417,10 +425,19 @@
                         Pastikan barcode rak yang discan adalah <strong>{{ $w->rack_no }}</strong>
                     </div>
                     <div class="form-group">
+                        @php
+                            $userNikRet = session('NIK_Member', $w->NIK_Withdrawal);
+                            $userNameRet = session('Name_Member', $w->name_disiapkan);
+                        @endphp
                         <label style="font-size:0.82rem;font-weight:600;">NIK Member DST <span class="text-danger">*</span></label>
-                        <input type="number" name="NIK_Return" class="form-control"
+                        <input type="text" name="NIK_Return" class="form-control font-weight-bold bg-light"
                             placeholder="Masukkan NIK" required
-                            value="{{ session('NIK_Member') }}">
+                            value="{{ $userNikRet }}" readonly>
+                        @if($userNameRet && $userNameRet != '-')
+                        <small class="text-success font-weight-bold d-block mt-1">
+                            <i class="fas fa-user-check mr-1"></i>Nama: {{ $userNameRet }} (NIK: {{ $userNikRet }})
+                        </small>
+                        @endif
                     </div>
 
                     <div class="custom-control custom-checkbox mb-3 p-2 bg-light rounded border">
@@ -480,6 +497,22 @@
                     <div class="alert alert-warning py-2 mb-3" style="font-size:0.8rem;">
                         <i class="fas fa-exclamation-triangle mr-1"></i>
                         Pastikan barcode rak yang discan adalah <strong>{{ $w->rack_no }}</strong>
+                    </div>
+
+                    <div class="form-group">
+                        @php
+                            $userNikNg = session('NIK_Member', $w->NIK_Return ?: $w->NIK_Withdrawal);
+                            $userNameNg = session('Name_Member', $w->name_return ?: $w->name_disiapkan);
+                        @endphp
+                        <label style="font-size:0.82rem;font-weight:600;">NIK Member DST <span class="text-danger">*</span></label>
+                        <input type="text" name="NIK_Return_Ng" class="form-control font-weight-bold bg-light"
+                            placeholder="Masukkan NIK" required
+                            value="{{ $userNikNg }}" readonly>
+                        @if($userNameNg && $userNameNg != '-')
+                        <small class="text-success font-weight-bold d-block mt-1">
+                            <i class="fas fa-user-check mr-1"></i>Nama: {{ $userNameNg }} (NIK: {{ $userNikNg }})
+                        </small>
+                        @endif
                     </div>
 
                     <div class="custom-control custom-checkbox mb-3 p-2 bg-light rounded border">
