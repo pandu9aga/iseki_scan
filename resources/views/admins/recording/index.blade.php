@@ -101,6 +101,19 @@
                                 <div class="col-lg-3 col-md-3 text-center"></div>
                             </div>
                         </form>
+
+                        {{-- Request Label WMS — input No Rack manual, kirim ke grup WA (antrian wa_queues) --}}
+                        <div class="row mt-2">
+                            <div class="col-lg-3 col-md-3 text-center"></div>
+                            <div class="col-lg-6 col-md-6 text-center">
+                                <button type="button" class="btn btn-success btn-user" data-toggle="modal"
+                                    data-target="#labelWmsModal" style="padding-left: 30px; padding-right: 30px;">
+                                    <i class="fas fa-tag mr-1"></i> Request Label WMS
+                                </button>
+                            </div>
+                            <div class="col-lg-3 col-md-3 text-center"></div>
+                        </div>
+
                         <!-- Modal Pilih Area -->
                         <div class="modal fade" id="areaModal" tabindex="-1" role="dialog" aria-hidden="true">
                             <div class="modal-dialog" role="document">
@@ -133,6 +146,46 @@
                                     <div class="modal-footer">
                                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal Request Label WMS -->
+                        <div class="modal fade" id="labelWmsModal" tabindex="-1" role="dialog" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <form action="{{ route('admin.recording.requestLabel') }}" method="POST">
+                                        @csrf
+                                        <div class="modal-header bg-success text-white">
+                                            <h5 class="modal-title">
+                                                <i class="fas fa-tag mr-1"></i> Request Label WMS
+                                            </h5>
+                                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="form-group mb-0">
+                                                <label for="No_Rack_Label" style="font-size: small; font-weight: 600;">
+                                                    No Rack <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text" name="No_Rack" id="No_Rack_Label"
+                                                    class="form-control @error('No_Rack') is-invalid @enderror"
+                                                    onkeyup="this.value = this.value.toUpperCase();"
+                                                    placeholder="Masukkan No Rack" autocomplete="off" required>
+                                                @error('No_Rack')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                                <small class="text-muted">Isi No Rack yang akan dimintakan label WMS.</small>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-paper-plane mr-1"></i> Kirim Permintaan
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -362,6 +415,16 @@
         proceedRecord(idRequest);
         $("#areaModal").modal("hide");
     }
+
+    // ── Request Label WMS ─────────────────────────────────────
+    // Input No Rack selalu kosong saat modal dibuka (diisi manual oleh admin).
+    $("#labelWmsModal").on("show.bs.modal", function() {
+        $("#No_Rack_Label").val("");
+    });
+
+    $("#labelWmsModal").on("shown.bs.modal", function() {
+        $("#No_Rack_Label").trigger("focus");
+    });
 </script>
 
 <script>

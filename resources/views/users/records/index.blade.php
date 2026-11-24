@@ -135,6 +135,59 @@
                                 <div class="col-lg-3 col-md-3 text-center"></div>
                             </div>
                         </form>
+
+                        {{-- Request Label WMS — buka modal input manual / konfirmasi --}}
+                        <div class="row mt-2">
+                            <div class="col-lg-3 col-md-3 text-center"></div>
+                            <div class="col-lg-6 col-md-6 text-center">
+                                <button type="button" id="requestLabelBtn" class="btn btn-success btn-user"
+                                    data-toggle="modal" data-target="#modalRequestLabelWms"
+                                    style="padding-left: 30px; padding-right: 30px;">
+                                    <i class="fas fa-tag mr-1"></i> Request Label WMS
+                                </button>
+                            </div>
+                            <div class="col-lg-3 col-md-3 text-center"></div>
+                        </div>
+
+                        <!-- Modal Request Label WMS -->
+                        <div class="modal fade" id="modalRequestLabelWms" tabindex="-1" role="dialog" aria-labelledby="modalLabelWmsTitle" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <form action="{{ route('record.requestLabel') }}" method="POST" id="requestLabelForm">
+                                        @csrf
+                                        <div class="modal-header bg-success text-white">
+                                            <h5 class="modal-title font-weight-bold" id="modalLabelWmsTitle">
+                                                <i class="fas fa-tag mr-2"></i>Request Label WMS ke WA
+                                            </h5>
+                                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body text-left">
+                                            <div class="alert alert-info py-2 mb-3" style="font-size:0.83rem;">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                Silakan input <strong>Nomor Rak</strong> secara manual. Info lokasi rak akan otomatis dicari dari database Iseki Label.
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label class="font-weight-bold text-gray-800" style="font-size: 0.88rem;">
+                                                    Nomor Rak / Rack Code <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text" name="Code_Rack" id="Manual_Code_Rack"
+                                                    class="form-control font-weight-bold text-uppercase"
+                                                    placeholder="Ketik nomor rak (contoh: A-01-02)" required autocomplete="off">
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                                            <button type="submit" class="btn btn-success font-weight-bold">
+                                                <i class="fab fa-whatsapp mr-1"></i> Kirim ke WhatsApp
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                         <!-- Modal Pilih Area -->
                         <div class="modal fade" id="areaModal" tabindex="-1" role="dialog" aria-hidden="true">
                             <div class="modal-dialog" role="document">
@@ -641,6 +694,19 @@
         proceedRecord(idRequest);
         $("#areaModal").modal("hide");
     }
+
+    // ── Modal Request Label WMS ──────────────────────────────
+    // Hanya No Rack yang diinput manual.
+    $('#modalRequestLabelWms').on('show.bs.modal', function () {
+        let currentRack = $("#Code_Rack").val() ? $("#Code_Rack").val().trim() : '';
+
+        // Jika form utama sudah terisi, masukkan ke input modal; jika kosong, biarkan kosong
+        $("#Manual_Code_Rack").val(currentRack);
+    });
+
+    $('#modalRequestLabelWms').on('shown.bs.modal', function () {
+        $("#Manual_Code_Rack").focus();
+    });
 </script>
 
 <script>

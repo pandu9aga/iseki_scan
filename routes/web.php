@@ -201,6 +201,7 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/admin_recording/check', [AdminRecordingController::class, 'check'])->name('admin.recording.check');
     Route::post('/admin_recording/check-multiple', [AdminRecordingController::class, 'checkMultiple'])->name('admin.recording.checkMultiple');
     Route::get('/admin_recording/data', [AdminRecordingController::class, 'getData'])->name('admin.recording.data');
+    Route::post('/admin_recording/request-label', [AdminRecordingController::class, 'requestLabel'])->name('admin.recording.requestLabel');
 
     // Admin Withdrawal (with actions)
     Route::get('/admin_withdrawal', [AdminWithdrawalController::class, 'index'])->name('admin.withdrawal');
@@ -256,6 +257,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::post('/record/check-multiple', [RecordController::class, 'checkMultiple'])->name('record.checkMultiple');
     Route::get('/record/data', [RecordController::class, 'getData'])->name('record.data');
     Route::post('/record/{id}/update-sum', [RecordController::class, 'updateSum'])->name('record.updateSum');
+    Route::post('/record/request-label', [RecordController::class, 'requestLabel'])->name('record.requestLabel');
 
     Route::get('/request', [RequestController::class, 'index'])->name('request');
     Route::post('/request/create', [RequestController::class, 'create'])->name('request.create');

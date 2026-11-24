@@ -4,15 +4,18 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Helper\LabelRackHelper;
+use App\Http\Controllers\Helper\WaQueueController;
 use App\Models\Member;
 use App\Models\Rack;
 use App\Models\RackPartList;
 use App\Models\Record;
 use App\Models\Request as RequestModel;
 use App\Models\SumMismatch;
+use App\Models\WaQueue;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // alias supaya tidak bentrok
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RecordController extends Controller
 {
@@ -702,5 +705,68 @@ class RecordController extends Controller
                 'user' => $lastRecord->display_name ?: '-',
             ] : null,
         ];
+    }
+
+    /**
+     * Kirim permintaan label WMS ke grup WA melalui antrian wa_queues (User/Member version).
+     */
+    public function requestLabel(Request $request)
+    {
+        $validated = $request->validate([
+            'Code_Rack' => 'required|string|max:255',
+        ], [
+            'Code_Rack.required' => 'Rack Code wajib diisi sebelum meminta label WMS.',
+        ]);
+
+        $codeRack = trim($validated['Code_Rack']);
+        $codeItem = '';
+
+        // Lokasi, item & nama part dari iseki_label.rack_part_lists
+        $location = '-';
+        $partName = '';
+        try {
+            $rackPartList = RackPartList::where('rack_no', $codeRack)->first();
+            if ($rackPartList) {
+                $rack = str_replace(['"', '[', ']', '{', '}'], '', $rackPartList->rack ?? '-');
+                $cell = str_replace(['"', '[', ']', '{', '}'], '', $rackPartList->cell ?? '-');
+                $location = trim($rack . ' / ' . $cell, ' /') ?: '-';
+
+                if ($codeItem === '' && !empty($rackPartList->item_code)) {
+                    $codeItem = $rackPartList->item_code;
+                }
+                if (!empty($rackPartList->part_name)) {
+                    $partName = trim($rackPartList->part_name);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gagal mengambil data dari iseki_label: ' . $e->getMessage());
+        }
+
+        $memberName = session('Name_Member');
+        $memberNik = session('NIK_Member');
+        $pic = $memberName ? "{$memberName} (Member - {$memberNik})" : 'Member';
+        $timeNow = Carbon::now()->format('d/m/Y H:i');
+
+        $message = "🏷️ *REQUEST LABEL WMS*\n";
+        $message .= "━━━━━━━━━━━━━━━━━━━━━━━\n";
+        $message .= "No Rack   : {$codeRack}\n";
+        if ($codeItem !== '') {
+            $message .= "Item      : {$codeItem}\n";
+        }
+        if ($partName !== '') {
+            $message .= "Nama Part : {$partName}\n";
+        }
+        $message .= "Lokasi    : {$location}\n";
+        $message .= "PIC       : {$pic}\n";
+        $message .= "Waktu     : {$timeNow}\n";
+        $message .= 'Mohon dibuatkan label WMS untuk part di atas.';
+
+        WaQueue::create([
+            'message' => $message,
+            'group_id' => WaQueueController::WA_GROUP_ID,
+            'status' => 'pending',
+        ]);
+
+        return redirect()->back()->with('success', 'Permintaan label WMS untuk rak ' . $codeRack . ' sudah masuk antrian WhatsApp.');
     }
 }
