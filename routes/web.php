@@ -220,6 +220,8 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::get('/admin_check/export-search', [AdminCheckController::class, 'exportSearch'])->name('admin.check.export_search');
     Route::get('/admin_check/export', [AdminCheckController::class, 'export'])->name('admin.check.export');
     Route::post('/admin_check/store', [AdminCheckController::class, 'store'])->name('admin.check.store');
+    Route::get('/admin_check/unchecked', [AdminCheckController::class, 'unchecked'])->name('admin.check.unchecked');
+    Route::get('/admin_check/unchecked/export', [AdminCheckController::class, 'exportUnchecked'])->name('admin.check.unchecked.export');
 
     // Stock Item
     Route::get('/stock_item', [AdminStockItemController::class, 'index'])->name('stock_item');
@@ -302,6 +304,8 @@ Route::middleware(AuthMiddleware::class)->group(function () {
     Route::post('/user_check/store', [UserCheckController::class, 'store'])->name('user.check.store');
     Route::post('/user_check/auto-store', [UserCheckController::class, 'autoStore'])->name('user.check.auto_store');
     Route::post('/user_check/{id}/done', [UserCheckController::class, 'markAsDone'])->name('user.check.done');
+    Route::get('/user_check/unchecked', [UserCheckController::class, 'unchecked'])->name('user.check.unchecked');
+    Route::get('/user_check/unchecked/export', [UserCheckController::class, 'exportUnchecked'])->name('user.check.unchecked.export');
 
     // User Rack
     Route::get('/user_rack', [UserRackController::class, 'index'])->name('user.rack');

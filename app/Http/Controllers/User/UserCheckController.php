@@ -3,9 +3,14 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Helper\AreaRackHelper;
 use App\Models\Check;
+use App\Models\Member;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class UserCheckController extends Controller
 {
@@ -199,5 +204,128 @@ class UserCheckController extends Controller
             'saved'   => true,
             'message' => $codeRack . ' berhasil dicatat ke Check.',
         ]);
+    }
+
+    /**
+     * Halaman "Data Belum Check" untuk member, otomatis memakai area akun.
+     */
+    public function unchecked(Request $request)
+    {
+        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        try {
+            $dateObj = Carbon::parse($date);
+        } catch (\Throwable $e) {
+            $dateObj = Carbon::today();
+            $date = $dateObj->format('Y-m-d');
+        }
+
+        $status = strtolower((string) $request->input('status', 'unchecked'));
+        if (! in_array($status, ['all', 'checked', 'unchecked'], true)) {
+            $status = 'unchecked';
+        }
+
+        $member = Member::find(session('Id_Member'));
+        $area = $member ? strtoupper((string) $member->Member_Area) : '';
+
+        if (! AreaRackHelper::isValidArea($area)) {
+            return view('users.checks.unchecked', [
+                'area'    => $area,
+                'date'    => $date,
+                'status'  => $status,
+                'items'   => [],
+                'summary' => null,
+                'noArea'  => true,
+            ]);
+        }
+
+        $partsByArea = AreaRackHelper::partsByArea();
+        $checkedSet = AreaRackHelper::checkedRackSet($dateObj);
+        $items = AreaRackHelper::itemsForArea($area, $partsByArea, $checkedSet, $status);
+        $summary = AreaRackHelper::summaryPerArea($partsByArea, $checkedSet);
+
+        return view('users.checks.unchecked', [
+            'area'    => $area,
+            'date'    => $date,
+            'status'  => $status,
+            'items'   => $items,
+            'summary' => $summary,
+            'noArea'  => false,
+        ]);
+    }
+
+    /**
+     * Export Excel "Data Belum Check" untuk member.
+     */
+    public function exportUnchecked(Request $request)
+    {
+        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        try {
+            $dateObj = Carbon::parse($date);
+        } catch (\Throwable $e) {
+            $dateObj = Carbon::today();
+            $date = $dateObj->format('Y-m-d');
+        }
+
+        $status = strtolower((string) $request->input('status', 'unchecked'));
+        if (! in_array($status, ['all', 'checked', 'unchecked'], true)) {
+            $status = 'unchecked';
+        }
+
+        $member = Member::find(session('Id_Member'));
+        $area = $member ? strtoupper((string) $member->Member_Area) : '';
+
+        if (! AreaRackHelper::isValidArea($area)) {
+            return redirect()->route('user.check.unchecked')
+                ->withErrors(['error' => 'Area akun Anda belum di-assign oleh admin.']);
+        }
+
+        $partsByArea = AreaRackHelper::partsByArea();
+        $checkedSet = AreaRackHelper::checkedRackSet($dateObj);
+        $items = AreaRackHelper::itemsForArea($area, $partsByArea, $checkedSet, $status);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = ['No', 'No Rack', 'Item Code', 'Nama Part', 'Cell', 'Zona', 'Checked'];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
+        ];
+        $sheet->getStyle('A1:G1')->applyFromArray($headerStyle);
+        $sheet->setAutoFilter('A1:G1');
+
+        $row = 2;
+        $no = 1;
+        foreach ($items as $item) {
+            $sheet->fromArray([
+                $no,
+                $item['rack_no'],
+                $item['item_code'],
+                $item['part_name'],
+                $item['cell'],
+                $item['zones'],
+                $item['checked'] ? '✓' : '',
+            ], null, 'A'.$row);
+
+            $sheet->getStyle('G'.$row)
+                ->getAlignment()
+                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            $no++;
+            $row++;
+        }
+
+        foreach (range('A', 'G') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = 'Data_Check_'.$area.'_'.$dateObj->format('Y-m-d').'_'.$status.'.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        $filePath = storage_path('app/public/'.$fileName);
+        $writer->save($filePath);
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
     }
 }

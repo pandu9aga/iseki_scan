@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Helper\AreaRackHelper;
 use App\Models\Check;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -446,6 +447,110 @@ class AdminCheckController extends Controller
         $fileName = "Check_Search_{$startDate}_to_{$endDate}.xlsx";
         $writer = new Xlsx($spreadsheet);
         $filePath = storage_path('app/public/' . $fileName);
+        $writer->save($filePath);
+
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Halaman "Data Belum Check" per area (harian, check otomatis).
+     */
+    public function unchecked(Request $request)
+    {
+        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        try {
+            $dateObj = Carbon::parse($date);
+        } catch (\Throwable $e) {
+            $dateObj = Carbon::today();
+            $date = $dateObj->format('Y-m-d');
+        }
+
+        $area = strtoupper((string) $request->input('area', 'BARAT'));
+        if (! AreaRackHelper::isValidArea($area)) {
+            $area = 'BARAT';
+        }
+
+        $status = strtolower((string) $request->input('status', 'unchecked'));
+        if (! in_array($status, ['all', 'checked', 'unchecked'], true)) {
+            $status = 'unchecked';
+        }
+
+        $partsByArea = AreaRackHelper::partsByArea();
+        $checkedSet = AreaRackHelper::checkedRackSet($dateObj);
+        $items = AreaRackHelper::itemsForArea($area, $partsByArea, $checkedSet, $status);
+        $summary = AreaRackHelper::summaryPerArea($partsByArea, $checkedSet);
+
+        return view('admins.checks.unchecked', compact('area', 'date', 'status', 'items', 'summary'));
+    }
+
+    /**
+     * Export Excel "Data Belum Check" per area.
+     */
+    public function exportUnchecked(Request $request)
+    {
+        $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        try {
+            $dateObj = Carbon::parse($date);
+        } catch (\Throwable $e) {
+            $dateObj = Carbon::today();
+            $date = $dateObj->format('Y-m-d');
+        }
+
+        $area = strtoupper((string) $request->input('area', 'BARAT'));
+        if (! AreaRackHelper::isValidArea($area)) {
+            $area = 'BARAT';
+        }
+
+        $status = strtolower((string) $request->input('status', 'unchecked'));
+        if (! in_array($status, ['all', 'checked', 'unchecked'], true)) {
+            $status = 'unchecked';
+        }
+
+        $partsByArea = AreaRackHelper::partsByArea();
+        $checkedSet = AreaRackHelper::checkedRackSet($dateObj);
+        $items = AreaRackHelper::itemsForArea($area, $partsByArea, $checkedSet, $status);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = ['No', 'No Rack', 'Item Code', 'Nama Part', 'Cell', 'Zona', 'Checked'];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4F4F4F']],
+        ];
+        $sheet->getStyle('A1:G1')->applyFromArray($headerStyle);
+        $sheet->setAutoFilter('A1:G1');
+
+        $row = 2;
+        $no = 1;
+        foreach ($items as $item) {
+            $sheet->fromArray([
+                $no,
+                $item['rack_no'],
+                $item['item_code'],
+                $item['part_name'],
+                $item['cell'],
+                $item['zones'],
+                $item['checked'] ? '✓' : '',
+            ], null, 'A'.$row);
+
+            $sheet->getStyle('G'.$row)
+                ->getAlignment()
+                ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+            $no++;
+            $row++;
+        }
+
+        foreach (range('A', 'G') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $fileName = 'Data_Check_'.$area.'_'.$dateObj->format('Y-m-d').'_'.$status.'.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        $filePath = storage_path('app/public/'.$fileName);
         $writer->save($filePath);
 
         return response()->download($filePath)->deleteFileAfterSend(true);

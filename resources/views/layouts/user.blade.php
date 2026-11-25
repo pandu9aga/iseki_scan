@@ -324,6 +324,13 @@
                     <span>11. Check</span></a>
             </li>
 
+            <!-- Nav Item - Data Belum Check -->
+            <li class="nav-item {{ request()->routeIs('user.check.unchecked*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('user.check.unchecked') }}">
+                    <i class="fas fa-fw fa-clipboard-list"></i>
+                    <span>11b. Data Belum Check</span></a>
+            </li>
+
             <!-- Nav Item - Withdrawal -->
             <li class="nav-item {{ request()->routeIs('user.withdrawal') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('user.withdrawal') }}">
